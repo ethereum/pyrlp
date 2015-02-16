@@ -14,16 +14,34 @@ def test_inference():
         (u'\xe4\xf6\xfc\xea\xe2\xfb', text),
         ([], ListSedes()),
         ([1, 2, 3], ListSedes((big_endian_int,) * 3)),
-        ([[], 'asdf'], ListSedes((ListSedes(), text))),
+        ([[], 'asdf'], ListSedes(([], text))),
     )
 
     for obj, sedes in obj_sedes_pairs:
         if sedes is not None:
             inferred = infer_sedes(obj, sedes_list)
             assert inferred == sedes
+            sedes.serialize(obj)
         else:
             with pytest.raises(TypeError):
                 infer_sedes(obj)
+
+def test_list_sedes():
+    l1 = ListSedes()
+    l2 = ListSedes((big_endian_int, big_endian_int))
+    l3 = ListSedes((l1, l2, [[[]]]))
+    assert l1.serializable([]) is True
+    assert l1.serializable([[]]) is False
+    assert l1.serializable([5]) is False
+
+    assert l2.serializable((2, 3)) is True
+    assert l2.serializable([]) is False
+    assert l2.serializable([1, 2, 3]) is False
+    assert l2.serializable([1, [2, 3], 4]) is False
+
+    assert l3.serializable([[], [5, 6], [[[]]]]) is True
+    assert l3.serializable([[], [], [[[]]]]) is False
+    assert l3.serializable([[], [5, 6], [[]]]) is False
 
 
 def test_serializable():

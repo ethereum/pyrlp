@@ -19,7 +19,6 @@ invalid_rlp = ('', '\x00\xab', '\x00\x00\xff')
 negative_ints = (-1, -100, -255, -256, -2342423)
 
 
-
 def test_neg():
     for n in negative_ints:
         assert not serializable(n)
@@ -49,7 +48,6 @@ def test_valid_data():
         deserialized = deserialize(serial)
         assert serialized == serial
         assert deserialized == n
-
 
 def test_invalid_rlp():
     for serial in invalid_rlp:

@@ -4,7 +4,6 @@
 from collections import Sequence
 from functools import partial
 from itertools import izip, imap
-from . import text, big_endian_int
 
 
 class class_property(property):
@@ -15,11 +14,32 @@ class class_property(property):
         return self.fget.__get__(None, owner)()
 
 
+def is_sedes(obj):
+    """Check if `obj` is a sedes object.
+    
+    A sedes object is characterized by having the methods `serialize(obj)`,
+    `serializable(obj)` and `deserialize(serial)`.
+    """
+    methods = ('serialize', 'deserialize', 'serializable')
+    return all(hasattr(obj, m) for m in methods)
+
+
 class ListSedes(list):
     """A sedes for lists, implemented as a list of other sedes objects."""
 
+    def __init__(self, elements=[]):
+        super(ListSedes, self).__init__()
+        for e in elements:
+            if is_sedes(e):
+                self.append(e)
+            elif isinstance(e, Sequence):
+                self.append(ListSedes(e))
+            else:
+                raise TypeError('Instances of ListSedes must only contain '
+                                'sedes objects or sequences thereof.')
+
     def serializable(self, obj):
-        if not isinstance(obj, Sequence):
+        if not isinstance(obj, Sequence) or len(self) != len(obj):
             return False
         return all(sedes.serializable(element)
                    for element, sedes in izip(obj, self))
@@ -80,7 +100,10 @@ class Serializable(object):
 
     @classmethod
     def serializable(cls, obj):
-        return hasattr(obj, 'fields') and obj.fields == cls.fields
+        if not hasattr(obj, 'fields') or obj.fields != cls.fields:
+            return False
+        return all(sedes.serializable(getattr(obj, field))
+                   for field, sedes in cls.fields)
 
     @classmethod
     def serialize(cls, obj):

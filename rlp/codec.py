@@ -2,9 +2,9 @@ import abc
 import collections
 from functools import partial
 from itertools import izip, imap
-from .sedes import big_endian_int, sedes_list
 from .exceptions import EncodingError, DecodingError
-from .utils import infer_sedes
+from .sedes import big_endian_int, sedes_list
+from .sedes.inference import infer_sedes
 
 
 class Atomic(object):

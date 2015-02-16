@@ -1,21 +1,22 @@
 from collections import Sequence
 from functools import partial
 from itertools import imap
-from .sedes.lists import ListSedes, Serializable
+from . import sedes_list
+from .lists import ListSedes, is_sedes
 
 
 def infer_sedes(obj, sedes_list):
-    """Try to find a sedes suitable for a given Python object.
+    """Try to find a sedes objects suitable for a given Python object.
 
-    If ``obj`` is :class:`rlp.Serializable` this will always return the class
-    of ``obj``. If ``obj`` is a sequence, a :class:`ListSedes` will be
+    The sedes objects considered are `obj`'s class and all elements of
+    `sedes_list`. If `obj` is a sequence, a :class:`ListSedes` will be
     constructed recursively.
     
-    :param obj: the python object in question
-    :param sedes_list: the collection of sedes objects to check
+    :param obj: the python object for which to find a sedes object
+    :param sedes_list: a collection of sedes objects to check
     :raises TypeError: if no appropriate sedes could be found
     """
-    if isinstance(obj, Serializable):
+    if is_sedes(obj.__class__):
         return obj.__class__
     for sedes in sedes_list:
         if sedes.serializable(obj):
