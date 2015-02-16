@@ -8,7 +8,7 @@ There are two types of fundamental items one can encode in RLP:
 
 In this package, byte strings are represented either as Python strings or as
 ``bytearrays``. Lists can be any sequence, e.g. ``lists`` or ``tuples``. To
-encode these objects, use :func:`rlp.encode`::
+encode these kinds of objects, use :func:`rlp.encode`::
 
     >>> from rlp import encode
     >>> encode('ethereum')
@@ -63,7 +63,7 @@ Serialization and its couterpart, deserialization, is done by, what we call,
 pass this sedes to :func:`rlp.decode`::
 
     >>> from rlp.sedes import big_endian_int
-    >>> decode('', big_endian_int)
+    >>> decode('\x82\x05\xdf', big_endian_int)
     1503
 
 
@@ -181,17 +181,17 @@ As we have seen, :func:`rlp.encode` (or, rather, :func:`rlp.infer_sedes`)
 tries to guess a sedes capable of serializing the object before encoding. In
 this process, it follows the following steps:
 
-1) Check if the object is an instance of :class:`rlp.Serializable`. If so, its
-   class is the sedes.
-2) Check if one of the entries in :attr:`rlp.sedes.sedes_set` can serialize the
-   object (via ``serializable(obj)``). If so, this is the sedes.
+1) Check if the object's class is a sedes object (like every subclass of
+   :class:`rlp.Serializable`). If so, its class is the sedes.
+2) Check if one of the entries in :attr:`rlp.sedes.sedes_list` can serialize
+   the object (via ``serializable(obj)``). If so, this is the sedes.
 3) Check if the object is a sequence. If so, build a :class:`rlp.ListSequence`
-   by recusively infering a sedes for each of its elements.
+   by recursively infering a sedes for each of its elements.
 4) If none of these steps was successful, sedes inference has failed.
 
 If you have build your own basic sedes (e.g. for ``dicts`` or ``floats``), you
-might want to hook in here and add it to :attr:`rlp.sedes.sedes_set`, whereby
-it will be automatically be used by :func:`rlp.encode`.
+might want to hook in at step 2 and add it to :attr:`rlp.sedes.sedes_list`,
+whereby it will be automatically be used by :func:`rlp.encode`.
 
 
 Further Reading
@@ -201,5 +201,5 @@ This was basically everything there is to about this package. The technical
 specification of RLP can be found either in the
 `Ethereum wiki <https://github.com/ethereum/wiki/wiki/RLP>` or in Appendix B of
 Gavin Woods `Yellow Paper <gavwood.com/Paper.pdf>`. For more detailed
-information about this package, have a look at the API reference. Also, don't
-hesitate to dig into the source code.
+information about this package, have a look at the API reference. Also or the
+source code.
