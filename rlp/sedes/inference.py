@@ -14,7 +14,7 @@ def infer_sedes(obj, sedes_list):
     
     :param obj: the python object for which to find a sedes object
     :param sedes_list: a collection of sedes objects to check
-    :raises TypeError: if no appropriate sedes could be found
+    :raises: :exc:`TypeError` if no appropriate sedes could be found
     """
     if is_sedes(obj.__class__):
         return obj.__class__

@@ -1,3 +1,6 @@
+Tutorial
+========
+
 Basics
 ------
 
@@ -127,7 +130,7 @@ Encoding Custom Objects
 -----------------------
 
 Often, we want to encode our own objects in RLP. Examples from the Ethereum
-world are Transactions, Blocks or anything send over the Wire. With *pyrlp*,
+world are transactions, blocks or anything send over the Wire. With *pyrlp*,
 this is as easy as subclassing :class:`rlp.Serializable`::
 
     >>> import rlp
@@ -174,8 +177,8 @@ responsible for its instances. Therefore, we can use :func:`rlp.encode` and
 
 .. _inference-section:
 
-Sedes Inference Explained
--------------------------
+Sedes Inference
+---------------
 
 As we have seen, :func:`rlp.encode` (or, rather, :func:`rlp.infer_sedes`)
 tries to guess a sedes capable of serializing the object before encoding. In
@@ -185,8 +188,9 @@ this process, it follows the following steps:
    :class:`rlp.Serializable`). If so, its class is the sedes.
 2) Check if one of the entries in :attr:`rlp.sedes.sedes_list` can serialize
    the object (via ``serializable(obj)``). If so, this is the sedes.
-3) Check if the object is a sequence. If so, build a :class:`rlp.ListSequence`
-   by recursively infering a sedes for each of its elements.
+3) Check if the object is a sequence. If so, build a
+   :class:`rlp.sedes.ListSedes` by recursively infering a sedes for each of its
+   elements.
 4) If none of these steps was successful, sedes inference has failed.
 
 If you have build your own basic sedes (e.g. for ``dicts`` or ``floats``), you
@@ -199,7 +203,7 @@ Further Reading
 
 This was basically everything there is to about this package. The technical
 specification of RLP can be found either in the
-`Ethereum wiki <https://github.com/ethereum/wiki/wiki/RLP>` or in Appendix B of
-Gavin Woods `Yellow Paper <gavwood.com/Paper.pdf>`. For more detailed
-information about this package, have a look at the API reference. Also or the
+`Ethereum wiki <https://github.com/ethereum/wiki/wiki/RLP>`_ or in Appendix B of
+Gavin Woods `Yellow Paper <http://gavwood.com/Paper.pdf>`_. For more detailed
+information about this package, have a look at the :ref:`API-reference` or the
 source code.

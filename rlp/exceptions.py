@@ -4,7 +4,7 @@ class RLPException(Exception):
 
 
 class EncodingError(RLPException):
-    """Exception raised when encoding fails.
+    """Exception raised if encoding fails.
     
     :ivar obj: the object that could not be encoded
     """
