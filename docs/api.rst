@@ -38,6 +38,8 @@ Sedes Objects
 
 .. autoclass:: rlp.sedes.ListSedes
 
+.. autoclass:: rlp.sedes.CountableListSedes
+
 .. autoclass:: rlp.Serializable
     :members:
 

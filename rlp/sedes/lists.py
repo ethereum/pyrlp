@@ -53,6 +53,28 @@ class ListSedes(list):
                 for element, sedes in izip(serial, self)]
 
 
+class CountableListSedes(object):
+    """A sedes for lists of arbitrary length.
+
+    :param element_sedes: when (de-)serializing a list, this sedes will be
+                          applied to all of its elements
+    """
+
+    def __init__(self, element_sedes):
+        self.element_sedes = element_sedes
+
+    def serializable(self, obj):
+        if not isinstance(obj, Sequence):
+            return False
+        return all(self.element_sedes.serializable(e) for e in obj)
+
+    def serialize(self, obj):
+        return [self.element_sedes.serialize(e) for e in obj]
+
+    def deserialize(self, serial):
+        return [self.element_sedes.deserialize(e) for e in serial]
+
+
 class Serializable(object):
     """Base class for objects which can be serialized into RLP lists.
 
