@@ -169,7 +169,10 @@ def decode(rlp, sedes=None):
     :raises: :exc:`DecodingError` if the input string does not end after the
              root item
     """
-    item, tail = consume_item(rlp)
+    try:
+        item, tail = consume_item(rlp)
+    except IndexError:
+        raise DecodingError('RLP string to short', rlp)
     if tail:
         msg = 'RLP string ends with {} superfluous bytes'.format(len(tail))
         raise DecodingError(msg, rlp)

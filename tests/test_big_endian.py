@@ -1,5 +1,4 @@
 import pytest
-from rlp import SerializationError, DeserializationError
 from rlp.sedes.big_endian_int import serializable, serialize, deserialize
 
 
@@ -9,12 +8,10 @@ valid_data = (
     (65535, '\xff\xff'),
 )
 
-single_bytes = ((n, chr(n)) for n in xrange(256))
+single_bytes = ((n, chr(n)) for n in xrange(1, 256))
 
 random_integers = (256, 257, 4839, 849302, 483290432, 483290483290482039482039,
                    48930248348219540325894323584235894327865439258743754893066)
-
-invalid_rlp = ('', '\x00\xab', '\x00\x00\xff')
 
 negative_ints = (-1, -100, -255, -256, -2342423)
 
@@ -48,8 +45,3 @@ def test_valid_data():
         deserialized = deserialize(serial)
         assert serialized == serial
         assert deserialized == n
-
-def test_invalid_rlp():
-    for serial in invalid_rlp:
-        with pytest.raises(DeserializationError):
-            deserialize(serial)
