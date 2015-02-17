@@ -10,8 +10,6 @@ Welcome to pyrlp's documentation!
 length prefix encoding* (*RLP*). This format finds widely spread use in the
 Ethereum world.
 
-Contents:
-
 .. toctree::
    :maxdepth: 2
 
