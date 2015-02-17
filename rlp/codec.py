@@ -65,90 +65,50 @@ def length_prefix(length, offset):
         raise ValueError('Length greater than 256**8')
 
 
-def consume_length_prefix(rlp):
-    """Read the length prefix of from the beginning of an RLP string.
-
-    This returns a 3-tuple with the following entries:
-
-    ``type``
-        either ``str`` or ``list`` depending on the type of the encoded item
-
-    ``length``
-        the length of the encoded data in bytes
-
-    ``tail``
-        the unprocessed rest of the input string (starting with an unprefixed
-        payload)
+def consume_item(rlp, start=0):
+    """Read an item from an RLP string.
     
-    :returns: a tuple ``(type, length, tail)`` as described above
-    :raises: :exc:`DecodingError` if the length prefix is invalid (the payload
-             is not further checked, however)
+    :param rlp: the rlp string to read from
+    :param start: the position at which to start reading
+    :returns: a tuple ``(item, end)``, where ``item`` is the read item and
+              ``end`` is the position of the first unprocessed byte
     """
-    b0 = ord(rlp[0])
-    branch = {
-               0 <= b0 < 128:      'single_byte',
-             128 <= b0 < 128 + 56: 'short_string',
-        128 + 56 <= b0 < 192:      'long_string',
-             192 <= b0 < 192 + 56: 'short_list',
-        192 + 56 <= b0 < 256:      'long_list'
-    }[True]
-
-    if branch == 'single_byte':
-        return (str, 1, rlp)
-    elif branch == 'short_string':
-        return (str, b0 - 128, rlp[1:])
-    elif branch == 'short_list':
-        return (list, b0 - 192, rlp[1:])
-    else:
-        length_length = b0 - 56 + 1
-        if branch == 'long_string':
-            type_ = str
-            length_length -= 128
-        elif branch == 'long_list':
-            type_ = list
-            length_length -= 192
-        else:
-            assert False, 'Unreachable'
-        length_encoded = rlp[1:1 + length_length]
-        try:
-            length = big_endian_int.deserialize(length_encoded)
-        except DeserializationError:
-            raise DecodingError('Invalid length prefix encountered', rlp)
-        return (type_, length, rlp[1 + length_length:])
-
-
-def consume_item(rlp):
-    """Read and decode an item from the beginning of an RLP string.
-    
-    This returns a 2-tuple with the following entries:
-
-    ``item``
-        the decoded item
-
-    ``tail``
-        the unprocessed rest of the input string
-
-    :param rlp: the RLP string, beginning with a length prefix
-    :returns: a tuple ``(item, tail)`` as described above
-    :raises: :exc:`DecodingError` if the length of the payload is shorter than
-             claimed by its length prefix
-    """
-    type_, length, residual = consume_length_prefix(rlp)
-    payload = residual[:length]
-    tail = residual[length:]
-    if len(payload) != length:
-        msg = ('Payload too short (clipped after {} bytes, but length prefix '
-               'announced {})'.format(len(payload), length))
-        raise DecodingError(msg, rlp)
-
-    if type_ == str:
-        return (str(payload), tail)
-    else:
-        elements = []
-        while payload:
-            item, payload = consume_item(payload)
-            elements.append(item)
-        return (elements, tail)
+    b0 = ord(rlp[start])
+    if b0 < 128:  # single byte
+        return (rlp[start], start + 1)
+    elif b0 < 128 + 56:
+        l = b0 - 128  # short string
+        return (rlp[start + 1:start + 1 + l], start + 1 + l)
+    elif b0 < 192:  # long string
+        ll = b0 - 128 - 56 + 1
+        l = big_endian_int.deserialize(rlp[start + 1:start + 1 + ll])
+        return (rlp[start + 1 + ll:start + 1 + ll + l], start + 1 + l + ll)
+    elif b0 < 192 + 56:  # short list
+        end = start + 1 + b0 - 192
+        items = []
+        next_item_start = start + 1
+        while next_item_start < end:
+            item, next_item_start = consume_item(rlp, next_item_start)
+            items.append(item)
+        if next_item_start > end:
+            raise DecodingError('List length prefix announced a too small '
+                                'length', rlp)
+        return (items, next_item_start)
+    else: # long list
+        ll = b0 - 192 - 56 + 1
+        l = big_endian_int.deserialize(rlp[start + 1:start + 1 + ll])
+        if l < 56:
+            raise DecodingError('Long list prefix used for short list', rlp)
+        items = []
+        next_item_start = start + 1 + ll
+        end = next_item_start + l
+        while next_item_start < end:
+            item, next_item_start = consume_item(rlp, next_item_start)
+            items.append(item)
+        if next_item_start > end:
+            raise DecodingError('List length prefix announced a too small '
+                                'length', rlp)
+        return (items, next_item_start)
 
 
 def decode(rlp, sedes=None):
@@ -162,11 +122,12 @@ def decode(rlp, sedes=None):
              root item
     """
     try:
-        item, tail = consume_item(rlp)
+        item, end = consume_item(rlp)
     except IndexError:
         raise DecodingError('RLP string to short', rlp)
-    if tail:
-        msg = 'RLP string ends with {} superfluous bytes'.format(len(tail))
+    if end != len(rlp):
+        print end, len(rlp)
+        msg = 'RLP string ends with {} superfluous bytes'.format(len(rlp) - end)
         raise DecodingError(msg, rlp)
     if sedes:
         return sedes.deserialize(item)
