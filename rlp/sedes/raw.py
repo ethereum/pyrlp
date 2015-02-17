@@ -6,7 +6,7 @@ larger structures.
 
 
 from collections import Sequence
-from ..codec import Atomic
+from ..utils import Atomic
 
 
 def serializable(obj):

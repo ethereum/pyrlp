@@ -3,17 +3,9 @@ import collections
 from functools import partial
 from itertools import izip, imap
 from .exceptions import EncodingError, DecodingError
+from .utils import Atomic
 from .sedes import big_endian_int, sedes_list
 from .sedes.inference import infer_sedes
-
-
-class Atomic(object):
-    """ABC for objects that can be RLP encoded as is."""
-    __metaclass__ = abc.ABCMeta
-
-
-Atomic.register(str)
-Atomic.register(bytearray)
 
 
 def encode(obj, sedes=None, infer_serializer=True):
