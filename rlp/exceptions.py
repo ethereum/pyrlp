@@ -32,6 +32,7 @@ class SerializationError(RLPException):
     """
 
     def __init__(self, message, obj):
+        super(SerializationError, self).__init__(message)
         self.obj = obj
 
 class DeserializationError(RLPException):
@@ -41,4 +42,5 @@ class DeserializationError(RLPException):
     """
 
     def __init__(self, message, serial):
+        super(DeserializationError, self).__init__(message)
         self.serial = serial
