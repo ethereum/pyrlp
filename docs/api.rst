@@ -23,6 +23,12 @@ Sedes Objects
 
    A sedes object for textual data using UTF-8.
 
+.. data:: rlp.sedes.raw
+
+   A sedes that does nothing. Thus, it can serialize everything that can be
+   directly encoded in RLP. This sedes can be used as a placeholder when
+   deserializing larger structures.
+
 .. data:: rlp.sedes.sedes_list
 
    A list of sedes objects that is passed to :func:`rlp.infer_sedes` by
