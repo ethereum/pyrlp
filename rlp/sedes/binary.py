@@ -1,4 +1,4 @@
-class BinarySedes(object):
+class Binary(object):
     """A sedes object for binary data of certain length.
     
     :param min_length: the minimal length in bytes or `None` for no lower limit

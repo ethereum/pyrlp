@@ -24,19 +24,19 @@ def is_sedes(obj):
     return all(hasattr(obj, m) for m in methods)
 
 
-class ListSedes(list):
+class List(list):
     """A sedes for lists, implemented as a list of other sedes objects."""
 
     def __init__(self, elements=[]):
-        super(ListSedes, self).__init__()
+        super(List, self).__init__()
         for e in elements:
             if is_sedes(e):
                 self.append(e)
             elif isinstance(e, Sequence):
-                self.append(ListSedes(e))
+                self.append(List(e))
             else:
-                raise TypeError('Instances of ListSedes must only contain '
-                                'sedes objects or sequences thereof.')
+                raise TypeError('Instances of List must only contain sedes '
+                                'objects or sequences thereof.')
 
     def serializable(self, obj):
         if not isinstance(obj, Sequence) or len(self) != len(obj):
@@ -53,7 +53,7 @@ class ListSedes(list):
                 for element, sedes in izip(serial, self)]
 
 
-class CountableListSedes(object):
+class CountableList(object):
     """A sedes for lists of arbitrary length.
 
     :param element_sedes: when (de-)serializing a list, this sedes will be
@@ -134,7 +134,7 @@ class Serializable(object):
     @classmethod
     def sedes(cls):
         if not cls._sedes:
-            cls._sedes = ListSedes(sedes for _, sedes in cls.fields)
+            cls._sedes = List(sedes for _, sedes in cls.fields)
         return cls._sedes
 
 

@@ -2,7 +2,7 @@ from collections import Sequence
 from functools import partial
 from itertools import imap
 from . import sedes_list
-from .lists import ListSedes, is_sedes
+from .lists import List, is_sedes
 
 
 def infer_sedes(obj, sedes_list):
@@ -22,6 +22,6 @@ def infer_sedes(obj, sedes_list):
         if sedes.serializable(obj):
             return sedes
     if isinstance(obj, Sequence):
-        return ListSedes(imap(partial(infer_sedes, sedes_list=sedes_list), obj))
+        return List(imap(partial(infer_sedes, sedes_list=sedes_list), obj))
     msg = 'Did not find sedes handling type {}'.format(type(obj).__name__)
     raise TypeError(msg)

@@ -1,9 +1,9 @@
 from rlp.sedes import big_endian_int
-from rlp.sedes.lists import CountableListSedes
+from rlp.sedes.lists import CountableList
 
 
 def test_countable_list():
-    l1 = CountableListSedes(big_endian_int)
+    l1 = CountableList(big_endian_int)
     serializable = ([], [1, 2], list(xrange(500)))
     for s in serializable:
         assert l1.serializable(s)
@@ -12,7 +12,7 @@ def test_countable_list():
     for n in not_serializable:
         assert not l1.serializable(n)
 
-    l2 = CountableListSedes(CountableListSedes(big_endian_int))
+    l2 = CountableList(CountableList(big_endian_int))
     serializable = ([], [[]], [[1, 2, 3], [4]], [[5], [6, 7, 8]], [[], [],
                     [9, 0]])
     for s in serializable:

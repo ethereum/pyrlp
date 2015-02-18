@@ -1,7 +1,7 @@
 import pytest
 from collections import OrderedDict
 from rlp import infer_sedes, Serializable, encode, decode
-from rlp.sedes import big_endian_int, text, ListSedes, sedes_list
+from rlp.sedes import big_endian_int, text, List, sedes_list
 
 
 def test_inference():
@@ -12,9 +12,9 @@ def test_inference():
         ('', text),
         ('asdf', text),
         (u'\xe4\xf6\xfc\xea\xe2\xfb', text),
-        ([], ListSedes()),
-        ([1, 2, 3], ListSedes((big_endian_int,) * 3)),
-        ([[], 'asdf'], ListSedes(([], text))),
+        ([], List()),
+        ([1, 2, 3], List((big_endian_int,) * 3)),
+        ([[], 'asdf'], List(([], text))),
     )
 
     for obj, sedes in obj_sedes_pairs:
@@ -27,9 +27,9 @@ def test_inference():
                 infer_sedes(obj)
 
 def test_list_sedes():
-    l1 = ListSedes()
-    l2 = ListSedes((big_endian_int, big_endian_int))
-    l3 = ListSedes((l1, l2, [[[]]]))
+    l1 = List()
+    l2 = List((big_endian_int, big_endian_int))
+    l3 = List((l1, l2, [[[]]]))
     assert l1.serializable([]) is True
     assert l1.serializable([[]]) is False
     assert l1.serializable([5]) is False
@@ -49,12 +49,12 @@ def test_serializable():
         fields = (
             ('field1', big_endian_int),
             ('field2', text),
-            ('field3', ListSedes((big_endian_int, text)))
+            ('field3', List((big_endian_int, text)))
         )
     class Test2(Serializable):
         fields = (
             ('field1', Test1),
-            ('field2', ListSedes((Test1, Test1))),
+            ('field2', List((Test1, Test1))),
         )
     t1a_data = (5, 'a', (0, ''))
     t1b_data = (9, 'b', (2, ''))
