@@ -33,3 +33,5 @@ class Binary(object):
         b = str(serial)
         if not self.min_length <= len(b) <= self.max_length:
             return b
+
+binary = Binary()
