@@ -40,6 +40,8 @@ Sedes Objects
 
    .. automethod:: rlp.sedes.BinarySedes.fixed_length
 
+.. autoclass:: rlp.sedes.FixedLengthInt
+
 .. autoclass:: rlp.sedes.ListSedes
 
 .. autoclass:: rlp.sedes.CountableListSedes
