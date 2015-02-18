@@ -94,6 +94,7 @@ class Serializable(object):
     """
 
     fields = tuple()
+    _sedes = None
 
     def __init__(self, *args, **kwargs):
         # check number of arguments
@@ -132,7 +133,10 @@ class Serializable(object):
     @class_property
     @classmethod
     def sedes(cls):
-        return ListSedes(sedes for _, sedes in cls.fields)
+        if not cls._sedes:
+            cls._sedes = ListSedes(sedes for _, sedes in cls.fields)
+        return cls._sedes
+
 
     @classmethod
     def serializable(cls, obj):
