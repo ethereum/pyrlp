@@ -36,6 +36,10 @@ Sedes Objects
    :mod:`rlp.sedes.big_endian_int` and :mod:`rlp.sedes.text`, but can be
    extended.
 
+.. autoclass:: rlp.sedes.BinarySedes
+
+   .. automethod:: rlp.sedes.BinarySedes.fixed_length
+
 .. autoclass:: rlp.sedes.ListSedes
 
 .. autoclass:: rlp.sedes.CountableListSedes
