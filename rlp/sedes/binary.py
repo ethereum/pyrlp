@@ -6,27 +6,34 @@ class Binary(object):
     
     :param min_length: the minimal length in bytes or `None` for no lower limit
     :param max_length: the maximal length in bytes or `None` for no upper limit
+    :param allow_empty: if true, empty strings are considered valid even if
+                        a minimum length is required otherwise
     """
 
-    def __init__(self, min_length=None, max_length=None):
+    def __init__(self, min_length=None, max_length=None, allow_empty=False):
         self.min_length = min_length or 0
         self.max_length = max_length or float('inf')
+        self.allow_empty = allow_empty
 
     @classmethod
     def fixed_length(cls, l):
         """Create a sedes for binary data with exactly `l` bytes."""
         return cls(l, l)
 
+    def is_valid_length(self, l):
+        return any((self.min_length <= l <= self.max_length,
+                    self.allow_empty and l == 0))
+
     def serialize(self, obj):
         if not isinstance(obj, (str, unicode, bytearray)):
             raise SerializationError('Object is not a string', obj)
-        if not self.min_length <= len(str(obj)) <= self.max_length:
+        if not self.is_valid_length(len(str(obj))):
             raise SerializationError('String has invalid length', obj)
         return str(obj)
 
     def deserialize(self, serial):
         b = str(serial)
-        if self.min_length <= len(b) <= self.max_length:
+        if self.is_valid_length(len(b)):
             return b
         else:
             raise DeserializationError('String has invalid length', serial)

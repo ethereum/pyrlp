@@ -38,3 +38,10 @@ def test_binary():
     for d in ('abcd', 'vwxyz', 'a' * 32):
         with pytest.raises(SerializationError):
             b5.serialize(d)
+
+    b6 = Binary(min_length=3, max_length=5, allow_empty=True)
+    for d in ('', 'abc', 'abcd', 'abcde'):
+        assert b6.serialize(d) == str(d)
+    for d in ('a', 'ab', 'abcdef', 'abcdefgh' * 10):
+        with pytest.raises(SerializationError):
+            b6.serialize(d)
