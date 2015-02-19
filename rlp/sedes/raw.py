@@ -6,19 +6,22 @@ larger structures.
 
 
 from collections import Sequence
+from ..exceptions import SerializationError
 from ..utils import Atomic
-
 
 def serializable(obj):
     if isinstance(obj, Atomic):
         return True
     elif isinstance(obj, Sequence):
-        return all(serializable(e) for e in obj)
+        return all(map(serializable, obj))
     else:
         return False
 
 
 def serialize(obj):
+    if not serializable(obj):
+        raise SerializationError('Can only serialize nested lists of strings',
+                                 obj)
     return obj
 
 

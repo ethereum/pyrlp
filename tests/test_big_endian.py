@@ -1,5 +1,6 @@
 import pytest
-from rlp.sedes.big_endian_int import serializable, serialize, deserialize
+from rlp import SerializationError
+from rlp.sedes import big_endian_int, BigEndianInt
 
 
 valid_data = (
@@ -18,14 +19,14 @@ negative_ints = (-1, -100, -255, -256, -2342423)
 
 def test_neg():
     for n in negative_ints:
-        assert not serializable(n)
+        with pytest.raises(SerializationError):
+            big_endian_int.serialize(n)
 
 
 def test_serialization():
     for n in random_integers:
-        assert serializable(n)
-        serial = serialize(n)
-        deserialized = deserialize(serial)
+        serial = big_endian_int.serialize(n)
+        deserialized = big_endian_int.deserialize(serial)
         assert deserialized == n
         if n != 0:
             assert serial[0] != '\x00'  # is not checked
@@ -33,15 +34,25 @@ def test_serialization():
 
 def test_single_byte():
     for n, s in single_bytes:
-        serial = serialize(n)
+        serial = big_endian_int.serialize(n)
         assert serial == s
-        deserialized = deserialize(serial)
+        deserialized = big_endian_int.deserialize(serial)
         assert deserialized == n
 
 
 def test_valid_data():
     for n, serial in valid_data:
-        serialized = serialize(n)
-        deserialized = deserialize(serial)
+        serialized = big_endian_int.serialize(n)
+        deserialized = big_endian_int.deserialize(serial)
         assert serialized == serial
         assert deserialized == n
+
+
+def test_fixedlength():
+    s = BigEndianInt(4)
+    for i in (0, 1, 255, 256, 256**3, 256**4 - 1):
+        assert len(s.serialize(i)) == 4
+        assert s.deserialize(s.serialize(i)) == i
+    for i in (256**4, 256**4 + 1, 256**5, -1, -256, 'asdf'):
+        with pytest.raises(SerializationError):
+            s.serialize(i)

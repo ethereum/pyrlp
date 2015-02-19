@@ -1,5 +1,5 @@
 import pytest
-from rlp import encode, decode
+from rlp import encode, decode, SerializationError
 from rlp.sedes import raw
 
 
@@ -25,8 +25,9 @@ not_serializable = (
 
 def test_serializable():
     for s in serializable:
-        assert raw.serializable(s)
+        raw.serialize(s)
         code = encode(s, raw)
         assert s == decode(code, raw)
     for s in not_serializable:
-        assert not raw.serializable(s)
+        with pytest.raises(SerializationError):
+            raw.serialize(s)

@@ -1,7 +1,8 @@
 import pytest
 from collections import OrderedDict
+from rlp import SerializationError, DeserializationError
 from rlp import infer_sedes, Serializable, encode, decode
-from rlp.sedes import big_endian_int, binary, List, sedes_list
+from rlp.sedes import big_endian_int, binary, List
 
 
 def test_inference():
@@ -19,7 +20,7 @@ def test_inference():
 
     for obj, sedes in obj_sedes_pairs:
         if sedes is not None:
-            inferred = infer_sedes(obj, sedes_list)
+            inferred = infer_sedes(obj)
             assert inferred == sedes
             sedes.serialize(obj)
         else:
@@ -30,18 +31,22 @@ def test_list_sedes():
     l1 = List()
     l2 = List((big_endian_int, big_endian_int))
     l3 = List((l1, l2, [[[]]]))
-    assert l1.serializable([]) is True
-    assert l1.serializable([[]]) is False
-    assert l1.serializable([5]) is False
 
-    assert l2.serializable((2, 3)) is True
-    assert l2.serializable([]) is False
-    assert l2.serializable([1, 2, 3]) is False
-    assert l2.serializable([1, [2, 3], 4]) is False
+    l1.serialize([])
+    l2.serialize((2, 3))
+    l3.serialize([[], [5, 6], [[[]]]])
 
-    assert l3.serializable([[], [5, 6], [[[]]]]) is True
-    assert l3.serializable([[], [], [[[]]]]) is False
-    assert l3.serializable([[], [5, 6], [[]]]) is False
+    with pytest.raises(SerializationError):
+        l1.serialize([[]])
+    with pytest.raises(SerializationError):
+        l1.serialize([5])
+
+    for d in ([], [1, 2, 3], [1, [2, 3], 4]):
+        with pytest.raises(SerializationError):
+            l2.serialize(d)
+    for d in ([], [[], [], [[[]]]], [[], [5, 6], [[]]]):
+        with pytest.raises(SerializationError):
+            l3.serialize(d)
 
 
 def test_serializable():
@@ -71,18 +76,17 @@ def test_serializable():
     assert test1b != test2
     assert test2 != test1a
 
-    # serializable
-    assert Test1.serializable(test1a) is True
-    assert Test1.serializable(test1b) is True
-    assert Test2.serializable(test2) is True
-    assert Test1.serializable(test2) is False
-    assert Test2.serializable(test1a) is False
-    assert Test2.serializable(test1b) is False
+    with pytest.raises(SerializationError):
+        Test1.serialize(test2)
+    with pytest.raises(SerializationError):
+        Test2.serialize(test1a)
+    with pytest.raises(SerializationError):
+        Test2.serialize(test1b)
 
     # inference
-    assert infer_sedes(test1a, sedes_list) == Test1
-    assert infer_sedes(test1b, sedes_list) == Test1
-    assert infer_sedes(test2, sedes_list) == Test2
+    assert infer_sedes(test1a) == Test1
+    assert infer_sedes(test1b) == Test1
+    assert infer_sedes(test2) == Test2
 
     # serialization
     serial_1a = Test1.serialize(test1a)

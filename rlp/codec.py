@@ -4,7 +4,7 @@ from functools import partial
 from itertools import izip, imap
 from .exceptions import EncodingError, DecodingError
 from .utils import Atomic
-from .sedes import big_endian_int, sedes_list
+from .sedes import big_endian_int
 from .sedes.inference import infer_sedes
 
 
@@ -22,7 +22,7 @@ def encode(obj, sedes=None, infer_serializer=True):
     if sedes:
         item = sedes.serialize(obj)
     elif infer_serializer:
-        item = infer_sedes(obj, sedes_list).serialize(obj)
+        item = infer_sedes(obj).serialize(obj)
     else:
         item = obj
     return encode_raw(item)

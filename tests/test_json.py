@@ -2,7 +2,6 @@ import json
 from collections import Sequence
 import pytest
 from rlp import encode, decode, infer_sedes
-from rlp.sedes import sedes_list
 
 
 with open('tests/rlptest.json') as f:
@@ -26,7 +25,7 @@ def test_decode(name, in_out):
     rlp_string = in_out['out'].decode('hex')
     decoded = decode(rlp_string)
     expected = in_out['in']
-    sedes = infer_sedes(expected, sedes_list)
+    sedes = infer_sedes(expected)
     data = sedes.deserialize(decoded)
     if data != expected:
         pytest.fail(msg_format.format(name, rlp_string, decoded, expected))

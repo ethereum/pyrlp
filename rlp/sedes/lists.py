@@ -4,6 +4,7 @@
 from collections import Sequence
 from functools import partial
 from itertools import izip, imap
+from ..exceptions import SerializationError, DeserializationError
 
 
 class class_property(property):
@@ -17,11 +18,11 @@ class class_property(property):
 def is_sedes(obj):
     """Check if `obj` is a sedes object.
     
-    A sedes object is characterized by having the methods `serialize(obj)`,
-    `serializable(obj)` and `deserialize(serial)`.
+    A sedes object is characterized by having the methods `serialize(obj)` and
+    `deserialize(serial)`.
     """
-    methods = ('serialize', 'deserialize', 'serializable')
-    return all(hasattr(obj, m) for m in methods)
+    methods = ('serialize', 'deserialize')
+    return all(hasattr(obj, m) for m in ('serialize', 'deserialize'))
 
 
 class List(list):
@@ -36,19 +37,19 @@ class List(list):
                 self.append(List(e))
             else:
                 raise TypeError('Instances of List must only contain sedes '
-                                'objects or sequences thereof.')
-
-    def serializable(self, obj):
-        if not isinstance(obj, Sequence) or len(self) != len(obj):
-            return False
-        return all(sedes.serializable(element)
-                   for element, sedes in izip(obj, self))
+                                'objects or nested sequences thereof.')
 
     def serialize(self, obj):
+        if not isinstance(obj, Sequence) or len(self) != len(obj):
+            raise SerializationError('Can only serialize sequences', obj)
+        if len(self) != len(obj):
+            raise SerializationError('List has wrong length')
         return [sedes.serialize(element)
                 for element, sedes in izip(obj, self)]
 
     def deserialize(self, serial):
+        if len(serial) != len(self):
+            raise DeserializationError('List has wrong length', serial)
         return [sedes.deserialize(element) 
                 for element, sedes in izip(serial, self)]
 
@@ -63,12 +64,9 @@ class CountableList(object):
     def __init__(self, element_sedes):
         self.element_sedes = element_sedes
 
-    def serializable(self, obj):
-        if not isinstance(obj, Sequence):
-            return False
-        return all(self.element_sedes.serializable(e) for e in obj)
-
     def serialize(self, obj):
+        if not isinstance(obj, Sequence):
+            raise SerializationError('Can only serialize sequences', obj)
         return [self.element_sedes.serialize(e) for e in obj]
 
     def deserialize(self, serial):
@@ -128,7 +126,7 @@ class Serializable(object):
         """Two objects are equal, if they are equal after serialization."""
         if not hasattr(other.__class__, 'serialize'):
             return False
-        return self.serialize(self) ==other.serialize(other)
+        return self.serialize(self) == other.serialize(other)
 
     @class_property
     @classmethod
@@ -137,16 +135,10 @@ class Serializable(object):
             cls._sedes = List(sedes for _, sedes in cls.fields)
         return cls._sedes
 
-
-    @classmethod
-    def serializable(cls, obj):
-        if not hasattr(obj, 'fields') or obj.fields != cls.fields:
-            return False
-        return all(sedes.serializable(getattr(obj, field))
-                   for field, sedes in cls.fields)
-
     @classmethod
     def serialize(cls, obj):
+        if not hasattr(obj, 'fields') or obj.fields != cls.fields:
+            raise SerializationError('Cannot serialize this object', obj)
         field_values = [getattr(obj, field) for field, _ in cls.fields]
         return cls.sedes.serialize(field_values)
 
