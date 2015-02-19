@@ -19,10 +19,6 @@ Sedes Objects
 
    A sedes object for non negative integers using big endian notation.
 
-.. data:: rlp.sedes.text
-
-   A sedes object for textual data using UTF-8.
-
 .. data:: rlp.sedes.raw
 
    A sedes that does nothing. Thus, it can serialize everything that can be

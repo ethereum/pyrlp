@@ -1,3 +1,6 @@
+from ..exceptions import DeserializationError
+
+
 class Binary(object):
     """A sedes object for binary data of certain length.
     
@@ -22,7 +25,7 @@ class Binary(object):
             self.max_length = float('inf')
 
     def serializable(self, obj):
-        if not isinstance(obj, (str, bytearray)):
+        if not isinstance(obj, (str, unicode, bytearray)):
             return False
         return self.min_length <= len(str(obj)) <= self.max_length
 
@@ -31,7 +34,10 @@ class Binary(object):
 
     def deserialize(self, serial):
         b = str(serial)
-        if not self.min_length <= len(b) <= self.max_length:
+        if self.min_length <= len(b) <= self.max_length:
             return b
+        else:
+            raise DeserializationError('Invalid length')
+
 
 binary = Binary()

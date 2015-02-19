@@ -1,7 +1,7 @@
 import pytest
 from collections import OrderedDict
 from rlp import infer_sedes, Serializable, encode, decode
-from rlp.sedes import big_endian_int, text, List, sedes_list
+from rlp.sedes import big_endian_int, binary, List, sedes_list
 
 
 def test_inference():
@@ -9,12 +9,12 @@ def test_inference():
         (5, big_endian_int),
         (0, big_endian_int),
         (-1, None),
-        ('', text),
-        ('asdf', text),
-        (u'\xe4\xf6\xfc\xea\xe2\xfb', text),
+        ('', binary),
+        ('asdf', binary),
+        ('\xe4\xf6\xfc\xea\xe2\xfb', binary),
         ([], List()),
         ([1, 2, 3], List((big_endian_int,) * 3)),
-        ([[], 'asdf'], List(([], text))),
+        ([[], 'asdf'], List(([], binary))),
     )
 
     for obj, sedes in obj_sedes_pairs:
@@ -48,8 +48,8 @@ def test_serializable():
     class Test1(Serializable):
         fields = (
             ('field1', big_endian_int),
-            ('field2', text),
-            ('field3', List((big_endian_int, text)))
+            ('field2', binary),
+            ('field3', List((big_endian_int, binary)))
         )
     class Test2(Serializable):
         fields = (
