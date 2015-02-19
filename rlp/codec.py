@@ -111,12 +111,14 @@ def consume_item(rlp, start=0):
         return (items, next_item_start)
 
 
-def decode(rlp, sedes=None):
+def decode(rlp, sedes=None, **kwargs):
     """Decode an RLP encoded object.
 
     :param sedes: an object implementing a function ``deserialize(code)`` which
                   will be applied after decoding, or ``None`` if no
                   deserialization should be performed
+    :param **kwargs: additional keyword arguments that will be passed to the
+                     deserializer
     :returns: the decoded and maybe deserialized Python object
     :raises: :exc:`DecodingError` if the input string does not end after the
              root item
@@ -126,10 +128,9 @@ def decode(rlp, sedes=None):
     except IndexError:
         raise DecodingError('RLP string to short', rlp)
     if end != len(rlp):
-        print end, len(rlp)
         msg = 'RLP string ends with {} superfluous bytes'.format(len(rlp) - end)
         raise DecodingError(msg, rlp)
     if sedes:
-        return sedes.deserialize(item)
+        return sedes.deserialize(item, **kwargs)
     else:
         return item

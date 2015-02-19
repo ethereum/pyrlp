@@ -95,19 +95,9 @@ class Serializable(object):
     _sedes = None
 
     def __init__(self, *args, **kwargs):
-        # check number of arguments
-        got = 1 + len(args) + len(kwargs)
-        expected = 1 + len(self.fields)
-        if got != expected:
-            raise TypeError('Wrong number of arguments given (expected {0}, '
-                            'got {1})'.format(expected, got))
-
         # check keyword arguments are known
         field_set = set(field for field, _ in self.fields)
-        for field, _ in kwargs.iteritems():
-            if field not in field_set:
-                raise TypeError('Unknown keyword argument: {}'.format(field))
-        
+
         # set positional arguments
         for (field, _), arg in izip(self.fields, args):
             setattr(self, field, arg)
@@ -118,15 +108,18 @@ class Serializable(object):
             if field in field_set:
                 setattr(self, field, value)
                 field_set.remove(field)
-            else:
-                raise TypeError('Got argument {0} more than '
-                                'once'.format(field))
+
+        if len(field_set) != 0:
+            raise TypeError('Not all fields initialized')
 
     def __eq__(self, other):
         """Two objects are equal, if they are equal after serialization."""
         if not hasattr(other.__class__, 'serialize'):
             return False
         return self.serialize(self) == other.serialize(other)
+
+    def __ne__(self, other):
+        return not self == other
 
     @class_property
     @classmethod
@@ -143,8 +136,8 @@ class Serializable(object):
         return cls.sedes.serialize(field_values)
 
     @classmethod
-    def deserialize(cls, serial):
+    def deserialize(cls, serial, **kwargs):
         values = cls.sedes.deserialize(serial)
         params = {field: value for (field, _), value
                                in izip(cls.fields, values)}
-        return cls(**params)
+        return cls(**dict(params.items() + kwargs.items()))
