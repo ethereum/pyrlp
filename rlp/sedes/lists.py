@@ -121,23 +121,34 @@ class Serializable(object):
     def __ne__(self, other):
         return not self == other
 
-    @class_property
     @classmethod
-    def sedes(cls):
+    def get_sedes(cls):
         if not cls._sedes:
             cls._sedes = List(sedes for _, sedes in cls.fields)
         return cls._sedes
 
     @classmethod
     def serialize(cls, obj):
-        if not hasattr(obj, 'fields') or obj.fields != cls.fields:
+        if not hasattr(obj, 'fields'):
             raise SerializationError('Cannot serialize this object', obj)
-        field_values = [getattr(obj, field) for field, _ in cls.fields]
-        return cls.sedes.serialize(field_values)
+        try:
+            field_values = [getattr(obj, field) for field, _ in cls.fields]
+        except AttributeError:
+            raise SerializationError('Cannot serialize this object', obj)
+        return cls.get_sedes().serialize(field_values)
 
     @classmethod
     def deserialize(cls, serial, **kwargs):
-        values = cls.sedes.deserialize(serial)
+        values = cls.get_sedes().deserialize(serial)
         params = {field: value for (field, _), value
                                in izip(cls.fields, values)}
         return cls(**dict(params.items() + kwargs.items()))
+
+    @classmethod
+    def exclude(cls, excluded_fields):
+        """Create a new sedes considering only a reduced set of fields."""
+        class SerializableExcluded(cls):
+            fields = [(field, sedes) for field, sedes in cls.fields
+                                     if field not in excluded_fields]
+            _sedes = None
+        return SerializableExcluded
