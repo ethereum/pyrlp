@@ -9,6 +9,7 @@ from collections import Sequence
 from ..exceptions import SerializationError
 from ..utils import Atomic
 
+
 def serializable(obj):
     if isinstance(obj, Atomic):
         return True
