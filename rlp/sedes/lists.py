@@ -7,14 +7,6 @@ from itertools import izip, imap
 from ..exceptions import SerializationError, DeserializationError
 
 
-class class_property(property):
-    """same as ``property`` but for classmethods"""
-    # see http://stackoverflow.com/a/1383402
-
-    def __get__(self, cls, owner):
-        return self.fget.__get__(None, owner)()
-
-
 def is_sedes(obj):
     """Check if `obj` is a sedes object.
     
