@@ -16,9 +16,9 @@ class Binary(object):
         self.allow_empty = allow_empty
 
     @classmethod
-    def fixed_length(cls, l):
+    def fixed_length(cls, l, allow_empty=False):
         """Create a sedes for binary data with exactly `l` bytes."""
-        return cls(l, l)
+        return cls(l, l, allow_empty=allow_empty)
 
     def is_valid_length(self, l):
         return any((self.min_length <= l <= self.max_length,

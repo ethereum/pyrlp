@@ -80,7 +80,7 @@ class Serializable(object):
     :param \*args: initial values for the first attributes defined via
                   :attr:`fields`
     :param \*\*kwargs: initial values for all attributes not initialized via
-                     positional arguments
+                       positional arguments
     """
 
     fields = tuple()
