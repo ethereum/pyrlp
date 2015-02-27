@@ -178,13 +178,3 @@ def infer_sedes(obj):
         return List(imap(infer_sedes, obj))
     msg = 'Did not find sedes handling type {}'.format(type(obj).__name__)
     raise TypeError(msg)
-
-
-#   class LazyRLP(object):
-
-#       def __init__(self, rlp):
-#           self.rlp = rlp
-#           self.decoded = None
-#           self.length = consume_length_prefix(rlp)
-
-#       def __getitem__(self, i):
