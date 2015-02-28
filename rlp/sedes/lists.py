@@ -56,6 +56,9 @@ class CountableList(object):
     def __init__(self, element_sedes):
         self.element_sedes = element_sedes
 
+    def __getitem__(self, i):
+        return self.element_sedes
+
     def serialize(self, obj):
         if not isinstance(obj, Sequence):
             raise SerializationError('Can only serialize sequences', obj)
