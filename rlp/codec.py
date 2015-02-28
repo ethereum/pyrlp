@@ -96,7 +96,7 @@ def consume_length_prefix(rlp, start):
 
 def consume_payload(rlp, start, type_, length):
     """Read the payload of an item from an RLP string.
-    
+
     :param rlp: the rlp string to read from
     :param type_: the type of the payload (``str`` or ``list``)
     :param start: the position at which to start reading
@@ -129,8 +129,7 @@ def consume_item(rlp, start):
               ``end`` is the position of the first unprocessed byte
     """
     t, l, s = consume_length_prefix(rlp, start)
-    item, end = consume_payload(rlp, s, t, l)
-    return (item, end)
+    return consume_payload(rlp, s, t, l)
 
 
 def decode(rlp, sedes=None, **kwargs):
