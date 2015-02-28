@@ -3,19 +3,58 @@ from .exceptions import DecodingError, DeserializationError
 from .codec import consume_length_prefix, consume_payload
 
 
-def decode_lazy(rlp, sedes=None, **kwargs):
+def decode_lazy(rlp, sedes=None, **sedes_kwargs):
+    """Decode an RLP encoded object in a lazy fashion.
+
+    If the encoded object is a bytestring, this function acts similar to
+    :func:`rlp.decode`.
+    
+    If it is a list however, a :class:`LazyList` is returned instead. This
+    object will decode the string lazily, avoiding both horizontal and vertical
+    traversing as much as possible.
+
+    If a sedes object is given (which is expected to behave list like), its
+    elements will deserialize the corresponding elements in the decoded list,
+    considering optional `sedes_kwargs`. In doing so, only "horizontal" but not
+    "vertical lazyness" is preserved.
+
+    Note, that incorrect encodings may be detected later or even never when
+    decoding lazily.
+    
+    :param rlp: the RLP string to decode
+    :param sedes: an sequence of objects implementing a function
+                  ``deserialize(code)`` which will lazily be applied to each
+                  list element after decoding, or ``None`` if no
+                  deserialization should be performed
+    :param **kwargs: additional keyword arguments that will be passed to the
+                     deserializers
+    :returns: either the already decoded and deserialized object (if encoded as
+              a string) or an instance of :class:`LazyList`
+    """
     item, end = consume_item_lazy(rlp, 0)
     if end != len(rlp):
         raise DecodingError('RLP length prefix announced wrong length', rlp)
     if isinstance(item, LazyList):
         item.sedes = sedes
+        item.sedes_kwargs = kwargs
         return item
     elif sedes:
-        return sedes.deserialize(item)
+        return sedes.deserialize(item, **kwargs)
     else:
         return item
 
 def consume_item_lazy(rlp, start):
+    """Read an item from an RLP string lazily.
+
+    If the length prefix announces a string, the string is read; if it
+    announces a list, a :class:`LazyList` is created.
+    
+    :param rlp: the rlp string to read from
+    :param start: the position at which to start reading
+    :returns: a tuple ``(item, end)`` where ``item`` is the read string or a
+              :class:`LazyList` and ``end`` is the position of the first
+              unprocessed byte.
+    """
     t, l, s = consume_length_prefix(rlp, start)
     if t == str:
         #item, _ = consume_payload(rlp, s, str, l), s + l
@@ -26,8 +65,18 @@ def consume_item_lazy(rlp, start):
 
 
 class LazyList(Sequence):
+    """A RLP encoded list which decodes itself when necessary.
+    
+    :param rlp: the rlp string in which the list is encoded
+    :param start: the position of the first payload byte of the encoded list
+    :param end: the position of the last payload byte of the encoded list
+    :param sedes: a list like sedes object whose elements deserialize the
+                  elements of this list, or ``None`` for no deserialization
+    :param \*\*sedes_kwargs: keyword arguments which will be passed on to each
+                             deserializer
+    """
 
-    def __init__(self, rlp, start, end, sedes=None):
+    def __init__(self, rlp, start, end, sedes=None, **sedes_kwargs):
         self.rlp = rlp
         self.start = start
         self.end = end
@@ -35,6 +84,7 @@ class LazyList(Sequence):
         self.elements_ = []
         self.len_ = None
         self.sedes = sedes
+        self.sedes_kwargs = kwargs
 
     def next(self):
         if self.index == self.end:
@@ -45,7 +95,8 @@ class LazyList(Sequence):
         self.index = end
         if self.sedes:
             try:
-                item = self.sedes[len(self.elements_)].deserialize(item)
+                sedes = self.sedes[len(self.elements_)]
+                item = sedes.deserialize(item, **kwargs)
             except IndexError:
                 raise DeserializationError('List has wrong length', self)
         self.elements_.append(item)
