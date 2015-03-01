@@ -36,10 +36,10 @@ def decode_lazy(rlp, sedes=None, **sedes_kwargs):
         raise DecodingError('RLP length prefix announced wrong length', rlp)
     if isinstance(item, LazyList):
         item.sedes = sedes
-        item.sedes_kwargs = kwargs
+        item.sedes_kwargs = sedes_kwargs
         return item
     elif sedes:
-        return sedes.deserialize(item, **kwargs)
+        return sedes.deserialize(item, **sedes_kwargs)
     else:
         return item
 
@@ -84,7 +84,7 @@ class LazyList(Sequence):
         self.elements_ = []
         self.len_ = None
         self.sedes = sedes
-        self.sedes_kwargs = kwargs
+        self.sedes_kwargs = sedes_kwargs
 
     def next(self):
         if self.index == self.end:

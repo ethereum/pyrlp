@@ -1,8 +1,15 @@
 import json
 from collections import Sequence
 import pytest
-from rlp import encode, decode, infer_sedes
+import rlp
+from rlp import encode, decode, decode_lazy, infer_sedes
 
+
+def evaluate(ll):
+    if isinstance(ll, rlp.lazy.LazyList):
+        return [evaluate(e) for e in ll]
+    else:
+        return ll
 
 with open('tests/rlptest.json') as f:
     test_data = json.loads(f.read())
@@ -24,8 +31,10 @@ def test_decode(name, in_out):
     msg_format = 'Test {} failed (decoded {} to {} instead of {})'
     rlp_string = in_out['out'].decode('hex')
     decoded = decode(rlp_string)
+    assert decoded == evaluate(decode_lazy(rlp_string))
     expected = in_out['in']
     sedes = infer_sedes(expected)
     data = sedes.deserialize(decoded)
+    assert data == decode(rlp_string, sedes)
     if data != expected:
         pytest.fail(msg_format.format(name, rlp_string, decoded, expected))
