@@ -13,21 +13,18 @@ def decode_lazy(rlp, sedes=None, **sedes_kwargs):
     object will decode the string lazily, avoiding both horizontal and vertical
     traversing as much as possible.
 
-    If a sedes object is given (which is expected to behave list like), its
-    elements will deserialize the corresponding elements in the decoded list,
-    considering optional `sedes_kwargs`. In doing so, only "horizontal" but not
-    "vertical lazyness" is preserved.
-
-    Note, that incorrect encodings may be detected later or even never when
-    decoding lazily.
+    The way `sedes` is applied depends on the decoded object: if it is a string
+    `sedes` deserializes it as a whole; if it is a list, each element is
+    deserialized individually. In both cases, ``sedes_kwargs`` are passed on.
+    Note that, if a deserializer is used, only "horizontal" but not
+    "vertical lazyness" can be preserved.
     
     :param rlp: the RLP string to decode
-    :param sedes: an sequence of objects implementing a function
-                  ``deserialize(code)`` which will lazily be applied to each
-                  list element after decoding, or ``None`` if no
-                  deserialization should be performed
-    :param **kwargs: additional keyword arguments that will be passed to the
-                     deserializers
+    :param sedes: an object implementing a method ``deserialize(code)``
+                          which is used as described above, or ``None`` if no
+                          deserialization should be performed
+    :param **sedes_kwargs: additional keyword arguments that will be passed to
+                           the deserializers
     :returns: either the already decoded and deserialized object (if encoded as
               a string) or an instance of :class:`LazyList`
     """
@@ -70,9 +67,9 @@ class LazyList(Sequence):
     :param rlp: the rlp string in which the list is encoded
     :param start: the position of the first payload byte of the encoded list
     :param end: the position of the last payload byte of the encoded list
-    :param sedes: a list like sedes object whose elements deserialize the
-                  elements of this list, or ``None`` for no deserialization
-    :param \*\*sedes_kwargs: keyword arguments which will be passed on to each
+    :param sedes: a sedes object which deserializes the each element of this
+                  list, or ``None`` for no deserialization
+    :param \*\*sedes_kwargs: keyword arguments which will be passed on to the
                              deserializer
     """
 
@@ -94,11 +91,7 @@ class LazyList(Sequence):
         item, end = consume_item_lazy(self.rlp, self.index)
         self.index = end
         if self.sedes:
-            try:
-                sedes = self.sedes[len(self.elements_)]
-                item = sedes.deserialize(item, **kwargs)
-            except IndexError:
-                raise DeserializationError('List has wrong length', self)
+            item = self.sedes.deserialize(item, **self.sedes_kwargs)
         self.elements_.append(item)
         return item
 
