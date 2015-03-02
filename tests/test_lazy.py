@@ -1,6 +1,8 @@
 from collections import Sequence
 import pytest
 import rlp
+from rlp import DeserializationError
+from rlp.sedes import big_endian_int, CountableList
 
 
 def evaluate(lazy_list):
@@ -43,3 +45,21 @@ def test_nested_list():
         assert dec()[2][3]
     with pytest.raises(IndexError):
         assert dec()[3]
+
+
+def test_sedes():
+    ls = [
+        [],
+        [1],
+        [3, 2, 1]
+    ]
+    for l in ls:
+        assert evaluate(rlp.decode_lazy(rlp.encode(l), big_endian_int)) == l
+
+    sedes = CountableList(big_endian_int)
+    l = [[], [1, 2], 'asdf', [3]]
+    invalid_lazy = rlp.decode_lazy(rlp.encode(l), sedes)
+    assert invalid_lazy[0] == l[0]
+    assert invalid_lazy[1] == l[1]
+    with pytest.raises(DeserializationError):
+        invalid_lazy[2]

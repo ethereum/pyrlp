@@ -17,6 +17,11 @@ def is_sedes(obj):
     return all(hasattr(obj, m) for m in ('serialize', 'deserialize'))
 
 
+def is_sequence(obj):
+    """Check if `obj` is a sequence, but not a string."""
+    return isinstance(obj, Sequence) and not isinstance(obj, basestring)
+
+
 class List(list):
     """A sedes for lists, implemented as a list of other sedes objects."""
 
@@ -32,14 +37,17 @@ class List(list):
                                 'objects or nested sequences thereof.')
 
     def serialize(self, obj):
-        if not isinstance(obj, Sequence) or len(self) != len(obj):
+        if not is_sequence(obj):
             raise SerializationError('Can only serialize sequences', obj)
         if len(self) != len(obj):
-            raise SerializationError('List has wrong length')
+            raise SerializationError('List has wrong length', obj)
         return [sedes.serialize(element)
                 for element, sedes in izip(obj, self)]
 
     def deserialize(self, serial):
+        if not is_sequence(serial):
+            raise DeserializationError('Can only deserialize sequences',
+                                       serial)
         if len(serial) != len(self):
             raise DeserializationError('List has wrong length', serial)
         return [sedes.deserialize(element) 
@@ -57,11 +65,13 @@ class CountableList(object):
         self.element_sedes = element_sedes
 
     def serialize(self, obj):
-        if not isinstance(obj, Sequence):
+        if not is_sequence(obj):
             raise SerializationError('Can only serialize sequences', obj)
         return [self.element_sedes.serialize(e) for e in obj]
 
     def deserialize(self, serial):
+        if not is_sequence(serial):
+            raise DeserializationError('Can only deserialize sequences', serial)
         return [self.element_sedes.deserialize(e) for e in serial]
 
 
