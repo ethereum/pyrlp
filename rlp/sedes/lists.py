@@ -78,11 +78,12 @@ class CountableList(object):
 class Serializable(object):
     """Base class for objects which can be serialized into RLP lists.
 
-    :attr:`fields` defines which fields are serialized and how this is done. It
-    is expected to be an ordered sequence of 2-tuples ``(name, sedes)``. Here,
-    ``name`` is the name of an attribute and ``sedes`` is the sedes object that
-    will be used to serialize the corresponding attribute. The object as a
-    whole is then serialized as a list of those fields.
+    :attr:`fields` defines which attributes are serialized and how this is
+    done. It is expected to be an ordered sequence of 2-tuples
+    ``(name, sedes)``. Here, ``name`` is the name of an attribute and ``sedes``
+    is the sedes object that will be used to serialize the corresponding
+    attribute. The object as a whole is then serialized as a list of those
+    fields.
 
     :cvar fields: a list of 2-tuples ``(name, sedes)`` where ``name`` is a
                   string corresponding to an attribute and ``sedes`` is the

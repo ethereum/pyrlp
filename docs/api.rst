@@ -10,33 +10,37 @@ Functions
 
 .. autofunction:: rlp.decode
 
+.. autofunction:: rlp.decode_lazy
+
+    .. autoclass:: rlp.LazyList
+
 .. autofunction:: rlp.infer_sedes
+
 
 Sedes Objects
 -------------
 
-.. data:: rlp.sedes.big_endian_int
-
-   A sedes object for non negative integers using big endian notation.
-
 .. data:: rlp.sedes.raw
 
-   A sedes that does nothing. Thus, it can serialize everything that can be
-   directly encoded in RLP. This sedes can be used as a placeholder when
-   deserializing larger structures.
-
-.. data:: rlp.sedes.sedes_list
-
-   A list of sedes objects that is passed to :func:`rlp.infer_sedes` by
-   :func:`rlp.encode`. By default, this contains only
-   :mod:`rlp.sedes.big_endian_int` and :mod:`rlp.sedes.text`, but can be
-   extended.
+   A sedes object that does nothing. Thus, it can serialize everything that can
+   be directly encoded in RLP (nested lists of strings). This sedes can be used
+   as a placeholder when deserializing larger structures.
 
 .. autoclass:: rlp.sedes.Binary
 
    .. automethod:: rlp.sedes.Binary.fixed_length
 
-.. autoclass:: rlp.sedes.FixedLengthInt
+.. data:: rlp.sedes.binary
+
+    A sedes object for binary data of arbitrary length (an instance of
+    :class:`rlp.sedes.Binary` with default arguments).
+
+.. autoclass:: rlp.sedes.BigEndianInt
+
+.. data:: rlp.sedes.big_endian_int
+
+    A sedes object for integers encoded in big endian without any leading zeros
+    (an instance of :class:`rlp.sedes.BigEndianInt` with default arguments).
 
 .. autoclass:: rlp.sedes.List
 

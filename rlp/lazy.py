@@ -7,15 +7,13 @@ def decode_lazy(rlp, sedes=None, **sedes_kwargs):
     """Decode an RLP encoded object in a lazy fashion.
 
     If the encoded object is a bytestring, this function acts similar to
-    :func:`rlp.decode`.
-    
-    If it is a list however, a :class:`LazyList` is returned instead. This
-    object will decode the string lazily, avoiding both horizontal and vertical
-    traversing as much as possible.
+    :func:`rlp.decode`. If it is a list however, a :class:`LazyList` is
+    returned instead. This object will decode the string lazily, avoiding
+    both horizontal and vertical traversing as much as possible.
 
-    The way `sedes` is applied depends on the decoded object: if it is a string
+    The way `sedes` is applied depends on the decoded object: If it is a string
     `sedes` deserializes it as a whole; if it is a list, each element is
-    deserialized individually. In both cases, ``sedes_kwargs`` are passed on.
+    deserialized individually. In both cases, `sedes_kwargs` are passed on.
     Note that, if a deserializer is used, only "horizontal" but not
     "vertical lazyness" can be preserved.
     
@@ -23,10 +21,10 @@ def decode_lazy(rlp, sedes=None, **sedes_kwargs):
     :param sedes: an object implementing a method ``deserialize(code)``
                           which is used as described above, or ``None`` if no
                           deserialization should be performed
-    :param **sedes_kwargs: additional keyword arguments that will be passed to
-                           the deserializers
+    :param \*\*sedes_kwargs: additional keyword arguments that will be passed
+                             to the deserializers
     :returns: either the already decoded and deserialized object (if encoded as
-              a string) or an instance of :class:`LazyList`
+              a string) or an instance of :class:`rlp.LazyList`
     """
     item, end = consume_item_lazy(rlp, 0)
     if end != len(rlp):
@@ -63,12 +61,16 @@ def consume_item_lazy(rlp, start):
 
 class LazyList(Sequence):
     """A RLP encoded list which decodes itself when necessary.
-    
+
+    Both indexing with positive indices and iterating are supported.
+    Getting the length with :func:`len` is possible as well but requires full
+    horizontal encoding.
+
     :param rlp: the rlp string in which the list is encoded
     :param start: the position of the first payload byte of the encoded list
     :param end: the position of the last payload byte of the encoded list
-    :param sedes: a sedes object which deserializes the each element of this
-                  list, or ``None`` for no deserialization
+    :param sedes: a sedes object which deserializes each element of the list,
+                  or ``None`` for no deserialization
     :param \*\*sedes_kwargs: keyword arguments which will be passed on to the
                              deserializer
     """

@@ -10,14 +10,22 @@ from .sedes.lists import List, is_sedes
 
 def encode(obj, sedes=None, infer_serializer=True):
     """Encode a Python object in RLP format.
-    
+
+    By default, the object is serialized in a suitable way first (using
+    :func:`rlp.infer_sedes`) and then encoded. Serialization can be 
+    explicitly suppressed by setting `infer_serializer` to ``False`` and not
+    passing an alternative as `sedes`.
+
     :param sedes: an object implementing a function ``serialize(obj)`` which
                   will be used to serialize ``obj`` before encoding, or
-                  ``None`` if no serialization should be performed
-    :param infer_serializer: if ``True``, an appropriate serializer will be
-                             selected using :func:`infer_sedes` to serialize
-                             ``obj`` before encoding. If ``sedes`` is given,
-                             ``infer_serializer`` is ignored.
+                  ``None`` to use the infered one (if any)
+    :param infer_serializer: if ``True`` an appropriate serializer will be
+                             selected using :func:`rlp.infer_sedes` to
+                             serialize `obj` before encoding
+    :returns: the RLP encoded item
+    :raises: :exc:`rlp.EncodingError` in the rather unlikely case that the item
+             is too big to encode (will not happen)
+    :raises: :exc:`rlp.SerializationError` if the serialization fails
     """
     if sedes:
         item = sedes.serialize(obj)
@@ -138,11 +146,12 @@ def decode(rlp, sedes=None, **kwargs):
     :param sedes: an object implementing a function ``deserialize(code)`` which
                   will be applied after decoding, or ``None`` if no
                   deserialization should be performed
-    :param **kwargs: additional keyword arguments that will be passed to the
+    :param \*\*kwargs: additional keyword arguments that will be passed to the
                      deserializer
     :returns: the decoded and maybe deserialized Python object
-    :raises: :exc:`DecodingError` if the input string does not end after the
-             root item
+    :raises: :exc:`rlp.DecodingError` if the input string does not end after
+             the root item
+    :raises: :exc:`rlp.DeserializationError` if the deserialization fails
     """
     try:
         item, end = consume_item(rlp, 0)
