@@ -38,7 +38,7 @@ class BigEndianInt(object):
         if self.l is None and len(serial) > 1 and serial[0] == '\x00':
             raise DeserializationError('Invalid serialization (not minimal '
                                        'length)', serial)
-        return reduce(lambda v, d: v * 256 + ord(d), serial, 0)
+        return int(serial.encode('hex') or '0', 16)
 
 
 big_endian_int = BigEndianInt()
