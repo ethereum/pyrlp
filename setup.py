@@ -21,7 +21,7 @@ test_requirements = [
 
 setup(
     name='rlp',
-    version='0.1.dev0',
+    version='0.2.dev0',
     description="A package for encoding and decoding data in and from Recursive Length Prefix notation",
     long_description=readme,
     author="jnnk",
