@@ -11,30 +11,24 @@ except ImportError:
 with open('README.md') as readme_file:
     readme = readme_file.read()
 
-requirements = [
-    # TODO: put package requirements here
-]
-
 test_requirements = [
-    # TODO: put package test requirements here
+        'pytest'
 ]
 
 setup(
     name='rlp',
-    version='0.2.dev0',
+    version='0.2.dev1',
     description="A package for encoding and decoding data in and from Recursive Length Prefix notation",
     long_description=readme,
     author="jnnk",
     author_email='jnnknnj@gmail.com',
     url='https://github.com/ethereum/pyrlp',
     packages=[
-        'rlp',
+        'rlp', 'rlp.sedes'
     ],
-    package_dir={'rlp':
-                 'rlp'},
     include_package_data=True,
-    install_requires=requirements,
-    license="BSD",
+    install_requires=[],
+    license="MIT",
     zip_safe=False,
     keywords='rlp ethereum',
     classifiers=[
