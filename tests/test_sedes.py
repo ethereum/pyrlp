@@ -92,8 +92,8 @@ def test_serializable():
     serial_1a = Test1.serialize(test1a)
     serial_1b = Test1.serialize(test1b)
     serial_2 = Test2.serialize(test2)
-    assert serial_1a == ['\x05', 'a', ['', '']]
-    assert serial_1b == ['\x09', 'b', ['\x02', '']]
+    assert serial_1a == [b'\x05', b'a', [b'', b'']]
+    assert serial_1b == [b'\x09', b'b', [b'\x02', b'']]
     assert serial_2 == [serial_1a, [serial_1a, serial_1b]]
 
     # deserialization

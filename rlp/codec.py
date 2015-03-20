@@ -1,12 +1,15 @@
 import abc
 import collections
+import sys
 from functools import partial
-from itertools import izip, imap
 from .exceptions import EncodingError, DecodingError
-from .utils import Atomic
+from .utils import Atomic, str_to_bytes, is_integer, bytes_to_int_array, int_to_big_endian
+from .sedes.binary import Binary as BinaryClass
 from .sedes import big_endian_int, binary
 from .sedes.lists import List, is_sedes
 
+if sys.version_info.major == 2:
+    from itertools import imap as map
 
 def encode(obj, sedes=None, infer_serializer=True):
     """Encode a Python object in RLP format.
@@ -38,13 +41,14 @@ def encode(obj, sedes=None, infer_serializer=True):
 
 def encode_raw(item):
     """RLP encode (a nested sequence of) :class:`Atomic`s."""
+    print('type:', type(item))
     if isinstance(item, Atomic):
-        if len(item) == 1 and ord(item[0]) < 128:
-            return str(item)
-        payload = str(item)
+        if len(item) == 1 and bytes_to_int_array(item)[0] < 128:
+            return str_to_bytes(item)
+        payload = str_to_bytes(item)
         prefix_offset = 128  # string
     elif isinstance(item, collections.Sequence):
-        payload = ''.join(imap(encode_raw, item))
+        payload = b''.join(map(encode_raw, item))
         prefix_offset = 192  # list
     else:
         msg = 'Cannot encode object of type {0}'.format(type(item).__name__)
@@ -54,6 +58,7 @@ def encode_raw(item):
         prefix = length_prefix(len(payload), prefix_offset)
     except ValueError:
         raise EncodingError('Item too big to encode', item)
+
     return prefix + payload
 
 
@@ -65,10 +70,10 @@ def length_prefix(length, offset):
                    list
     """
     if length < 56:
-        return chr(offset + length)
+        return int_to_big_endian(offset + length)
     elif length < 256**8:
         length_string = big_endian_int.serialize(length)
-        return chr(offset + 56 - 1 + len(length_string)) + length_string
+        return int_to_big_endian(offset + 56 - 1 + len(length_string)) + length_string
     else:
         raise ValueError('Length greater than 256**8')
 
@@ -83,7 +88,10 @@ def consume_length_prefix(rlp, start):
               ``length`` is the length of the payload in bytes, and ``end`` is
               the position of the first payload byte in the rlp string
     """
-    b0 = ord(rlp[start])
+    if isinstance(rlp, str):
+        rlp = str_to_bytes(rlp)
+
+    b0 = bytes_to_int_array(rlp)[start]
     if b0 < 128:  # single byte
         return (str, 1, start)
     elif b0 < 128 + 56:  # short string
@@ -166,6 +174,7 @@ def decode(rlp, sedes=None, **kwargs):
         return item
 
 
+
 def infer_sedes(obj):
     """Try to find a sedes objects suitable for a given Python object.
 
@@ -178,11 +187,11 @@ def infer_sedes(obj):
     """
     if is_sedes(obj.__class__):
         return obj.__class__
-    if isinstance(obj, (int, long)) and obj >= 0:
+    if is_integer(obj) and obj >= 0:
         return big_endian_int
-    if isinstance(obj, (str, unicode, bytearray)):
+    if BinaryClass.is_valid_type(obj):
         return binary
     if isinstance(obj, collections.Sequence):
-        return List(imap(infer_sedes, obj))
+        return List(map(infer_sedes, obj))
     msg = 'Did not find sedes handling type {}'.format(type(obj).__name__)
     raise TypeError(msg)
