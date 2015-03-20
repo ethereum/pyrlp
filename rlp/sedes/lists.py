@@ -3,6 +3,7 @@ import sys
 from collections import Sequence
 from functools import partial
 from ..exceptions import SerializationError, DeserializationError
+from ..sedes.binary import Binary as BinaryClass
 
 if sys.version_info.major == 2:
     from itertools import izip as zip
@@ -19,7 +20,7 @@ def is_sedes(obj):
 
 def is_sequence(obj):
     """Check if `obj` is a sequence, but not a string or bytes."""
-    return isinstance(obj, Sequence) and not isinstance(obj, (str, bytes))
+    return isinstance(obj, Sequence) and not BinaryClass.is_valid_type(obj)
 
 
 class List(list):

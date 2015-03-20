@@ -1,5 +1,5 @@
 from ..exceptions import DeserializationError, SerializationError
-from ..utils import int_to_big_endian, is_integer
+from ..utils import int_to_big_endian, is_integer, encode_hex
 import binascii
 
 class BigEndianInt(object):
@@ -40,7 +40,6 @@ class BigEndianInt(object):
                                        'length)', serial)
 
         serial = serial or b'\x00'
-        s = binascii.hexlify(serial)
-        return int(s, 16)
+        return int(encode_hex(serial), 16)
 
 big_endian_int = BigEndianInt()

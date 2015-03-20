@@ -3,7 +3,7 @@ import collections
 import sys
 from functools import partial
 from .exceptions import EncodingError, DecodingError
-from .utils import Atomic, str_to_bytes, is_integer, bytes_to_int_array, int_to_big_endian
+from .utils import Atomic, str_to_bytes, is_integer, bytes_to_int_array, int_to_big_endian, ascii_chr
 from .sedes.binary import Binary as BinaryClass
 from .sedes import big_endian_int, binary
 from .sedes.lists import List, is_sedes
@@ -41,7 +41,6 @@ def encode(obj, sedes=None, infer_serializer=True):
 
 def encode_raw(item):
     """RLP encode (a nested sequence of) :class:`Atomic`s."""
-    print('type:', type(item))
     if isinstance(item, Atomic):
         if len(item) == 1 and bytes_to_int_array(item)[0] < 128:
             return str_to_bytes(item)
@@ -70,10 +69,10 @@ def length_prefix(length, offset):
                    list
     """
     if length < 56:
-        return int_to_big_endian(offset + length)
+        return ascii_chr(offset + length)
     elif length < 256**8:
         length_string = big_endian_int.serialize(length)
-        return int_to_big_endian(offset + 56 - 1 + len(length_string)) + length_string
+        return ascii_chr(offset + 56 - 1 + len(length_string)) + length_string
     else:
         raise ValueError('Length greater than 256**8')
 

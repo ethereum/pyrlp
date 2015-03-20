@@ -11,7 +11,7 @@ from ..utils import Atomic
 
 
 def serializable(obj):
-    if isinstance(obj, (str, bytes)):
+    if isinstance(obj, Atomic):
         return True
     elif isinstance(obj, Sequence):
         return all(map(serializable, obj))
