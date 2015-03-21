@@ -4,14 +4,14 @@ from rlp.sedes import raw
 
 
 serializable = (
-    '',
-    'asdf',
-    'fds89032#$@%',
+    b'',
+    b'asdf',
+    b'fds89032#$@%',
     b'',
     b'dfsa',
-    ['dfsa', ''],
+    [b'dfsa', b''],
     [],
-    ['fdsa', ['dfs', ['jfdkl']]],
+    [b'fdsa', [b'dfs', [b'jfdkl']]],
 )
 
 
