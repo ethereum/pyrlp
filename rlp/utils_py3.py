@@ -36,12 +36,12 @@ def decode_hex(s):
         return bytes.fromhex(s)
     if isinstance(s, bytes):
         return binascii.unhexlify(s)
-    raise Exception('Value must be an instance of str or bytes')
+    raise TypeError('Value must be an instance of str or bytes')
 
 def encode_hex(b):
     if isinstance(b, str):
         b = bytes(b, 'utf-8')
     if isinstance(b, bytes):
         return binascii.hexlify(b)
-    raise Exception('Value must be an instance of str or bytes')
+    raise TypeError('Value must be an instance of str or bytes')
 

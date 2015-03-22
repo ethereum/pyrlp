@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 import pytest
 from rlp import SerializationError, utils
 from rlp.sedes import Binary
@@ -25,7 +26,7 @@ def test_binary():
     f = {'as': b'as', 'dfg': b'dfg', 'hjkl': b'hjkl', b'\x00\x01\x02': b'\x00\x01\x02'}
     for k in f:
         assert b3.serialize(k) == f[k]
-    for d in ('', 'a', 'abcde'):
+    for d in ('', 'a', 'abcde', 'äää'):
         with pytest.raises(SerializationError):
             b3.serialize(d)
 
