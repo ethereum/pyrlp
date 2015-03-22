@@ -24,15 +24,15 @@ def test_empty_list():
 
 
 def test_string():
-    for s in ('', 'asdf', 'a' * 56, 'b' * 123):
+    for s in (b'', b'asdf', b'a' * 56, b'b' * 123):
         dec = lambda: rlp.decode_lazy(rlp.encode(s))
-        assert isinstance(dec(), str)
+        assert isinstance(dec(), bytes)
         assert len(dec()) == len(s)
         assert dec() == s
 
 
 def test_nested_list():
-    l = [[], ['a'], ['b', 'c', 'd']]
+    l = [[], [b'a'], [b'b', b'c', b'd']]
     dec = lambda: rlp.decode_lazy(rlp.encode(l))
     assert isinstance(dec(), Sequence)
     assert len(dec()) == len(l)
