@@ -1,5 +1,5 @@
 from collections import Sequence
-from .exceptions import DecodingError, DeserializationError
+from .exceptions import DecodingError
 from .codec import consume_length_prefix, consume_payload
 
 
@@ -16,7 +16,7 @@ def decode_lazy(rlp, sedes=None, **sedes_kwargs):
     deserialized individually. In both cases, `sedes_kwargs` are passed on.
     Note that, if a deserializer is used, only "horizontal" but not
     "vertical lazyness" can be preserved.
-    
+
     :param rlp: the RLP string to decode
     :param sedes: an object implementing a method ``deserialize(code)``
                           which is used as described above, or ``None`` if no
@@ -38,12 +38,13 @@ def decode_lazy(rlp, sedes=None, **sedes_kwargs):
     else:
         return item
 
+
 def consume_item_lazy(rlp, start):
     """Read an item from an RLP string lazily.
 
     If the length prefix announces a string, the string is read; if it
     announces a list, a :class:`LazyList` is created.
-    
+
     :param rlp: the rlp string to read from
     :param start: the position at which to start reading
     :returns: a tuple ``(item, end)`` where ``item`` is the read string or a
@@ -100,7 +101,7 @@ class LazyList(Sequence):
     def __getitem__(self, i):
         try:
             while len(self.elements_) <= i:
-                next(self)
+                self.next()
         except StopIteration:
             assert self.index == self.end
             raise IndexError('Index %d out of range' % i)
@@ -110,7 +111,7 @@ class LazyList(Sequence):
         if not self.len_:
             try:
                 while True:
-                    next(self)
+                    self.next()
             except StopIteration:
                 self.len_ = len(self.elements_)
         return self.len_

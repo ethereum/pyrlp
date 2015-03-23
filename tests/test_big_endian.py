@@ -1,15 +1,14 @@
 import pytest
-from rlp import SerializationError
+from rlp import SerializationError, utils
 from rlp.sedes import big_endian_int, BigEndianInt
 
-
 valid_data = (
-    (256, '\x01\x00'),
-    (1024, '\x04\x00'),
-    (65535, '\xff\xff'),
+    (256, b'\x01\x00'),
+    (1024, b'\x04\x00'),
+    (65535, b'\xff\xff'),
 )
 
-single_bytes = ((n, chr(n)) for n in xrange(1, 256))
+single_bytes = ((n, utils.ascii_chr(n)) for n in range(1, 256))
 
 random_integers = (256, 257, 4839, 849302, 483290432, 483290483290482039482039,
                    48930248348219540325894323584235894327865439258743754893066)
@@ -29,7 +28,7 @@ def test_serialization():
         deserialized = big_endian_int.deserialize(serial)
         assert deserialized == n
         if n != 0:
-            assert serial[0] != '\x00'  # is not checked
+            assert serial[0] != b'\x00'  # is not checked
 
 
 def test_single_byte():

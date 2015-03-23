@@ -1,25 +1,25 @@
 """Module for sedes objects that use lists as serialization format."""
-
-
+import sys
 from collections import Sequence
-from functools import partial
-from itertools import izip, imap
 from ..exceptions import SerializationError, DeserializationError
+from ..sedes.binary import Binary as BinaryClass
+
+if sys.version_info.major == 2:
+    from itertools import izip as zip
 
 
 def is_sedes(obj):
     """Check if `obj` is a sedes object.
-    
+
     A sedes object is characterized by having the methods `serialize(obj)` and
     `deserialize(serial)`.
     """
-    methods = ('serialize', 'deserialize')
     return all(hasattr(obj, m) for m in ('serialize', 'deserialize'))
 
 
 def is_sequence(obj):
-    """Check if `obj` is a sequence, but not a string."""
-    return isinstance(obj, Sequence) and not isinstance(obj, basestring)
+    """Check if `obj` is a sequence, but not a string or bytes."""
+    return isinstance(obj, Sequence) and not BinaryClass.is_valid_type(obj)
 
 
 class List(list):
@@ -42,7 +42,7 @@ class List(list):
         if len(self) != len(obj):
             raise SerializationError('List has wrong length', obj)
         return [sedes.serialize(element)
-                for element, sedes in izip(obj, self)]
+                for element, sedes in zip(obj, self)]
 
     def deserialize(self, serial):
         if not is_sequence(serial):
@@ -50,8 +50,8 @@ class List(list):
                                        serial)
         if len(serial) != len(self):
             raise DeserializationError('List has wrong length', serial)
-        return [sedes.deserialize(element) 
-                for element, sedes in izip(serial, self)]
+        return [sedes.deserialize(element)
+                for element, sedes in zip(serial, self)]
 
 
 class CountableList(object):
@@ -71,7 +71,8 @@ class CountableList(object):
 
     def deserialize(self, serial):
         if not is_sequence(serial):
-            raise DeserializationError('Can only deserialize sequences', serial)
+            raise DeserializationError('Can only deserialize sequences',
+                                       serial)
         return [self.element_sedes.deserialize(e) for e in serial]
 
 
@@ -102,12 +103,12 @@ class Serializable(object):
         field_set = set(field for field, _ in self.fields)
 
         # set positional arguments
-        for (field, _), arg in izip(self.fields, args):
+        for (field, _), arg in zip(self.fields, args):
             setattr(self, field, arg)
             field_set.remove(field)
 
         # set keyword arguments, if not already set
-        for (field, value) in kwargs.iteritems():
+        for (field, value) in kwargs.items():
             if field in field_set:
                 setattr(self, field, value)
                 field_set.remove(field)
@@ -144,8 +145,8 @@ class Serializable(object):
     def deserialize(cls, serial, **kwargs):
         values = cls.get_sedes().deserialize(serial)
         params = {field: value for (field, _), value
-                               in izip(cls.fields, values)}
-        return cls(**dict(params.items() + kwargs.items()))
+                               in zip(cls.fields, values)}
+        return cls(**dict(list(params.items()) + list(kwargs.items())))
 
     @classmethod
     def exclude(cls, excluded_fields):
