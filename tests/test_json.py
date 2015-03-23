@@ -1,9 +1,8 @@
 import json
-from collections import Sequence
 import pytest
 import rlp
 from rlp import encode, decode, decode_lazy, infer_sedes, utils
-import binascii
+
 
 def evaluate(ll):
     if isinstance(ll, rlp.lazy.LazyList):
@@ -11,9 +10,12 @@ def evaluate(ll):
     else:
         return ll
 
+
 with open('tests/rlptest.json') as f:
     test_data = json.loads(f.read())
-    test_pieces = [(name, {'in': in_out['in'], 'out': utils.str_to_bytes(in_out['out'])}) for name, in_out in test_data.items()]
+    test_pieces = [(name, {'in': in_out['in'],
+                           'out': utils.str_to_bytes(in_out['out'])})
+                   for name, in_out in test_data.items()]
 
 
 @pytest.mark.parametrize('name, in_out', test_pieces)

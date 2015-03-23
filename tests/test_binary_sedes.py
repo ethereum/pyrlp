@@ -6,7 +6,12 @@ from rlp.sedes import Binary
 
 def test_binary():
     b1 = Binary()
-    f = {'': b'', 'asdf': b'asdf', ('\x00' * 20): (b'\x00' * 20), 'fdsa': b'fdsa'}
+    f = {
+        '': b'',
+        'asdf': b'asdf',
+        ('\x00' * 20): (b'\x00' * 20),
+        'fdsa': b'fdsa'
+    }
     for k in f:
         assert b1.serialize(k) == f[k]
     for d in ([], 5, str):
@@ -14,7 +19,11 @@ def test_binary():
             b1.serialize(d)
 
     b2 = Binary.fixed_length(5)
-    f = {'asdfg': b'asdfg', b'\x00\x01\x02\x03\x04': b'\x00\x01\x02\x03\x04', utils.str_to_bytes('ababa'): b'ababa'}
+    f = {
+        'asdfg': b'asdfg',
+        b'\x00\x01\x02\x03\x04': b'\x00\x01\x02\x03\x04',
+        utils.str_to_bytes('ababa'): b'ababa'
+    }
     for k in f:
         assert b2.serialize(k) == f[k]
 
@@ -23,7 +32,12 @@ def test_binary():
             b2.serialize(d)
 
     b3 = Binary(2, 4)
-    f = {'as': b'as', 'dfg': b'dfg', 'hjkl': b'hjkl', b'\x00\x01\x02': b'\x00\x01\x02'}
+    f = {
+        'as': b'as',
+        'dfg': b'dfg',
+        'hjkl': b'hjkl',
+        b'\x00\x01\x02': b'\x00\x01\x02'
+    }
     for k in f:
         assert b3.serialize(k) == f[k]
     for d in ('', 'a', 'abcde', 'äää'):

@@ -5,7 +5,7 @@ class RLPException(Exception):
 
 class EncodingError(RLPException):
     """Exception raised if encoding fails.
-    
+
     :ivar obj: the object that could not be encoded
     """
 
@@ -16,7 +16,7 @@ class EncodingError(RLPException):
 
 class DecodingError(RLPException):
     """Exception raised if decoding fails.
-    
+
     :ivar rlp: the RLP string that could not be decoded
     """
 
@@ -27,7 +27,7 @@ class DecodingError(RLPException):
 
 class SerializationError(RLPException):
     """Exception raised if serialization fails.
-    
+
     :ivar obj: the object that could not be serialized
     """
 
@@ -35,9 +35,10 @@ class SerializationError(RLPException):
         super(SerializationError, self).__init__(message)
         self.obj = obj
 
+
 class DeserializationError(RLPException):
     """Exception raised if deserialization fails.
-    
+
     :ivar serial: the decoded RLP string that could not be deserialized
     """
 

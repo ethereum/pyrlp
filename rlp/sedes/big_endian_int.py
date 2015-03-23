@@ -1,6 +1,6 @@
 from ..exceptions import DeserializationError, SerializationError
 from ..utils import int_to_big_endian, is_integer, encode_hex
-import binascii
+
 
 class BigEndianInt(object):
     """A sedes for big endian integers.

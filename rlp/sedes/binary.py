@@ -1,10 +1,11 @@
+import sys
 from ..exceptions import SerializationError, DeserializationError
 from ..utils import Atomic, str_to_bytes, bytes_to_str
-import sys, binascii
+
 
 class Binary(object):
     """A sedes object for binary data of certain length.
-    
+
     :param min_length: the minimal length in bytes or `None` for no lower limit
     :param max_length: the maximal length in bytes or `None` for no upper limit
     :param allow_empty: if true, empty strings are considered valid even if
@@ -50,7 +51,7 @@ class Binary(object):
         if not isinstance(serial, Atomic):
             m = 'Objects of type {} cannot be deserialized'
             raise DeserializationError(m.format(type(serial).__name__), serial)
-        
+
         if self.is_valid_length(len(serial)):
             return bytes_to_str(serial)
         else:

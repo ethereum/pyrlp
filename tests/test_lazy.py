@@ -14,7 +14,7 @@ def evaluate(lazy_list):
 
 def test_empty_list():
     dec = lambda: rlp.decode_lazy(rlp.encode([]))
-    assert isinstance(dec(), Sequence) 
+    assert isinstance(dec(), Sequence)
     with pytest.raises(IndexError):
         dec()[0]
     with pytest.raises(IndexError):

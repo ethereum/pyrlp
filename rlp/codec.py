@@ -1,21 +1,22 @@
-import abc
 import collections
 import sys
-from functools import partial
 from .exceptions import EncodingError, DecodingError
-from .utils import Atomic, str_to_bytes, is_integer, bytes_to_int_array, int_to_big_endian, ascii_chr
+from .utils import (Atomic, str_to_bytes, is_integer, bytes_to_int_array,
+                    ascii_chr)
 from .sedes.binary import Binary as BinaryClass
 from .sedes import big_endian_int, binary
 from .sedes.lists import List, is_sedes
 
+
 if sys.version_info.major == 2:
     from itertools import imap as map
+
 
 def encode(obj, sedes=None, infer_serializer=True):
     """Encode a Python object in RLP format.
 
     By default, the object is serialized in a suitable way first (using
-    :func:`rlp.infer_sedes`) and then encoded. Serialization can be 
+    :func:`rlp.infer_sedes`) and then encoded. Serialization can be
     explicitly suppressed by setting `infer_serializer` to ``False`` and not
     passing an alternative as `sedes`.
 
@@ -79,7 +80,7 @@ def length_prefix(length, offset):
 
 def consume_length_prefix(rlp, start):
     """Read a length prefix from an RLP string.
-    
+
     :param rlp: the rlp string to read from
     :param start: the position at which to start reading
     :returns: a tuple ``(type, length, end)``, where ``type`` is either ``str``
@@ -101,7 +102,7 @@ def consume_length_prefix(rlp, start):
         return (str, l, start + 1 + ll)
     elif b0 < 192 + 56:  # short list
         return (list, b0 - 192, start + 1)
-    else: # long list
+    else:  # long list
         ll = b0 - 192 - 56 + 1
         l = big_endian_int.deserialize(rlp[start + 1:start + 1 + ll])
         if l < 56:
@@ -135,9 +136,10 @@ def consume_payload(rlp, start, type_, length):
     else:
         raise TypeError('Type must be either list or str')
 
+
 def consume_item(rlp, start):
     """Read an item from an RLP string.
-    
+
     :param rlp: the rlp string to read from
     :param start: the position at which to start reading
     :returns: a tuple ``(item, end)`` where ``item`` is the read item and
@@ -171,7 +173,6 @@ def decode(rlp, sedes=None, **kwargs):
         return sedes.deserialize(item, **kwargs)
     else:
         return item
-
 
 
 def infer_sedes(obj):

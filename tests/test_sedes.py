@@ -1,6 +1,5 @@
 import pytest
-from collections import OrderedDict
-from rlp import SerializationError, DeserializationError
+from rlp import SerializationError
 from rlp import infer_sedes, Serializable, encode, decode
 from rlp.sedes import big_endian_int, binary, List
 
@@ -26,6 +25,7 @@ def test_inference():
         else:
             with pytest.raises(TypeError):
                 infer_sedes(obj)
+
 
 def test_list_sedes():
     l1 = List()
@@ -56,17 +56,18 @@ def test_serializable():
             ('field2', binary),
             ('field3', List((big_endian_int, binary)))
         )
+
     class Test2(Serializable):
         fields = (
             ('field1', Test1),
             ('field2', List((Test1, Test1))),
         )
+
     t1a_data = (5, 'a', (0, ''))
     t1b_data = (9, 'b', (2, ''))
     test1a = Test1(*t1a_data)
     test1b = Test1(*t1b_data)
     test2 = Test2(test1a, [test1a, test1b])
-    t2_data = (t1a_data, (t1a_data, t1b_data))
 
     # equality
     assert test1a == test1a

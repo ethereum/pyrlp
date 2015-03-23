@@ -1,20 +1,19 @@
 """Module for sedes objects that use lists as serialization format."""
 import sys
 from collections import Sequence
-from functools import partial
 from ..exceptions import SerializationError, DeserializationError
 from ..sedes.binary import Binary as BinaryClass
 
 if sys.version_info.major == 2:
     from itertools import izip as zip
 
+
 def is_sedes(obj):
     """Check if `obj` is a sedes object.
-    
+
     A sedes object is characterized by having the methods `serialize(obj)` and
     `deserialize(serial)`.
     """
-    methods = ('serialize', 'deserialize')
     return all(hasattr(obj, m) for m in ('serialize', 'deserialize'))
 
 
@@ -51,7 +50,7 @@ class List(list):
                                        serial)
         if len(serial) != len(self):
             raise DeserializationError('List has wrong length', serial)
-        return [sedes.deserialize(element) 
+        return [sedes.deserialize(element)
                 for element, sedes in zip(serial, self)]
 
 
@@ -72,7 +71,8 @@ class CountableList(object):
 
     def deserialize(self, serial):
         if not is_sequence(serial):
-            raise DeserializationError('Can only deserialize sequences', serial)
+            raise DeserializationError('Can only deserialize sequences',
+                                       serial)
         return [self.element_sedes.deserialize(e) for e in serial]
 
 
