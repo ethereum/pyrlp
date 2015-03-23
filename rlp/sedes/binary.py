@@ -48,7 +48,8 @@ class Binary(object):
 
     def deserialize(self, serial):
         if not isinstance(serial, Atomic):
-            raise DeserializationError('{} has invalid length'.format(type(serial)), serial)
+            m = 'Objects of type {} cannot be deserialized'
+            raise DeserializationError(m.format(type(serial).__name__), serial)
         
         if self.is_valid_length(len(serial)):
             return bytes_to_str(serial)
