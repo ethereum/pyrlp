@@ -33,7 +33,7 @@ test_requirements = [
 
 setup(
     name='rlp',
-    version='0.3.3',
+    version='0.3.4',
     description="A package for encoding and decoding data in and from Recursive Length Prefix notation",
     long_description=readme,
     author="jnnk",
@@ -53,7 +53,6 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
         "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
