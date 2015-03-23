@@ -32,7 +32,11 @@ def bytes_to_int_array(value):
     return [ord(c) for  c in value]
 
 def decode_hex(s):
+    if not isinstance(s, (str, unicode)):
+        raise TypeError('Value must be an instance of str or unicode')
     return s.decode('hex')
 
 def encode_hex(s):
+    if not isinstance(s, (str, unicode)):
+        raise TypeError('Value must be an instance of str or unicode')
     return s.encode('hex')
