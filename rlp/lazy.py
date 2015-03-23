@@ -100,7 +100,7 @@ class LazyList(Sequence):
     def __getitem__(self, i):
         try:
             while len(self.elements_) <= i:
-                next(self)
+                self.next()
         except StopIteration:
             assert self.index == self.end
             raise IndexError('Index %d out of range' % i)
@@ -110,7 +110,7 @@ class LazyList(Sequence):
         if not self.len_:
             try:
                 while True:
-                    next(self)
+                    self.next()
             except StopIteration:
                 self.len_ = len(self.elements_)
         return self.len_
