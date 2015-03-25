@@ -181,8 +181,8 @@ def infer_sedes(obj):
     """Try to find a sedes objects suitable for a given Python object.
 
     The sedes objects considered are `obj`'s class, `big_endian_int` and
-    `binary`. If `obj` is a sequence, a :class:`ListSedes` will be constructed
-    recursively.
+    `binary`. If `obj` is a sequence, a :class:`rlp.sedes.List` will be
+    constructed recursively.
 
     :param obj: the python object for which to find a sedes object
     :raises: :exc:`TypeError` if no appropriate sedes could be found
