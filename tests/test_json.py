@@ -1,7 +1,7 @@
 import json
 import pytest
 import rlp
-from rlp import encode, decode, decode_lazy, infer_sedes, utils
+from rlp import encode, decode, decode_lazy, infer_sedes, utils, DecodingError
 
 
 def evaluate(ll):
@@ -33,6 +33,10 @@ def test_decode(name, in_out):
     msg_format = 'Test {} failed (decoded {} to {} instead of {})'
     rlp_string = utils.decode_hex(in_out['out'])
     decoded = decode(rlp_string)
+    with pytest.raises(DecodingError):
+        decode(rlp_string + '\x00')
+    assert decoded == decode(rlp_string + '\x00', strict=False)
+
     assert decoded == evaluate(decode_lazy(rlp_string))
     expected = in_out['in']
     sedes = infer_sedes(expected)
