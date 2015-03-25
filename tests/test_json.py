@@ -41,8 +41,8 @@ def test_decode(name, in_out):
     rlp_string = utils.decode_hex(in_out['out'])
     decoded = decode(rlp_string)
     with pytest.raises(DecodingError):
-        decode(rlp_string + '\x00')
-    assert decoded == decode(rlp_string + '\x00', strict=False)
+        decode(rlp_string + b'\x00')
+    assert decoded == decode(rlp_string + b'\x00', strict=False)
 
     assert decoded == evaluate(decode_lazy(rlp_string))
     expected = in_out['in']
