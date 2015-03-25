@@ -10,10 +10,17 @@ def evaluate(ll):
     else:
         return ll
 
+def to_bytes(value):
+    if isinstance(value, str):
+        return utils.str_to_bytes(value)
+    elif isinstance(value, list):
+        return [to_bytes(v) for v in value]
+    else:
+        return value
 
 with open('tests/rlptest.json') as f:
     test_data = json.loads(f.read())
-    test_pieces = [(name, {'in': in_out['in'],
+    test_pieces = [(name, {'in': to_bytes(in_out['in']),
                            'out': utils.str_to_bytes(in_out['out'])})
                    for name, in_out in test_data.items()]
 
