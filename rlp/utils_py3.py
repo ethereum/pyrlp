@@ -13,6 +13,8 @@ Atomic.register(bytes)
 
 
 def str_to_bytes(value):
+    if isinstance(value, bytearray):
+        value = bytes(value)
     if isinstance(value, bytes):
         return value
     return bytes(value, 'utf-8')
