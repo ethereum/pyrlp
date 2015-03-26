@@ -24,7 +24,13 @@ def is_sequence(obj):
 
 class List(list):
 
-    """A sedes for lists, implemented as a list of other sedes objects."""
+    """A sedes for lists, implemented as a list of other sedes objects.
+
+    :param strict: If true (de)serializing lists that have a length not
+                   matching the sedes length will result in an error. If false
+                   (de)serialization will stop as soon as either one of the
+                   lists runs out of elements.
+    """
 
     def __init__(self, elements=[], strict=True):
         super(List, self).__init__()
