@@ -2,6 +2,7 @@ import abc
 
 
 class Atomic(object):
+
     """ABC for objects that can be RLP encoded as is."""
     __metaclass__ = abc.ABCMeta
 
@@ -37,6 +38,8 @@ def is_integer(value):
 
 
 def bytes_to_int_array(value):
+    if isinstance(value, bytearray):
+        return list(value)
     return [ord(c) for c in value]
 
 
