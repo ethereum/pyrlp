@@ -149,7 +149,7 @@ def consume_item(rlp, start):
     return consume_payload(rlp, s, t, l)
 
 
-def decode(rlp, sedes=None, **kwargs):
+def decode(rlp, sedes=None, strict=True, **kwargs):
     """Decode an RLP encoded object.
 
     :param sedes: an object implementing a function ``deserialize(code)`` which
@@ -157,16 +157,18 @@ def decode(rlp, sedes=None, **kwargs):
                   deserialization should be performed
     :param \*\*kwargs: additional keyword arguments that will be passed to the
                      deserializer
+    :param strict: if false inputs that are longer than necessary don't cause
+                   an exception
     :returns: the decoded and maybe deserialized Python object
     :raises: :exc:`rlp.DecodingError` if the input string does not end after
-             the root item
+             the root item and `strict` is true
     :raises: :exc:`rlp.DeserializationError` if the deserialization fails
     """
     try:
         item, end = consume_item(rlp, 0)
     except IndexError:
         raise DecodingError('RLP string to short', rlp)
-    if end != len(rlp):
+    if end != len(rlp) and strict:
         msg = 'RLP string ends with {} superfluous bytes'.format(len(rlp) - end)
         raise DecodingError(msg, rlp)
     if sedes:
@@ -179,8 +181,8 @@ def infer_sedes(obj):
     """Try to find a sedes objects suitable for a given Python object.
 
     The sedes objects considered are `obj`'s class, `big_endian_int` and
-    `binary`. If `obj` is a sequence, a :class:`ListSedes` will be constructed
-    recursively.
+    `binary`. If `obj` is a sequence, a :class:`rlp.sedes.List` will be
+    constructed recursively.
 
     :param obj: the python object for which to find a sedes object
     :raises: :exc:`TypeError` if no appropriate sedes could be found

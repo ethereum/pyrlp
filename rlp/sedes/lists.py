@@ -23,10 +23,18 @@ def is_sequence(obj):
 
 
 class List(list):
-    """A sedes for lists, implemented as a list of other sedes objects."""
 
-    def __init__(self, elements=[]):
+    """A sedes for lists, implemented as a list of other sedes objects.
+
+    :param strict: If true (de)serializing lists that have a length not
+                   matching the sedes length will result in an error. If false
+                   (de)serialization will stop as soon as either one of the
+                   lists runs out of elements.
+    """
+
+    def __init__(self, elements=[], strict=True):
         super(List, self).__init__()
+        self.strict = strict
         for e in elements:
             if is_sedes(e):
                 self.append(e)
@@ -39,7 +47,7 @@ class List(list):
     def serialize(self, obj):
         if not is_sequence(obj):
             raise SerializationError('Can only serialize sequences', obj)
-        if len(self) != len(obj):
+        if self.strict and len(self) != len(obj):
             raise SerializationError('List has wrong length', obj)
         return [sedes.serialize(element)
                 for element, sedes in zip(obj, self)]
