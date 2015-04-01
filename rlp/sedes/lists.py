@@ -47,7 +47,7 @@ class List(list):
     def serialize(self, obj):
         if not is_sequence(obj):
             raise SerializationError('Can only serialize sequences', obj)
-        if self.strict and len(self) != len(obj):
+        if self.strict and len(self) != len(obj) or len(self) < len(obj):
             raise SerializationError('List has wrong length', obj)
         return [sedes.serialize(element)
                 for element, sedes in zip(obj, self)]
@@ -56,13 +56,14 @@ class List(list):
         if not is_sequence(serial):
             raise DeserializationError('Can only deserialize sequences',
                                        serial)
-        if len(serial) != len(self):
+        if len(serial) > len(self) or self.strict and len(serial) != len(self):
             raise DeserializationError('List has wrong length', serial)
         return [sedes.deserialize(element)
                 for element, sedes in zip(serial, self)]
 
 
 class CountableList(object):
+
     """A sedes for lists of arbitrary length.
 
     :param element_sedes: when (de-)serializing a list, this sedes will be
@@ -85,6 +86,7 @@ class CountableList(object):
 
 
 class Serializable(object):
+
     """Base class for objects which can be serialized into RLP lists.
 
     :attr:`fields` defines which attributes are serialized and how this is
@@ -153,7 +155,7 @@ class Serializable(object):
     def deserialize(cls, serial, **kwargs):
         values = cls.get_sedes().deserialize(serial)
         params = {field: value for (field, _), value
-                               in zip(cls.fields, values)}
+                  in zip(cls.fields, values)}
         return cls(**dict(list(params.items()) + list(kwargs.items())))
 
     @classmethod
@@ -161,6 +163,6 @@ class Serializable(object):
         """Create a new sedes considering only a reduced set of fields."""
         class SerializableExcluded(cls):
             fields = [(field, sedes) for field, sedes in cls.fields
-                                     if field not in excluded_fields]
+                      if field not in excluded_fields]
             _sedes = None
         return SerializableExcluded
