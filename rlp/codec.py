@@ -88,9 +88,6 @@ def consume_length_prefix(rlp, start):
               ``length`` is the length of the payload in bytes, and ``end`` is
               the position of the first payload byte in the rlp string
     """
-    if isinstance(rlp, str):
-        rlp = str_to_bytes(rlp)
-
     b0 = bytes_to_int_array(rlp)[start]
     if b0 < 128:  # single byte
         return (str, 1, start)
@@ -164,6 +161,7 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
              the root item and `strict` is true
     :raises: :exc:`rlp.DeserializationError` if the deserialization fails
     """
+    rlp = str_to_bytes(rlp)
     try:
         item, end = consume_item(rlp, 0)
     except IndexError:
