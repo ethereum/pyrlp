@@ -1,5 +1,5 @@
 from ..exceptions import DeserializationError, SerializationError
-from ..utils import int_to_big_endian, is_integer, encode_hex
+from ..utils import int_to_big_endian, is_integer, encode_hex, ascii_chr
 
 
 class BigEndianInt(object):
@@ -35,7 +35,7 @@ class BigEndianInt(object):
         if self.l is not None and len(serial) != self.l:
             raise DeserializationError('Invalid serialization (wrong size)',
                                        serial)
-        if self.l is None and len(serial) > 1 and serial[0] == 0:
+        if self.l is None and len(serial) > 1 and serial[0] == ascii_chr(0):
             raise DeserializationError('Invalid serialization (not minimal '
                                        'length)', serial)
 
