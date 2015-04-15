@@ -14,7 +14,8 @@ def is_sedes(obj):
     A sedes object is characterized by having the methods `serialize(obj)` and
     `deserialize(serial)`.
     """
-    return all(hasattr(obj, m) for m in ('serialize', 'deserialize'))
+    # return all(hasattr(obj, m) for m in ('serialize', 'deserialize'))
+    return hasattr(obj, 'serialize') and hasattr(obj, 'deserialize')
 
 
 def is_sequence(obj):

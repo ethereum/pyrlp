@@ -11,13 +11,7 @@ Atomic.register(str)
 Atomic.register(bytearray)
 Atomic.register(unicode)
 
-
-def str_to_bytes(value):
-    return str(value)
-
-
-def bytes_to_str(value):
-    return str(value)
+str_to_bytes = bytes_to_str = lambda a: a
 
 
 def ascii_chr(value):
