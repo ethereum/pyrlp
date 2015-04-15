@@ -1,8 +1,7 @@
 import collections
 import sys
 from .exceptions import EncodingError, DecodingError
-from .utils import (Atomic, str_to_bytes, is_integer, bytes_to_int_array,
-                    ascii_chr)
+from .utils import Atomic, str_to_bytes, is_integer, ascii_chr, safe_ord
 from .sedes.binary import Binary as BinaryClass
 from .sedes import big_endian_int, binary
 from .sedes.lists import List, is_sedes
@@ -43,7 +42,7 @@ def encode(obj, sedes=None, infer_serializer=True):
 def encode_raw(item):
     """RLP encode (a nested sequence of) :class:`Atomic`s."""
     if isinstance(item, Atomic):
-        if len(item) == 1 and ord(item[0]) < 128:
+        if len(item) == 1 and safe_ord(item[0]) < 128:
             return str_to_bytes(item)
         payload = str_to_bytes(item)
         prefix_offset = 128  # string
@@ -88,7 +87,7 @@ def consume_length_prefix(rlp, start):
               ``length`` is the length of the payload in bytes, and ``end`` is
               the position of the first payload byte in the rlp string
     """
-    b0 = ord(rlp[start])
+    b0 = safe_ord(rlp[start])
     if b0 < 128:  # single byte
         return (str, 1, start)
     elif b0 < 128 + 56:  # short string

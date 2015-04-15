@@ -31,10 +31,6 @@ def is_integer(value):
     return isinstance(value, (int, long))
 
 
-def bytes_to_int_array(value):
-    return memoryview(value).tolist()
-
-
 def decode_hex(s):
     if not isinstance(s, (str, unicode)):
         raise TypeError('Value must be an instance of str or unicode')
@@ -45,3 +41,6 @@ def encode_hex(s):
     if not isinstance(s, (str, unicode)):
         raise TypeError('Value must be an instance of str or unicode')
     return s.encode('hex')
+
+
+safe_ord = ord

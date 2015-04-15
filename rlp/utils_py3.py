@@ -39,10 +39,6 @@ def is_integer(value):
     return isinstance(value, int)
 
 
-def bytes_to_int_array(value):
-    return value
-
-
 def decode_hex(s):
     if isinstance(s, str):
         return bytes.fromhex(s)
@@ -57,3 +53,11 @@ def encode_hex(b):
     if isinstance(b, bytes):
         return binascii.hexlify(b)
     raise TypeError('Value must be an instance of str or bytes')
+
+
+def safe_ord(c):
+    try:
+        return ord(c)
+    except TypeError:
+        assert isinstance(c, int)
+        return c
