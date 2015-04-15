@@ -43,7 +43,7 @@ def encode(obj, sedes=None, infer_serializer=True):
 def encode_raw(item):
     """RLP encode (a nested sequence of) :class:`Atomic`s."""
     if isinstance(item, Atomic):
-        if len(item) == 1 and bytes_to_int_array(item)[0] < 128:
+        if len(item) == 1 and ord(item[0]) < 128:
             return str_to_bytes(item)
         payload = str_to_bytes(item)
         prefix_offset = 128  # string
@@ -88,7 +88,7 @@ def consume_length_prefix(rlp, start):
               ``length`` is the length of the payload in bytes, and ``end`` is
               the position of the first payload byte in the rlp string
     """
-    b0 = bytes_to_int_array(rlp)[start]
+    b0 = ord(rlp[start])
     if b0 < 128:  # single byte
         return (str, 1, start)
     elif b0 < 128 + 56:  # short string
