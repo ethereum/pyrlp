@@ -1,7 +1,8 @@
 import collections
 import sys
 from .exceptions import EncodingError, DecodingError
-from .utils import Atomic, str_to_bytes, is_integer, ascii_chr, safe_ord, big_endian_to_int
+from .utils import (Atomic, str_to_bytes, is_integer, ascii_chr, safe_ord, big_endian_to_int,
+                    int_to_big_endian)
 from .sedes.binary import Binary as BinaryClass
 from .sedes import big_endian_int, binary
 from .sedes.lists import List, is_sedes
@@ -71,7 +72,7 @@ def length_prefix(length, offset):
     if length < 56:
         return ascii_chr(offset + length)
     elif length < 256**8:
-        length_string = big_endian_int.serialize(length)
+        length_string = int_to_big_endian(length)
         return ascii_chr(offset + 56 - 1 + len(length_string)) + length_string
     else:
         raise ValueError('Length greater than 256**8')
