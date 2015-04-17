@@ -1,7 +1,7 @@
 import collections
 import sys
 from .exceptions import EncodingError, DecodingError
-from .utils import Atomic, str_to_bytes, is_integer, ascii_chr, safe_ord
+from .utils import Atomic, str_to_bytes, is_integer, ascii_chr, safe_ord, big_endian_to_int
 from .sedes.binary import Binary as BinaryClass
 from .sedes import big_endian_int, binary
 from .sedes.lists import List, is_sedes
@@ -94,13 +94,13 @@ def consume_length_prefix(rlp, start):
         return (str, b0 - 128, start + 1)
     elif b0 < 192:  # long string
         ll = b0 - 128 - 56 + 1
-        l = big_endian_int.deserialize(rlp[start + 1:start + 1 + ll])
+        l = big_endian_to_int(rlp[start + 1:start + 1 + ll])
         return (str, l, start + 1 + ll)
     elif b0 < 192 + 56:  # short list
         return (list, b0 - 192, start + 1)
     else:  # long list
         ll = b0 - 192 - 56 + 1
-        l = big_endian_int.deserialize(rlp[start + 1:start + 1 + ll])
+        l = big_endian_to_int(rlp[start + 1:start + 1 + ll])
         if l < 56:
             raise DecodingError('Long list prefix used for short list', rlp)
         return (list, l, start + 1 + ll)

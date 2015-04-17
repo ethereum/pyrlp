@@ -35,6 +35,10 @@ def int_to_big_endian(value):
     return (value).to_bytes(byte_length, byteorder='big')
 
 
+def big_endian_to_int(value):
+    return int.from_bytes(value, byteorder='big')
+
+
 def is_integer(value):
     return isinstance(value, int)
 
