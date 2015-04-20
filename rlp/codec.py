@@ -1,6 +1,7 @@
 import collections
 import sys
 from .exceptions import EncodingError, DecodingError
+
 from .utils import (Atomic, str_to_bytes, is_integer, ascii_chr, safe_ord, big_endian_to_int,
                     int_to_big_endian)
 from .sedes.binary import Binary as BinaryClass
@@ -40,10 +41,18 @@ def encode(obj, sedes=None, infer_serializer=True):
     return encode_raw(item)
 
 
+class RLPData(str):
+
+    "wraper to mark already rlp serialized data"
+    pass
+
+
 def encode_raw(item):
     """RLP encode (a nested sequence of) :class:`Atomic`s."""
-    if isinstance(item, Atomic):
-        if len(item) == 1 and safe_ord(item[0]) < 128:
+    if isinstance(item, RLPData):
+        return item
+    elif isinstance(item, Atomic):
+        if len(item) == 1 and ord(item[0]) < 128:
             return str_to_bytes(item)
         payload = str_to_bytes(item)
         prefix_offset = 128  # string
