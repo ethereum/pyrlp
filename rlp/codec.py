@@ -52,7 +52,7 @@ def encode_raw(item):
     if isinstance(item, RLPData):
         return item
     elif isinstance(item, Atomic):
-        if len(item) == 1 and ord(item[0]) < 128:
+        if len(item) == 1 and safe_ord(item[0]) < 128:
             return str_to_bytes(item)
         payload = str_to_bytes(item)
         prefix_offset = 128  # string
@@ -104,12 +104,16 @@ def consume_length_prefix(rlp, start):
         return (str, b0 - 128, start + 1)
     elif b0 < 192:  # long string
         ll = b0 - 128 - 56 + 1
+        if rlp[start + 1] == b'\x00':
+            raise DecodingError('Length starts with zero bytes', rlp)
         l = big_endian_to_int(rlp[start + 1:start + 1 + ll])
         return (str, l, start + 1 + ll)
     elif b0 < 192 + 56:  # short list
         return (list, b0 - 192, start + 1)
     else:  # long list
         ll = b0 - 192 - 56 + 1
+        if rlp[start + 1] == b'\x00':
+            raise DecodingError('Length starts with zero bytes', rlp)
         l = big_endian_to_int(rlp[start + 1:start + 1 + ll])
         if l < 56:
             raise DecodingError('Long list prefix used for short list', rlp)
