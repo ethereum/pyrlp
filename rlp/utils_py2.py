@@ -13,10 +13,7 @@ Atomic.register(bytearray)
 Atomic.register(unicode)
 
 str_to_bytes = bytes_to_str = str
-
-
-def ascii_chr(value):
-    return chr(value)
+ascii_chr = chr
 
 
 def int_to_big_endian(value):
