@@ -35,7 +35,7 @@ class BigEndianInt(object):
         if self.l is not None and len(serial) != self.l:
             raise DeserializationError('Invalid serialization (wrong size)',
                                        serial)
-        if self.l is None and len(serial) > 1 and serial[0] == ascii_chr(0):
+        if self.l is None and len(serial) > 0 and serial[0:1] == ascii_chr(0):
             raise DeserializationError('Invalid serialization (not minimal '
                                        'length)', serial)
 

@@ -101,10 +101,11 @@ def consume_length_prefix(rlp, start):
     if b0 < 128:  # single byte
         return (str, 1, start)
     elif b0 < 128 + 56:  # short string
+        assert b0 - 128 != 1 or safe_ord(rlp[start + 1]) >= 128
         return (str, b0 - 128, start + 1)
     elif b0 < 192:  # long string
         ll = b0 - 128 - 56 + 1
-        if rlp[start + 1] == b'\x00':
+        if rlp[start + 1:start + 2] == b'\x00':
             raise DecodingError('Length starts with zero bytes', rlp)
         l = big_endian_to_int(rlp[start + 1:start + 1 + ll])
         return (str, l, start + 1 + ll)
@@ -112,7 +113,7 @@ def consume_length_prefix(rlp, start):
         return (list, b0 - 192, start + 1)
     else:  # long list
         ll = b0 - 192 - 56 + 1
-        if rlp[start + 1] == b'\x00':
+        if rlp[start + 1:start + 2] == b'\x00':
             raise DecodingError('Length starts with zero bytes', rlp)
         l = big_endian_to_int(rlp[start + 1:start + 1 + ll])
         if l < 56:
