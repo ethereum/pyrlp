@@ -101,7 +101,8 @@ def consume_length_prefix(rlp, start):
     if b0 < 128:  # single byte
         return (str, 1, start)
     elif b0 < 128 + 56:  # short string
-        assert b0 - 128 != 1 or safe_ord(rlp[start + 1]) >= 128
+        if b0 - 128 == 1 and safe_ord(rlp[start + 1]) < 128:
+            raise DecodingError('Encoded as short string although single byte was possible', rlp)
         return (str, b0 - 128, start + 1)
     elif b0 < 192:  # long string
         ll = b0 - 128 - 56 + 1
