@@ -1,6 +1,7 @@
-from collections import Sequence
-from .exceptions import DecodingError
+from collections import Iterable, Sequence
 from .codec import consume_length_prefix, consume_payload
+from .exceptions import DecodingError
+from .utils import Atomic
 
 
 def decode_lazy(rlp, sedes=None, **sedes_kwargs):
@@ -18,9 +19,9 @@ def decode_lazy(rlp, sedes=None, **sedes_kwargs):
     "vertical lazyness" can be preserved.
 
     :param rlp: the RLP string to decode
-    :param sedes: an object implementing a method ``deserialize(code)``
-                          which is used as described above, or ``None`` if no
-                          deserialization should be performed
+    :param sedes: an object implementing a method ``deserialize(code)`` which
+                  is used as described above, or ``None`` if no
+                  deserialization should be performed
     :param \*\*sedes_kwargs: additional keyword arguments that will be passed
                              to the deserializers
     :returns: either the already decoded and deserialized object (if encoded as
@@ -81,31 +82,31 @@ class LazyList(Sequence):
         self.start = start
         self.end = end
         self.index = start
-        self.elements_ = []
+        self._elements = []
         self.len_ = None
         self.sedes = sedes
         self.sedes_kwargs = sedes_kwargs
 
     def next(self):
         if self.index == self.end:
-            self.len_ = len(self.elements_)
+            self.len_ = len(self._elements)
             raise StopIteration
         assert self.index < self.end
         item, end = consume_item_lazy(self.rlp, self.index)
         self.index = end
         if self.sedes:
             item = self.sedes.deserialize(item, **self.sedes_kwargs)
-        self.elements_.append(item)
+        self._elements.append(item)
         return item
 
     def __getitem__(self, i):
         try:
-            while len(self.elements_) <= i:
+            while len(self._elements) <= i:
                 self.next()
         except StopIteration:
             assert self.index == self.end
             raise IndexError('Index %d out of range' % i)
-        return self.elements_[i]
+        return self._elements[i]
 
     def __len__(self):
         if not self.len_:
@@ -113,5 +114,40 @@ class LazyList(Sequence):
                 while True:
                     self.next()
             except StopIteration:
-                self.len_ = len(self.elements_)
-        return self.len_
+                self._len = len(self._elements)
+        return self._len
+
+
+def peek(rlp, index, sedes=None):
+    """Get a specific element from an rlp encoded nested list.
+
+    This function uses :func:`rlp.decode_lazy` and, thus, decodes only the
+    necessary parts of the string.
+
+    Usage example::
+
+        >>> rlpdata = rlp.encode([1, 2, [3, [4, 5]]])
+        >>> rlp.peek(rlpdata, 0, rlp.sedes.big_endian_int)
+        1
+        >>> rlp.peek(rlpdata, [2, 0], rlp.sedes.big_endian_int)
+        3
+
+    :param rlp: the rlp string
+    :param index: the index of the element to peek at (can be a list for
+                  nested data)
+    :param sedes: a sedes used to deserialize the peeked at object, or `None`
+                  if no deserialization should be performed
+    :raises: :exc:`IndexError` if `index` is invalid (out of range or too many
+             levels)
+    """
+    ll = decode_lazy(rlp)
+    if not isinstance(index, Iterable):
+        index = [index]
+    for i in index:
+        if isinstance(ll, Atomic):
+            raise IndexError('Too many indices given')
+        ll = ll[i]
+    if sedes:
+        return sedes.deserialize(ll)
+    else:
+        return ll

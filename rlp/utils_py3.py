@@ -13,6 +13,8 @@ Atomic.register(bytes)
 
 
 def str_to_bytes(value):
+    if isinstance(value, bytearray):
+        value = bytes(value)
     if isinstance(value, bytes):
         return value
     return bytes(value, 'utf-8')
@@ -33,12 +35,12 @@ def int_to_big_endian(value):
     return (value).to_bytes(byte_length, byteorder='big')
 
 
+def big_endian_to_int(value):
+    return int.from_bytes(value, byteorder='big')
+
+
 def is_integer(value):
     return isinstance(value, int)
-
-
-def bytes_to_int_array(value):
-    return value
 
 
 def decode_hex(s):
@@ -55,3 +57,11 @@ def encode_hex(b):
     if isinstance(b, bytes):
         return binascii.hexlify(b)
     raise TypeError('Value must be an instance of str or bytes')
+
+
+def safe_ord(c):
+    try:
+        return ord(c)
+    except TypeError:
+        assert isinstance(c, int)
+        return c

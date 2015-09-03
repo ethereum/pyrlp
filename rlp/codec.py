@@ -1,8 +1,9 @@
 import collections
 import sys
 from .exceptions import EncodingError, DecodingError
-from .utils import (Atomic, str_to_bytes, is_integer, bytes_to_int_array,
-                    ascii_chr)
+
+from .utils import (Atomic, str_to_bytes, is_integer, ascii_chr, safe_ord, big_endian_to_int,
+                    int_to_big_endian)
 from .sedes.binary import Binary as BinaryClass
 from .sedes import big_endian_int, binary
 from .sedes.lists import List, is_sedes
@@ -40,10 +41,18 @@ def encode(obj, sedes=None, infer_serializer=True):
     return encode_raw(item)
 
 
+class RLPData(str):
+
+    "wraper to mark already rlp serialized data"
+    pass
+
+
 def encode_raw(item):
     """RLP encode (a nested sequence of) :class:`Atomic`s."""
-    if isinstance(item, Atomic):
-        if len(item) == 1 and bytes_to_int_array(item)[0] < 128:
+    if isinstance(item, RLPData):
+        return item
+    elif isinstance(item, Atomic):
+        if len(item) == 1 and safe_ord(item[0]) < 128:
             return str_to_bytes(item)
         payload = str_to_bytes(item)
         prefix_offset = 128  # string
@@ -72,7 +81,7 @@ def length_prefix(length, offset):
     if length < 56:
         return ascii_chr(offset + length)
     elif length < 256**8:
-        length_string = big_endian_int.serialize(length)
+        length_string = int_to_big_endian(length)
         return ascii_chr(offset + 56 - 1 + len(length_string)) + length_string
     else:
         raise ValueError('Length greater than 256**8')
@@ -88,23 +97,26 @@ def consume_length_prefix(rlp, start):
               ``length`` is the length of the payload in bytes, and ``end`` is
               the position of the first payload byte in the rlp string
     """
-    if isinstance(rlp, str):
-        rlp = str_to_bytes(rlp)
-
-    b0 = bytes_to_int_array(rlp)[start]
+    b0 = safe_ord(rlp[start])
     if b0 < 128:  # single byte
         return (str, 1, start)
     elif b0 < 128 + 56:  # short string
+        if b0 - 128 == 1 and safe_ord(rlp[start + 1]) < 128:
+            raise DecodingError('Encoded as short string although single byte was possible', rlp)
         return (str, b0 - 128, start + 1)
     elif b0 < 192:  # long string
         ll = b0 - 128 - 56 + 1
-        l = big_endian_int.deserialize(rlp[start + 1:start + 1 + ll])
+        if rlp[start + 1:start + 2] == b'\x00':
+            raise DecodingError('Length starts with zero bytes', rlp)
+        l = big_endian_to_int(rlp[start + 1:start + 1 + ll])
         return (str, l, start + 1 + ll)
     elif b0 < 192 + 56:  # short list
         return (list, b0 - 192, start + 1)
     else:  # long list
         ll = b0 - 192 - 56 + 1
-        l = big_endian_int.deserialize(rlp[start + 1:start + 1 + ll])
+        if rlp[start + 1:start + 2] == b'\x00':
+            raise DecodingError('Length starts with zero bytes', rlp)
+        l = big_endian_to_int(rlp[start + 1:start + 1 + ll])
         if l < 56:
             raise DecodingError('Long list prefix used for short list', rlp)
         return (list, l, start + 1 + ll)
@@ -149,7 +161,7 @@ def consume_item(rlp, start):
     return consume_payload(rlp, s, t, l)
 
 
-def decode(rlp, sedes=None, **kwargs):
+def decode(rlp, sedes=None, strict=True, **kwargs):
     """Decode an RLP encoded object.
 
     :param sedes: an object implementing a function ``deserialize(code)`` which
@@ -157,16 +169,19 @@ def decode(rlp, sedes=None, **kwargs):
                   deserialization should be performed
     :param \*\*kwargs: additional keyword arguments that will be passed to the
                      deserializer
+    :param strict: if false inputs that are longer than necessary don't cause
+                   an exception
     :returns: the decoded and maybe deserialized Python object
     :raises: :exc:`rlp.DecodingError` if the input string does not end after
-             the root item
+             the root item and `strict` is true
     :raises: :exc:`rlp.DeserializationError` if the deserialization fails
     """
+    rlp = str_to_bytes(rlp)
     try:
         item, end = consume_item(rlp, 0)
     except IndexError:
         raise DecodingError('RLP string to short', rlp)
-    if end != len(rlp):
+    if end != len(rlp) and strict:
         msg = 'RLP string ends with {} superfluous bytes'.format(len(rlp) - end)
         raise DecodingError(msg, rlp)
     if sedes:
@@ -179,8 +194,8 @@ def infer_sedes(obj):
     """Try to find a sedes objects suitable for a given Python object.
 
     The sedes objects considered are `obj`'s class, `big_endian_int` and
-    `binary`. If `obj` is a sequence, a :class:`ListSedes` will be constructed
-    recursively.
+    `binary`. If `obj` is a sequence, a :class:`rlp.sedes.List` will be
+    constructed recursively.
 
     :param obj: the python object for which to find a sedes object
     :raises: :exc:`TypeError` if no appropriate sedes could be found

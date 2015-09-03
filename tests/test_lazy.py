@@ -29,6 +29,12 @@ def test_string():
         assert isinstance(dec(), bytes)
         assert len(dec()) == len(s)
         assert dec() == s
+        assert rlp.peek(rlp.encode(s), []) == s
+        with pytest.raises(IndexError):
+            rlp.peek(rlp.encode(s), 0)
+        with pytest.raises(IndexError):
+            rlp.peek(rlp.encode(s), [0])
+
 
 
 def test_nested_list():
@@ -38,13 +44,13 @@ def test_nested_list():
     assert len(dec()) == len(l)
     assert evaluate(dec()) == l
     with pytest.raises(IndexError):
-        assert dec()[0][0]
+        dec()[0][0]
     with pytest.raises(IndexError):
-        assert dec()[1][1]
+        dec()[1][1]
     with pytest.raises(IndexError):
-        assert dec()[2][3]
+        dec()[2][3]
     with pytest.raises(IndexError):
-        assert dec()[3]
+        dec()[3]
 
 
 def test_sedes():
@@ -63,3 +69,13 @@ def test_sedes():
     assert invalid_lazy[1] == l[1]
     with pytest.raises(DeserializationError):
         invalid_lazy[2]
+
+
+def test_peek():
+    assert rlp.peek(rlp.encode(b''), []) == b''
+    nested = rlp.encode([0, 1, [2, 3]])
+    assert rlp.peek(nested, [2, 0], big_endian_int) == 2
+    for index in [3, [3], [0, 0], [2, 2], [2, 1, 0]]:
+        with pytest.raises(IndexError):
+            rlp.peek(nested, index)
+    assert rlp.peek(nested, 2, CountableList(big_endian_int)) == [2, 3]

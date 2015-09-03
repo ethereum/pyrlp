@@ -14,7 +14,8 @@ def is_sedes(obj):
     A sedes object is characterized by having the methods `serialize(obj)` and
     `deserialize(serial)`.
     """
-    return all(hasattr(obj, m) for m in ('serialize', 'deserialize'))
+    # return all(hasattr(obj, m) for m in ('serialize', 'deserialize'))
+    return hasattr(obj, 'serialize') and hasattr(obj, 'deserialize')
 
 
 def is_sequence(obj):
@@ -23,10 +24,18 @@ def is_sequence(obj):
 
 
 class List(list):
-    """A sedes for lists, implemented as a list of other sedes objects."""
 
-    def __init__(self, elements=[]):
+    """A sedes for lists, implemented as a list of other sedes objects.
+
+    :param strict: If true (de)serializing lists that have a length not
+                   matching the sedes length will result in an error. If false
+                   (de)serialization will stop as soon as either one of the
+                   lists runs out of elements.
+    """
+
+    def __init__(self, elements=[], strict=True):
         super(List, self).__init__()
+        self.strict = strict
         for e in elements:
             if is_sedes(e):
                 self.append(e)
@@ -39,7 +48,7 @@ class List(list):
     def serialize(self, obj):
         if not is_sequence(obj):
             raise SerializationError('Can only serialize sequences', obj)
-        if len(self) != len(obj):
+        if self.strict and len(self) != len(obj) or len(self) < len(obj):
             raise SerializationError('List has wrong length', obj)
         return [sedes.serialize(element)
                 for element, sedes in zip(obj, self)]
@@ -48,13 +57,14 @@ class List(list):
         if not is_sequence(serial):
             raise DeserializationError('Can only deserialize sequences',
                                        serial)
-        if len(serial) != len(self):
+        if len(serial) > len(self) or self.strict and len(serial) != len(self):
             raise DeserializationError('List has wrong length', serial)
         return [sedes.deserialize(element)
                 for element, sedes in zip(serial, self)]
 
 
 class CountableList(object):
+
     """A sedes for lists of arbitrary length.
 
     :param element_sedes: when (de-)serializing a list, this sedes will be
@@ -77,6 +87,7 @@ class CountableList(object):
 
 
 class Serializable(object):
+
     """Base class for objects which can be serialized into RLP lists.
 
     :attr:`fields` defines which attributes are serialized and how this is
@@ -134,18 +145,18 @@ class Serializable(object):
     @classmethod
     def serialize(cls, obj):
         if not hasattr(obj, 'fields'):
-            raise SerializationError('Cannot serialize this object', obj)
+            raise SerializationError('Cannot serialize this object (no fields)', obj)
         try:
             field_values = [getattr(obj, field) for field, _ in cls.fields]
         except AttributeError:
-            raise SerializationError('Cannot serialize this object', obj)
+            raise SerializationError('Cannot serialize this object (missing attribute)', obj)
         return cls.get_sedes().serialize(field_values)
 
     @classmethod
     def deserialize(cls, serial, **kwargs):
         values = cls.get_sedes().deserialize(serial)
         params = {field: value for (field, _), value
-                               in zip(cls.fields, values)}
+                  in zip(cls.fields, values)}
         return cls(**dict(list(params.items()) + list(kwargs.items())))
 
     @classmethod
@@ -153,6 +164,6 @@ class Serializable(object):
         """Create a new sedes considering only a reduced set of fields."""
         class SerializableExcluded(cls):
             fields = [(field, sedes) for field, sedes in cls.fields
-                                     if field not in excluded_fields]
+                      if field not in excluded_fields]
             _sedes = None
         return SerializableExcluded
