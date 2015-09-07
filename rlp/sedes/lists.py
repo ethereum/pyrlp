@@ -1,7 +1,9 @@
 """Module for sedes objects that use lists as serialization format."""
 import sys
 from collections import Sequence
-from ..exceptions import SerializationError, DeserializationError
+from ..exceptions import (SerializationError, ListSerializationError, ObjectSerializationError,
+                          DeserializationError, ListDeserializationError,
+                          ObjectDeserializationError)
 from ..sedes.binary import Binary as BinaryClass
 
 if sys.version_info.major == 2:
@@ -47,20 +49,29 @@ class List(list):
 
     def serialize(self, obj):
         if not is_sequence(obj):
-            raise SerializationError('Can only serialize sequences', obj)
+            raise ListSerializationError('Can only serialize sequences', obj)
         if self.strict and len(self) != len(obj) or len(self) < len(obj):
-            raise SerializationError('List has wrong length', obj)
-        return [sedes.serialize(element)
-                for element, sedes in zip(obj, self)]
+            raise ListSerializationError('List has wrong length', obj)
+        result = []
+        for index, (element, sedes) in enumerate(zip(obj, self)):
+            try:
+                result.append(sedes.serialize(element))
+            except SerializationError as e:
+                raise ListSerializationError(obj=obj, element_exception=e, index=index)
+        return result
 
     def deserialize(self, serial):
         if not is_sequence(serial):
-            raise DeserializationError('Can only deserialize sequences',
-                                       serial)
+            raise ListDeserializationError('Can only deserialize sequences', serial)
         if len(serial) > len(self) or self.strict and len(serial) != len(self):
-            raise DeserializationError('List has wrong length', serial)
-        return [sedes.deserialize(element)
-                for element, sedes in zip(serial, self)]
+            raise ListDeserializationError('List has wrong length', serial)
+        result = []
+        for index, (element, sedes) in enumerate(zip(serial, self)):
+            try:
+                result.append(sedes.deserialize(element))
+            except DeserializationError as e:
+                raise ListDeserializationError(serial=serial, element_exception=e, index=index)
+        return result
 
 
 class CountableList(object):
@@ -76,14 +87,25 @@ class CountableList(object):
 
     def serialize(self, obj):
         if not is_sequence(obj):
-            raise SerializationError('Can only serialize sequences', obj)
-        return [self.element_sedes.serialize(e) for e in obj]
+            raise ListSerializationError('Can only serialize sequences', obj)
+        result = []
+        for index, element in enumerate(obj):
+            try:
+                result.append(self.element_sedes.serialize(element))
+            except SerializationError as e:
+                raise ListSerializationError(obj=obj, element_exception=e, index=index)
+        return result
 
     def deserialize(self, serial):
         if not is_sequence(serial):
-            raise DeserializationError('Can only deserialize sequences',
-                                       serial)
-        return [self.element_sedes.deserialize(e) for e in serial]
+            raise ListDeserializationError('Can only deserialize sequences', serial)
+        result = []
+        for index, element in enumerate(serial):
+            try:
+                result.append(self.element_sedes.deserialize(element))
+            except DeserializationError as e:
+                raise ListDeserializationError(serial=serial, element_exception=e, index=index)
+        return result
 
 
 class Serializable(object):
@@ -145,16 +167,24 @@ class Serializable(object):
     @classmethod
     def serialize(cls, obj):
         if not hasattr(obj, 'fields'):
-            raise SerializationError('Cannot serialize this object (no fields)', obj)
+            raise ObjectSerializationError('Cannot serialize this object (no fields)', obj)
         try:
             field_values = [getattr(obj, field) for field, _ in cls.fields]
         except AttributeError:
-            raise SerializationError('Cannot serialize this object (missing attribute)', obj)
-        return cls.get_sedes().serialize(field_values)
+            raise ObjectSerializationError('Cannot serialize this object (missing attribute)', obj)
+        try:
+            result = cls.get_sedes().serialize(field_values)
+        except ListSerializationError as e:
+            raise ObjectSerializationError(obj=obj, sedes=cls, list_exception=e)
+        else:
+            return result
 
     @classmethod
     def deserialize(cls, serial, **kwargs):
-        values = cls.get_sedes().deserialize(serial)
+        try:
+            values = cls.get_sedes().deserialize(serial)
+        except ListDeserializationError as e:
+            raise ObjectDeserializationError(serial=serial, sedes=cls, list_exception=e)
         params = {field: value for (field, _), value
                   in zip(cls.fields, values)}
         return cls(**dict(list(params.items()) + list(kwargs.items())))
