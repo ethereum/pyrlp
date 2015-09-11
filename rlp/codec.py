@@ -61,7 +61,7 @@ def encode_raw(item):
         payload = str_to_bytes(item)
         prefix_offset = 128  # string
     elif isinstance(item, collections.Sequence):
-        payload = b''.join(map(encode_raw, item))
+        payload = b''.join(encode_raw(x) for x in item)
         prefix_offset = 192  # list
     else:
         msg = 'Cannot encode object of type {0}'.format(type(item).__name__)
