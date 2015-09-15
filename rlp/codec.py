@@ -6,7 +6,7 @@ from .utils import (Atomic, str_to_bytes, is_integer, ascii_chr, safe_ord, big_e
                     int_to_big_endian)
 from .sedes.binary import Binary as BinaryClass
 from .sedes import big_endian_int, binary
-from .sedes.lists import List, is_sedes
+from .sedes.lists import List, Serializable, is_sedes
 
 
 if sys.version_info.major == 2:
@@ -16,22 +16,26 @@ if sys.version_info.major == 2:
 def encode(obj, sedes=None, infer_serializer=True):
     """Encode a Python object in RLP format.
 
-    By default, the object is serialized in a suitable way first (using
-    :func:`rlp.infer_sedes`) and then encoded. Serialization can be
-    explicitly suppressed by setting `infer_serializer` to ``False`` and not
-    passing an alternative as `sedes`.
+    By default, the object is serialized in a suitable way first (using :func:`rlp.infer_sedes`)
+    and then encoded. Serialization can be explicitly suppressed by setting `infer_serializer` to
+    ``False`` and not passing an alternative as `sedes`.
 
-    :param sedes: an object implementing a function ``serialize(obj)`` which
-                  will be used to serialize ``obj`` before encoding, or
-                  ``None`` to use the infered one (if any)
-    :param infer_serializer: if ``True`` an appropriate serializer will be
-                             selected using :func:`rlp.infer_sedes` to
-                             serialize `obj` before encoding
+    If `obj` has an attribute :attr:`rlp_` (as, notably, :class:`rlp.Serializable`) and its value
+    is not `None`, this value is returned bypassing serialization and encoding, unless `sedes` is
+    given (as `rlp_` is assumed to refer to the standard serialization which can be replaced by
+    specifying `sedes`).
+
+    :param sedes: an object implementing a function ``serialize(obj)`` which will be used to
+                  serialize ``obj`` before encoding, or ``None`` to use the infered one (if any)
+    :param infer_serializer: if ``True`` an appropriate serializer will be selected using
+                             :func:`rlp.infer_sedes` to serialize `obj` before encoding
     :returns: the RLP encoded item
-    :raises: :exc:`rlp.EncodingError` in the rather unlikely case that the item
-             is too big to encode (will not happen)
+    :raises: :exc:`rlp.EncodingError` in the rather unlikely case that the item is too big to
+             encode (will not happen)
     :raises: :exc:`rlp.SerializationError` if the serialization fails
     """
+    if hasattr(obj, 'rlp_') and obj.rlp_ and sedes is None:
+        return obj.rlp_
     if sedes:
         item = sedes.serialize(obj)
     elif infer_serializer:
@@ -164,16 +168,19 @@ def consume_item(rlp, start):
 def decode(rlp, sedes=None, strict=True, **kwargs):
     """Decode an RLP encoded object.
 
-    :param sedes: an object implementing a function ``deserialize(code)`` which
-                  will be applied after decoding, or ``None`` if no
-                  deserialization should be performed
-    :param \*\*kwargs: additional keyword arguments that will be passed to the
-                     deserializer
-    :param strict: if false inputs that are longer than necessary don't cause
-                   an exception
+    If the deserialized result has an attribute :attr:`rlp_` (e.g. if `sedes` is a subclass of
+    :class:`rlp.sedes.Serializable`) it will be set to `rlp`, which will improve performance on
+    subsequent encode calls. Bear in mind however that `obj` needs to make sure that this value is
+    updated whenever one of its fields changes or prevent such changes entirely
+    (:class:`rlp.sedes.Serializable` does the latter).
+
+    :param sedes: an object implementing a function ``deserialize(code)`` which will be applied
+                  after decoding, or ``None`` if no deserialization should be performed
+    :param \*\*kwargs: additional keyword arguments that will be passed to the deserializer
+    :param strict: if false inputs that are longer than necessary don't cause an exception
     :returns: the decoded and maybe deserialized Python object
-    :raises: :exc:`rlp.DecodingError` if the input string does not end after
-             the root item and `strict` is true
+    :raises: :exc:`rlp.DecodingError` if the input string does not end after the root item and
+             `strict` is true
     :raises: :exc:`rlp.DeserializationError` if the deserialization fails
     """
     rlp = str_to_bytes(rlp)
@@ -185,7 +192,12 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
         msg = 'RLP string ends with {} superfluous bytes'.format(len(rlp) - end)
         raise DecodingError(msg, rlp)
     if sedes:
-        return sedes.deserialize(item, **kwargs)
+        obj = sedes.deserialize(item, **kwargs)
+        if hasattr(obj, 'rlp_'):
+            obj.rlp_ = rlp
+            if isinstance(obj, Serializable):
+                assert not obj.mutable_
+        return obj
     else:
         return item
 

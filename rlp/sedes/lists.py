@@ -126,12 +126,19 @@ class Serializable(object):
                   :attr:`fields`
     :param \*\*kwargs: initial values for all attributes not initialized via
                        positional arguments
+    :ivar rlp_: can be used to store the object's RLP code (by default `None`)
+    :ivar mutable_: if `False`, all attempts to set field values will fail (by
+                    default `True`, unless created with :meth:`deserialize`)
     """
 
     fields = tuple()
     _sedes = None
 
     def __init__(self, *args, **kwargs):
+        # set mutable_ through __dict__ because it is used by __setattr__
+        self.mutable_ = True
+        self.rlp_ = None
+
         # check keyword arguments are known
         field_set = set(field for field, _ in self.fields)
 
@@ -148,6 +155,17 @@ class Serializable(object):
 
         if len(field_set) != 0:
             raise TypeError('Not all fields initialized')
+
+    def __setattr__(self, attr, value):
+        try:
+            mutable = self.mutable_
+        except AttributeError:
+            mutable = True
+            self.__dict__['mutable_'] = True  # don't call __setattr__ again
+        if mutable or attr not in set(field for field, _ in self.fields):
+            super(Serializable, self).__setattr__(attr, value)
+        else:
+            raise ValueError('Tried to mutate immutable object')
 
     def __eq__(self, other):
         """Two objects are equal, if they are equal after serialization."""
@@ -187,7 +205,9 @@ class Serializable(object):
             raise ObjectDeserializationError(serial=serial, sedes=cls, list_exception=e)
         params = {field: value for (field, _), value
                   in zip(cls.fields, values)}
-        return cls(**dict(list(params.items()) + list(kwargs.items())))
+        obj = cls(**dict(list(params.items()) + list(kwargs.items())))
+        obj.mutable_ = False
+        return obj
 
     @classmethod
     def exclude(cls, excluded_fields):
