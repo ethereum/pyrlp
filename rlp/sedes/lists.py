@@ -146,17 +146,23 @@ class Serializable(object):
     def serialize(cls, obj):
         if not hasattr(obj, 'fields'):
             raise SerializationError('Cannot serialize this object (no fields)', obj)
-        try:
-            field_values = [getattr(obj, field) for field, _ in cls.fields]
-        except AttributeError:
-            raise SerializationError('Cannot serialize this object (missing attribute)', obj)
+        field_values = []
+        for field, _ in cls.fields:
+            if not hasattr(obj, field):
+                raise SerializationError(
+                    'Cannot serialize this object (missing attribute %s)' % field, obj)
+            else:
+                field_values.append(getattr(obj, field))
         return cls.get_sedes().serialize(field_values)
 
     @classmethod
-    def deserialize(cls, serial, **kwargs):
+    def deserialize(cls, serial, exclude=None, **kwargs):
         values = cls.get_sedes().deserialize(serial)
         params = {field: value for (field, _), value
                   in zip(cls.fields, values)}
+        if exclude:
+            for k in exclude:
+                del params[k]
         return cls(**dict(list(params.items()) + list(kwargs.items())))
 
     @classmethod
