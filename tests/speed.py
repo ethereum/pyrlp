@@ -116,28 +116,38 @@ def mk_block(num_transactions=10, num_uncles=1):
 rlp.decode(rlp.encode(mk_block()), Block)
 
 
-def test_serialize(block, rounds=100):
+def do_test_serialize(block, rounds=100):
     for i in range(rounds):
         x = rlp.encode(block)
     return x
 
 
-def test_deserialize(data, rounds=100):
+def do_test_deserialize(data, rounds=100, sedes=Block):
     for i in range(rounds):
-        x = rlp.decode(data, sedes=Block)
+        x = rlp.decode(data, sedes)
     return x
 
 
 def main(rounds=10000):
     st = time.time()
-    d = test_serialize(mk_block(), rounds)
+    d = do_test_serialize(mk_block(), rounds)
     elapsed = time.time() - st
-    print 'serializations / sec: %.2f' % (rounds / elapsed)
+    print 'Block serializations / sec: %.2f' % (rounds / elapsed)
 
     st = time.time()
-    d = test_deserialize(d, rounds)
+    d = do_test_deserialize(d, rounds)
     elapsed = time.time() - st
-    print 'deserializations / sec: %.2f' % (rounds / elapsed)
+    print 'Block deserializations / sec: %.2f' % (rounds / elapsed)
+
+    st = time.time()
+    d = do_test_serialize(mk_transaction(), rounds)
+    elapsed = time.time() - st
+    print 'TX serializations / sec: %.2f' % (rounds / elapsed)
+
+    st = time.time()
+    d = do_test_deserialize(d, rounds, sedes=Transaction)
+    elapsed = time.time() - st
+    print 'TX deserializations / sec: %.2f' % (rounds / elapsed)
 
 
 if __name__ == '__main__':
