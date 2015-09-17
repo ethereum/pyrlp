@@ -189,7 +189,8 @@ class Serializable(object):
         try:
             field_values = [getattr(obj, field) for field, _ in cls.fields]
         except AttributeError:
-            raise ObjectSerializationError('Cannot serialize this object (missing attribute)', obj)
+            raise ObjectSerializationError('Cannot serialize this object (missing attribute)',
+                                           obj, field)
         try:
             result = cls.get_sedes().serialize(field_values)
         except ListSerializationError as e:
@@ -198,13 +199,16 @@ class Serializable(object):
             return result
 
     @classmethod
-    def deserialize(cls, serial, **kwargs):
+    def deserialize(cls, serial, exclude=None, **kwargs):
         try:
             values = cls.get_sedes().deserialize(serial)
         except ListDeserializationError as e:
             raise ObjectDeserializationError(serial=serial, sedes=cls, list_exception=e)
         params = {field: value for (field, _), value
                   in zip(cls.fields, values)}
+        if exclude:
+            for k in exclude:
+                del params[k]
         obj = cls(**dict(list(params.items()) + list(kwargs.items())))
         obj.mutable_ = False
         return obj
