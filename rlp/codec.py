@@ -13,36 +13,53 @@ if sys.version_info.major == 2:
     from itertools import imap as map
 
 
-def encode(obj, sedes=None, infer_serializer=True):
+def encode(obj, sedes=None, infer_serializer=True, cache=False):
     """Encode a Python object in RLP format.
 
     By default, the object is serialized in a suitable way first (using :func:`rlp.infer_sedes`)
     and then encoded. Serialization can be explicitly suppressed by setting `infer_serializer` to
     ``False`` and not passing an alternative as `sedes`.
 
-    If `obj` has an attribute :attr:`rlp_` (as, notably, :class:`rlp.Serializable`) and its value
-    is not `None`, this value is returned bypassing serialization and encoding, unless `sedes` is
-    given (as `rlp_` is assumed to refer to the standard serialization which can be replaced by
-    specifying `sedes`).
+    If `obj` has an attribute :attr:`_cached_rlp` (as, notably, :class:`rlp.Serializable`) and its
+    value is not `None`, this value is returned bypassing serialization and encoding, unless
+    `sedes` is given (as the cache is assumed to refer to the standard serialization which can be
+    replaced by specifying `sedes`).
+
+    If `obj` is a :class:`rlp.Serializable` and `cache` is true, the result of the encoding will be
+    stored in :attr:`_cached_rlp` if it is empty and :meth:`rlp.Serializable.make_immutable` will
+    be invoked on `obj`.
 
     :param sedes: an object implementing a function ``serialize(obj)`` which will be used to
                   serialize ``obj`` before encoding, or ``None`` to use the infered one (if any)
     :param infer_serializer: if ``True`` an appropriate serializer will be selected using
                              :func:`rlp.infer_sedes` to serialize `obj` before encoding
+    :param cache: cache the return value in `obj._cached_rlp` if possible and make `obj` immutable
+                  (default `False`)
     :returns: the RLP encoded item
     :raises: :exc:`rlp.EncodingError` in the rather unlikely case that the item is too big to
              encode (will not happen)
     :raises: :exc:`rlp.SerializationError` if the serialization fails
     """
-    if hasattr(obj, 'rlp_') and obj.rlp_ and sedes is None:
-        return obj.rlp_
+    if isinstance(obj, Serializable):
+        if obj._cached_rlp:
+            return obj._cached_rlp
+        else:
+            really_cache = cache
+    else:
+        really_cache = False
+
     if sedes:
         item = sedes.serialize(obj)
     elif infer_serializer:
         item = infer_sedes(obj).serialize(obj)
     else:
         item = obj
-    return encode_raw(item)
+
+    result = encode_raw(item)
+    if really_cache:
+        obj._cached_rlp = result
+        obj.make_immutable()
+    return result
 
 
 class RLPData(str):
@@ -168,10 +185,10 @@ def consume_item(rlp, start):
 def decode(rlp, sedes=None, strict=True, **kwargs):
     """Decode an RLP encoded object.
 
-    If the deserialized result has an attribute :attr:`rlp_` (e.g. if `sedes` is a subclass of
-    :class:`rlp.sedes.Serializable`) it will be set to `rlp`, which will improve performance on
-    subsequent encode calls. Bear in mind however that `obj` needs to make sure that this value is
-    updated whenever one of its fields changes or prevent such changes entirely
+    If the deserialized result `obj` has an attribute :attr:`_cached_rlp` (e.g. if `sedes` is a
+    subclass of :class:`rlp.Serializable`) it will be set to `rlp`, which will improve performance
+    on subsequent :func:`rlp.encode` calls. Bear in mind however that `obj` needs to make sure that
+    this value is updated whenever one of its fields changes or prevent such changes entirely
     (:class:`rlp.sedes.Serializable` does the latter).
 
     :param sedes: an object implementing a function ``deserialize(code)`` which will be applied
@@ -193,10 +210,9 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
         raise DecodingError(msg, rlp)
     if sedes:
         obj = sedes.deserialize(item, **kwargs)
-        if hasattr(obj, 'rlp_'):
-            obj.rlp_ = rlp
-            if isinstance(obj, Serializable):
-                assert not obj.mutable_
+        if hasattr(obj, '_cached_rlp'):
+            obj._cached_rlp = rlp
+            assert not isinstance(obj, Serializable) or not obj.is_mutable()
         return obj
     else:
         return item

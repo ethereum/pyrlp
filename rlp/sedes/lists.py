@@ -126,8 +126,9 @@ class Serializable(object):
                   :attr:`fields`
     :param \*\*kwargs: initial values for all attributes not initialized via
                        positional arguments
-    :ivar rlp_: can be used to store the object's RLP code (by default `None`)
-    :ivar mutable_: if `False`, all attempts to set field values will fail (by
+    :ivar _cached_rlp: can be used to store the object's RLP code (by default
+                       `None`)
+    :ivar _mutable: if `False`, all attempts to set field values will fail (by
                     default `True`, unless created with :meth:`deserialize`)
     """
 
@@ -135,9 +136,8 @@ class Serializable(object):
     _sedes = None
 
     def __init__(self, *args, **kwargs):
-        # set mutable_ through __dict__ because it is used by __setattr__
-        self.mutable_ = True
-        self.rlp_ = None
+        self._mutable = True
+        self._cached_rlp = None
 
         # check keyword arguments are known
         field_set = set(field for field, _ in self.fields)
@@ -158,10 +158,10 @@ class Serializable(object):
 
     def __setattr__(self, attr, value):
         try:
-            mutable = self.mutable_
+            mutable = self.is_mutable()
         except AttributeError:
             mutable = True
-            self.__dict__['mutable_'] = True  # don't call __setattr__ again
+            self.__dict__['_mutable'] = True  # don't call __setattr__ again
         if mutable or attr not in set(field for field, _ in self.fields):
             super(Serializable, self).__setattr__(attr, value)
         else:
@@ -175,6 +175,18 @@ class Serializable(object):
 
     def __ne__(self, other):
         return not self == other
+
+    def is_mutable(self):
+        """Checks if the object is mutable"""
+        return self._mutable
+
+    def make_immutable(self):
+        """Make it immutable to prevent accidental changes.
+
+        `obj.make_immutable` is equivalent to `make_immutable(obj)`, but doesn't return
+        anything.
+        """
+        make_immutable(self)
 
     @classmethod
     def get_sedes(cls):
@@ -210,7 +222,7 @@ class Serializable(object):
             for k in exclude:
                 del params[k]
         obj = cls(**dict(list(params.items()) + list(kwargs.items())))
-        obj.mutable_ = False
+        obj._mutable = False
         return obj
 
     @classmethod
@@ -221,3 +233,28 @@ class Serializable(object):
                       if field not in excluded_fields]
             _sedes = None
         return SerializableExcluded
+
+
+def make_immutable(x):
+    """Do your best to make `x` as immutable as possible.
+
+    If `x` is a sequence, apply this function recursively to all elements and return a tuple
+    containing them. If `x` is an instance of :class:`rlp.Serializable`, apply this function to its
+    fields, and set :attr:`_mutable` to `False`. If `x` is neither of the above, just return `x`.
+
+    :returns: `x` after making it immutable
+    """
+    if isinstance(x, Serializable):
+        x._mutable = True
+        for field, _ in x.fields:
+            attr = getattr(x, field)
+            try:
+                setattr(x, field, make_immutable(attr))
+            except AttributeError:
+                pass  # respect read only properties
+        x._mutable = False
+        return x
+    elif is_sequence(x):
+        return tuple(make_immutable(element) for element in x)
+    else:
+        return x
