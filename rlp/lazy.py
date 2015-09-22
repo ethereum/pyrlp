@@ -83,13 +83,13 @@ class LazyList(Sequence):
         self.end = end
         self.index = start
         self._elements = []
-        self.len_ = None
+        self._len = None
         self.sedes = sedes
         self.sedes_kwargs = sedes_kwargs
 
     def next(self):
         if self.index == self.end:
-            self.len_ = len(self._elements)
+            self._len = len(self._elements)
             raise StopIteration
         assert self.index < self.end
         item, end = consume_item_lazy(self.rlp, self.index)
@@ -109,7 +109,7 @@ class LazyList(Sequence):
         return self._elements[i]
 
     def __len__(self):
-        if not self.len_:
+        if not self._len:
             try:
                 while True:
                     self.next()
