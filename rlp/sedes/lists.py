@@ -71,7 +71,7 @@ class List(list):
                 result.append(sedes.deserialize(element))
             except DeserializationError as e:
                 raise ListDeserializationError(serial=serial, element_exception=e, index=index)
-        return result
+        return tuple(result)
 
 
 class CountableList(object):
@@ -105,7 +105,7 @@ class CountableList(object):
                 result.append(self.element_sedes.deserialize(element))
             except DeserializationError as e:
                 raise ListDeserializationError(serial=serial, element_exception=e, index=index)
-        return result
+        return tuple(result)
 
 
 class Serializable(object):

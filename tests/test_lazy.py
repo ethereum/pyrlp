@@ -7,7 +7,7 @@ from rlp.sedes import big_endian_int, CountableList
 
 def evaluate(lazy_list):
     if isinstance(lazy_list, rlp.lazy.LazyList):
-        return [evaluate(e) for e in lazy_list]
+        return tuple(evaluate(e) for e in lazy_list)
     else:
         return lazy_list
 
@@ -20,7 +20,7 @@ def test_empty_list():
     with pytest.raises(IndexError):
         dec()[1]
     assert len(dec()) == 0
-    assert evaluate(dec()) == []
+    assert evaluate(dec()) == ()
 
 
 def test_string():
@@ -36,9 +36,8 @@ def test_string():
             rlp.peek(rlp.encode(s), [0])
 
 
-
 def test_nested_list():
-    l = [[], [b'a'], [b'b', b'c', b'd']]
+    l = ((), (b'a'), (b'b', b'c', b'd'))
     dec = lambda: rlp.decode_lazy(rlp.encode(l))
     assert isinstance(dec(), Sequence)
     assert len(dec()) == len(l)
@@ -55,15 +54,15 @@ def test_nested_list():
 
 def test_sedes():
     ls = [
-        [],
-        [1],
-        [3, 2, 1]
+        (),
+        (1,),
+        (3, 2, 1)
     ]
     for l in ls:
         assert evaluate(rlp.decode_lazy(rlp.encode(l), big_endian_int)) == l
 
     sedes = CountableList(big_endian_int)
-    l = [[], [1, 2], 'asdf', [3]]
+    l = [(), (1, 2), 'asdf', (3)]
     invalid_lazy = rlp.decode_lazy(rlp.encode(l), sedes)
     assert invalid_lazy[0] == l[0]
     assert invalid_lazy[1] == l[1]
@@ -78,4 +77,4 @@ def test_peek():
     for index in [3, [3], [0, 0], [2, 2], [2, 1, 0]]:
         with pytest.raises(IndexError):
             rlp.peek(nested, index)
-    assert rlp.peek(nested, 2, CountableList(big_endian_int)) == [2, 3]
+    assert rlp.peek(nested, 2, CountableList(big_endian_int)) == (2, 3)

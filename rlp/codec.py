@@ -41,10 +41,10 @@ def encode(obj, sedes=None, infer_serializer=True, cache=False):
     :raises: :exc:`rlp.SerializationError` if the serialization fails
     """
     if isinstance(obj, Serializable):
-        if obj._cached_rlp:
+        if obj._cached_rlp and sedes is None:
             return obj._cached_rlp
         else:
-            really_cache = cache
+            really_cache = cache if sedes is None else False
     else:
         really_cache = False
 

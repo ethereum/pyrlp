@@ -1,7 +1,16 @@
 import json
+import sys
 import pytest
 import rlp
 from rlp import encode, decode, decode_lazy, infer_sedes, utils, DecodingError
+
+
+if sys.version_info.major == 2:
+    str_types = (str, unicode)
+elif sys.version_info.major == 3:
+    str_types = bytes
+else:
+    assert False
 
 
 def evaluate(ll):
@@ -10,6 +19,7 @@ def evaluate(ll):
     else:
         return ll
 
+
 def to_bytes(value):
     if isinstance(value, str):
         return utils.str_to_bytes(value)
@@ -17,6 +27,20 @@ def to_bytes(value):
         return [to_bytes(v) for v in value]
     else:
         return value
+
+
+def compare_nested(got, expected):
+    if isinstance(got, str_types):
+        return got == expected
+    try:
+        zipped = zip(got, expected)
+    except TypeError:
+        return got == expected
+    else:
+        if len(list(zipped)) == len(got) == len(expected):
+            return all(compare_nested(x, y) for x, y in zipped)
+        else:
+            return False
 
 with open('tests/rlptest.json') as f:
     test_data = json.loads(f.read())
@@ -48,7 +72,7 @@ def test_decode(name, in_out):
     expected = in_out['in']
     sedes = infer_sedes(expected)
     data = sedes.deserialize(decoded)
-    assert data == decode(rlp_string, sedes)
+    assert compare_nested(data, decode(rlp_string, sedes))
 
-    if data != expected:
+    if not compare_nested(data, expected):
         pytest.fail(msg_format.format(name, rlp_string, decoded, expected))

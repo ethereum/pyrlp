@@ -6,7 +6,7 @@ from rlp import SerializationError
 
 def test_countable_list():
     l1 = CountableList(big_endian_int)
-    serializable = ([], [1, 2], list(range(500)))
+    serializable = [(), (1, 2), tuple(range(500))]
     for s in serializable:
         r = l1.serialize(s)
         assert l1.deserialize(r) == s
@@ -16,8 +16,8 @@ def test_countable_list():
             l1.serialize(n)
 
     l2 = CountableList(CountableList(big_endian_int))
-    serializable = ([], [[]], [[1, 2, 3], [4]], [[5], [6, 7, 8]], [[], [],
-                    [9, 0]])
+    serializable = ((), ((),), ((1, 2, 3), (4,)), ((5,), (6, 7, 8)), ((), (),
+                    (9, 0)))
     for s in serializable:
         r = l2.serialize(s)
         assert l2.deserialize(r) == s
