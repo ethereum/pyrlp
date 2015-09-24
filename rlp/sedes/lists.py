@@ -80,10 +80,12 @@ class CountableList(object):
 
     :param element_sedes: when (de-)serializing a list, this sedes will be
                           applied to all of its elements
+    :param max_length: maximum number of allowed elements, or `None` for no limit
     """
 
-    def __init__(self, element_sedes):
+    def __init__(self, element_sedes, max_length=None):
         self.element_sedes = element_sedes
+        self.max_length = max_length
 
     def serialize(self, obj):
         if not is_sequence(obj):
@@ -94,6 +96,9 @@ class CountableList(object):
                 result.append(self.element_sedes.serialize(element))
             except SerializationError as e:
                 raise ListSerializationError(obj=obj, element_exception=e, index=index)
+        if self.max_length is not None and len(result) > self.max_length:
+            raise ListSerializationError('Too many elements ({}, allowed '
+                                         '{})'.format(len(result), self.max_length))
         return result
 
     def deserialize(self, serial):
@@ -105,6 +110,9 @@ class CountableList(object):
                 result.append(self.element_sedes.deserialize(element))
             except DeserializationError as e:
                 raise ListDeserializationError(serial=serial, element_exception=e, index=index)
+            if self.max_length is not None and index >= self.max_length:
+                raise ListDeserializationError('Too many elements (more than '
+                                               '{})'.format(self.max_length), serial)
         return tuple(result)
 
 
