@@ -63,14 +63,26 @@ class List(list):
     def deserialize(self, serial):
         if not is_sequence(serial):
             raise ListDeserializationError('Can only deserialize sequences', serial)
-        if len(serial) > len(self) or self.strict and len(serial) != len(self):
-            raise ListDeserializationError('List has wrong length', serial)
         result = []
-        for index, (element, sedes) in enumerate(zip(serial, self)):
+        index = -1
+        serial_iterator = iter(serial)
+        for index, (element, sedes) in enumerate(zip(serial_iterator, self)):
             try:
                 result.append(sedes.deserialize(element))
             except DeserializationError as e:
                 raise ListDeserializationError(serial=serial, element_exception=e, index=index)
+        # length should not be checked before with `len` because this would consume lazy lists
+        try:
+            serial_iterator.next()
+        except StopIteration:
+            if index + 1 == len(self):
+                correct_length = True
+            else:
+                correct_length = False
+        else:
+            correct_length = False
+        if self.strict and not correct_length:
+            raise ListDeserializationError('List has wrong length', serial)
         return tuple(result)
 
 
