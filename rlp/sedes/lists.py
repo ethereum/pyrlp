@@ -1,6 +1,7 @@
 """Module for sedes objects that use lists as serialization format."""
 import sys
 from collections import Sequence
+from itertools import count
 from ..exceptions import (SerializationError, ListSerializationError, ObjectSerializationError,
                           DeserializationError, ListDeserializationError,
                           ObjectDeserializationError)
@@ -64,25 +65,28 @@ class List(list):
         if not is_sequence(serial):
             raise ListDeserializationError('Can only deserialize sequences', serial)
         result = []
-        index = -1
-        serial_iterator = iter(serial)
-        for index, (element, sedes) in enumerate(zip(serial_iterator, self)):
+        element_iterator = iter(serial)
+        sedes_iterator = iter(self)
+        elements_consumed = False
+        sedes_consumed = False
+        for index in count():
             try:
-                result.append(sedes.deserialize(element))
-            except DeserializationError as e:
-                raise ListDeserializationError(serial=serial, element_exception=e, index=index)
-        # length should not be checked before with `len` because this would consume lazy lists
-        try:
-            next(serial_iterator)
-        except StopIteration:
-            if index + 1 == len(self):
-                correct_length = True
+                element = next(element_iterator)
+            except StopIteration:
+                elements_consumed = True
+            try:
+                sedes = next(sedes_iterator)
+            except StopIteration:
+                sedes_consumed = True
+            if not (sedes_consumed or elements_consumed):
+                try:
+                    result.append(sedes.deserialize(element))
+                except DeserializationError as e:
+                    raise ListDeserializationError(serial=serial, element_exception=e, index=index)
             else:
-                correct_length = False
-        else:
-            correct_length = False
-        if self.strict and not correct_length:
-            raise ListDeserializationError('List has wrong length', serial)
+                if self.strict and not (sedes_consumed and elements_consumed):
+                    raise ListDeserializationError('List has wrong length', serial)
+                break
         return tuple(result)
 
 

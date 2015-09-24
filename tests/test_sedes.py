@@ -1,7 +1,7 @@
 import pytest
-from rlp import SerializationError
-from rlp import infer_sedes, Serializable, encode, decode
-from rlp.sedes import big_endian_int, binary, List
+from rlp import SerializationError, DeserializationError
+from rlp import infer_sedes
+from rlp.sedes import big_endian_int, binary, List, CountableList
 
 
 def test_inference():
@@ -47,3 +47,17 @@ def test_list_sedes():
     for d in ([], [[], [], [[[]]]], [[], [5, 6], [[]]]):
         with pytest.raises(SerializationError):
             l3.serialize(d)
+
+    c = CountableList(big_endian_int)
+    assert l1.deserialize(c.serialize([])) == ()
+    for s in (c.serialize(l) for l in [[1], [1, 2, 3], range(30), (4, 3)]):
+        with pytest.raises(DeserializationError):
+            l1.deserialize(s)
+
+    valid = [(1, 2), (3, 4), (9, 8)]
+    for s, v in ((c.serialize(v), v) for v in valid):
+        assert l2.deserialize(s) == v
+    invalid = [[], [1], [1, 2, 3]]
+    for s in (c.serialize(i) for i in invalid):
+        with pytest.raises(DeserializationError):
+            l2.deserialize(s)
