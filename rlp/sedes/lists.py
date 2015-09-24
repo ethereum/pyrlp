@@ -201,8 +201,7 @@ class Serializable(object):
         try:
             field_values = [getattr(obj, field) for field, _ in cls.fields]
         except AttributeError:
-            raise ObjectSerializationError('Cannot serialize this object (missing attribute)',
-                                           obj, field)
+            raise ObjectSerializationError('Cannot serialize this object (missing attribute)', obj)
         try:
             result = cls.get_sedes().serialize(field_values)
         except ListSerializationError as e:
