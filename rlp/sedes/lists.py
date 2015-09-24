@@ -73,7 +73,7 @@ class List(list):
                 raise ListDeserializationError(serial=serial, element_exception=e, index=index)
         # length should not be checked before with `len` because this would consume lazy lists
         try:
-            serial_iterator.next()
+            next(serial_iterator)
         except StopIteration:
             if index + 1 == len(self):
                 correct_length = True
