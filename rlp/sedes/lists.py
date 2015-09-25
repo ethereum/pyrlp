@@ -158,10 +158,10 @@ class Serializable(object):
 
     fields = tuple()
     _sedes = None
+    _mutable = True
+    _cached_rlp = None
 
     def __init__(self, *args, **kwargs):
-        self._mutable = True
-        self._cached_rlp = None
 
         # check keyword arguments are known
         field_set = set(field for field, _ in self.fields)
