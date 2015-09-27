@@ -29,7 +29,6 @@ with open('README.md') as readme_file:
 
 test_requirements = [
     'pytest',
-    'pytest-benchmark'
 ]
 
 setup(

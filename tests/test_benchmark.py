@@ -7,6 +7,21 @@ from rlp.sedes import binary, CountableList
 from rlp.exceptions import DecodingError, DeserializationError
 
 
+try:
+    import pytest_benchmark
+except ImportError:
+    do_benchmark = False
+else:
+    do_benchmark = True
+
+
+# speed up setup in case tests aren't run anyway
+if do_benchmark:
+    SIZE = int(1e6)
+else:
+    SIZE = 1
+
+
 class Message(rlp.Serializable):
 
     fields = [
@@ -14,9 +29,6 @@ class Message(rlp.Serializable):
         ('field2', binary),
         ('field3', CountableList(binary, max_length=100))
     ]
-
-
-SIZE = int(1e6)
 
 
 def lazy_test_factory(s, valid):
@@ -77,8 +89,8 @@ def generate_test_functions():
 
     current_module = sys.modules[__name__]
     for rlp_string, valid, name in zip(rlp_strings, valids, names):
-        f_eager = eager_test_factory(rlp_string, valid)
-        f_lazy = lazy_test_factory(rlp_string, valid)
+        f_eager = pytest.mark.skipif('not do_benchmark')(eager_test_factory(rlp_string, valid))
+        f_lazy = pytest.mark.skipif('not do_benchmark')(lazy_test_factory(rlp_string, valid))
         setattr(current_module, 'test_eager_' + name, f_eager)
         setattr(current_module, 'test_lazy_' + name, f_lazy)
 
