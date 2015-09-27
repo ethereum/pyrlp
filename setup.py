@@ -28,7 +28,8 @@ with open('README.md') as readme_file:
     readme = readme_file.read()
 
 test_requirements = [
-    'pytest'
+    'pytest',
+    'pytest-benchmark'
 ]
 
 setup(
