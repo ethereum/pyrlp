@@ -243,7 +243,8 @@ class Serializable(object):
                   in zip(cls.fields, values)}
         if exclude:
             for k in exclude:
-                del params[k]
+                if k in params:
+                    del params[k]
         obj = cls(**dict(list(params.items()) + list(kwargs.items())))
         obj._mutable = False
         return obj
