@@ -217,6 +217,19 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
     else:
         return item
 
+def descend(rlp, *path):
+    rlp = str_to_bytes(rlp)
+    for p in path:
+        pos = 0
+        _typ, _len, pos = consume_length_prefix(rlp, pos)
+        if _typ != list:
+            raise DecodingError('Trying to descend through a non-list!', rlp)
+        for i in range(p):
+            _, _l, _p = consume_length_prefix(rlp, pos)
+            pos = _l + _p
+        _, _l, _p = consume_length_prefix(rlp, pos)
+        rlp = rlp[pos: _p + _l]
+    return rlp
 
 def infer_sedes(obj):
     """Try to find a sedes objects suitable for a given Python object.
