@@ -1,6 +1,7 @@
 import pytest
 from rlp import SerializationError, utils
 from rlp.sedes import big_endian_int, BigEndianInt
+from rlp.utils import int_to_big_endian
 
 valid_data = (
     (256, b'\x01\x00'),
@@ -12,6 +13,7 @@ single_bytes = ((n, utils.ascii_chr(n)) for n in range(1, 256))
 
 random_integers = (256, 257, 4839, 849302, 483290432, 483290483290482039482039,
                    48930248348219540325894323584235894327865439258743754893066)
+assert random_integers[-1] < 2**256
 
 negative_ints = (-1, -100, -255, -256, -2342423)
 
@@ -55,3 +57,80 @@ def test_fixedlength():
     for i in (256**4, 256**4 + 1, 256**5, -1, -256, 'asdf'):
         with pytest.raises(SerializationError):
             s.serialize(i)
+
+
+import binascii
+
+
+def packl(lnum):
+    """Packs the lnum (which must be convertable to a long) into a
+       byte string 0 padded to a multiple of padmultiple bytes in size. 0
+       means no padding whatsoever, so that packing 0 result in an empty
+       string.  The resulting byte string is the big-endian two's
+       complement representation of the passed in long."""
+
+    if lnum == 0:
+        return b'\0'
+    s = hex(lnum)[2:]
+    s = s.rstrip('L')
+    if len(s) & 1:
+        s = '0' + s
+    s = binascii.unhexlify(s)
+    return s
+
+
+try:
+    import ctypes
+    PyLong_AsByteArray = ctypes.pythonapi._PyLong_AsByteArray
+    PyLong_AsByteArray.argtypes = [ctypes.py_object,
+                                   ctypes.c_char_p,
+                                   ctypes.c_size_t,
+                                   ctypes.c_int,
+                                   ctypes.c_int]
+    import sys
+    long_start = sys.maxint + 1
+
+    def packl_ctypes(lnum):
+        if lnum < long_start:
+            return int_to_big_endian(lnum)
+        a = ctypes.create_string_buffer(lnum.bit_length() // 8 + 1)
+        PyLong_AsByteArray(lnum, a, len(a), 0, 1)
+        return a.raw.lstrip('\0')
+except AttributeError:
+    packl_ctypes = packl
+
+
+def test_packl():
+    for i in range(256):
+        v = 2**i - 1
+        rc = packl_ctypes(v)
+        assert rc == int_to_big_endian(v)
+        r = packl(v)
+        assert r == int_to_big_endian(v)
+
+
+def perf():
+    import time
+
+    st = time.time()
+    for j in range(100000):
+        for i in random_integers:
+            packl(i)
+    print 'packl elapsed {}'.format(time.time() - st)
+
+    st = time.time()
+    for j in range(100000):
+        for i in random_integers:
+            packl_ctypes(i)
+    print 'ctypes elapsed {}'.format(time.time() - st)
+
+    st = time.time()
+    for j in range(100000):
+        for i in random_integers:
+            int_to_big_endian(i)
+    print 'py elapsed {}'.format(time.time() - st)
+
+
+if __name__ == '__main__':
+    # test_packl()
+    perf()

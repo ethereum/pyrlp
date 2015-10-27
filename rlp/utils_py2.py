@@ -1,5 +1,6 @@
 import abc
 import struct
+import binascii
 
 
 class Atomic(object):
@@ -16,13 +17,26 @@ str_to_bytes = bytes_to_str = str
 ascii_chr = chr
 
 
-def int_to_big_endian(value):
+def _old_int_to_big_endian(value):
     cs = []
     while value > 0:
         cs.append(chr(value % 256))
         value /= 256
     s = ''.join(reversed(cs))
     return s
+
+
+def packl(lnum):
+    if lnum == 0:
+        return b'\0'
+    s = hex(lnum)[2:]
+    s = s.rstrip('L')
+    if len(s) & 1:
+        s = '0' + s
+    s = binascii.unhexlify(s)
+    return s
+
+int_to_big_endian = packl
 
 
 def big_endian_to_int(value):
