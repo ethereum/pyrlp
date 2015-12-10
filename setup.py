@@ -31,9 +31,13 @@ test_requirements = [
     'pytest',
 ]
 
+# *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
+# see: https://github.com/ethereum/pyethapp/wiki/Development:-Versions-and-Releases
+version = '0.4.3'
+
 setup(
     name='rlp',
-    version='0.4.3',
+    version=version,
     description="A package for encoding and decoding data in and from Recursive Length Prefix notation",
     long_description=readme,
     author="jnnk",
