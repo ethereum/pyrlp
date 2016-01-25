@@ -69,12 +69,12 @@ class ObjectSerializationError(SerializationError):
     def __init__(self, message=None, obj=None, sedes=None, list_exception=None):
         if message is None:
             assert list_exception is not None
-            assert sedes is not None
             if list_exception.element_exception is None:
                 field = None
                 message = ('Serialization failed because of underlying list '
                            '("{}")'.format(str(list_exception)))
             else:
+                assert sedes is not None
                 field = sedes.fields[list_exception.index][0]
                 message = ('Serialization failed because of field {} '
                            '("{}")'.format(field, str(list_exception.element_exception)))
