@@ -1,20 +1,30 @@
 language: python
+sudo: false
+env:
+  - TOXENV=py27
+  - TOXENV=pypy
+#  - TOXENV=py33
+#  - TOXENV=py34
+#  - TOXENV=py35
+#  - TOXENV=pypy3
 
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "pypy"
-  - "pypy3"
-
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
- - pip install -r requirements.txt
+ - pip install tox
  - pip install coveralls
 
-# command to run tests, e.g. python setup.py test
 script:
-  - coverage run --source pyethapp setup.py test
+  - tox
 
 after_success:
   - coveralls
+
+deploy:
+  provider: pypi
+  user: ethereum_pypi_automated
+  password:
+    secure: "aekJDPTyOt3xFI+4nJav0Oc6PlaD6R/rmcCH+Br6G3+L5cI5TWOPmukjPw4CZ/Q6HPPZbKV4B6OYDvEcGrt+9gIWPN44cfk7iGe1MFav1B//H+vEXfUEHpNZuNyhsKkKx5RvDHAbmJZv69kgTsm9JGgv0z+Q5b46Zn6erovsBEs="
+  on:
+    tags: true
+    repo: ethereum/pyrlp
+    branch: develop
+  distributions: "sdist bdist_wheel"
