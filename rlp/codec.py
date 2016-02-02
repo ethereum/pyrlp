@@ -160,7 +160,9 @@ def consume_payload(rlp, start, type_, length):
         next_item_start = start
         end = next_item_start + length
         while next_item_start < end:
-            item, next_item_start = consume_item(rlp, next_item_start)
+            # item, next_item_start = consume_item(rlp, next_item_start)
+            t, l, s = consume_length_prefix(rlp, next_item_start)
+            item, next_item_start = consume_payload(rlp, s, t, l)
             items.append(item)
         if next_item_start > end:
             raise DecodingError('List length prefix announced a too small '
@@ -251,3 +253,58 @@ def infer_sedes(obj):
         return List(map(infer_sedes, obj))
     msg = 'Did not find sedes handling type {}'.format(type(obj).__name__)
     raise TypeError(msg)
+
+def append(rlpdata, obj):
+    _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
+    assert _typ is list
+    rlpdata = rlpdata[_pos:] + encode(obj)
+    prefix = length_prefix(len(rlpdata), 192)
+    return prefix + rlpdata
+
+def insert(rlpdata, index, obj):
+    _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
+    _beginpos = _pos
+    assert _typ is list
+    for i in range(index):
+        _, _l, _p = consume_length_prefix(rlpdata, _pos)
+        _pos = _l + _p
+        if _l + _p >= len(rlpdata):
+            break
+    rlpdata = rlpdata[_beginpos:_pos] + encode(obj) + rlpdata[_pos:]
+    prefix = length_prefix(len(rlpdata), 192)
+    return prefix + rlpdata
+
+def pop(rlpdata, index=2**50):
+    _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
+    _initpos = _pos
+    assert _typ is list
+    while index > 0:
+        _, _l, _p = consume_length_prefix(rlpdata, _pos)
+        if _l + _p >= len(rlpdata):
+            break
+        _pos = _l + _p
+        index -= 1
+    _, _l, _p = consume_length_prefix(rlpdata, _pos)
+    newdata = rlpdata[_initpos:_pos] + rlpdata[_l + _p:]
+    prefix = length_prefix(len(newdata), 192)
+    return prefix + newdata
+
+EMPTYLIST = encode([])
+
+def compare_length(rlpdata, length):
+    _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
+    _initpos = _pos
+    assert _typ is list
+    lenlist = 0
+    if rlpdata == EMPTYLIST:
+        return 1 if length > 0 else -1 if length < 0 else 0
+    while 1:
+        if lenlist > length:
+            return 1
+        _, _l, _p = consume_length_prefix(rlpdata, _pos)
+        lenlist += 1
+        if _l + _p >= len(rlpdata):
+            break
+        _pos = _l + _p
+    return 0 if lenlist == length else -1
+    
