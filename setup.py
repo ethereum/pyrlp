@@ -37,7 +37,7 @@ version = '0.4.4'
 
 setup(
     name='rlp',
-    version='0.4.2',
+    version=version,
     description="A package for encoding and decoding data in and from Recursive Length Prefix notation",
     long_description=readme,
     author="jnnk",
