@@ -297,7 +297,7 @@ def compare_length(rlpdata, length):
     assert _typ is list
     lenlist = 0
     if rlpdata == EMPTYLIST:
-        return 1 if length > 0 else -1 if length < 0 else 0
+        return -1 if length > 0 else 1 if length < 0 else 0
     while 1:
         if lenlist > length:
             return 1
