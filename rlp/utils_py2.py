@@ -64,4 +64,7 @@ def encode_hex(s):
     return s.encode('hex')
 
 
-safe_ord = ord
+def safe_ord(s):
+    if isinstance(s, int):
+        return s
+    return ord(s)
