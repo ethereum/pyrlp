@@ -53,12 +53,16 @@ def is_integer(value):
 
 
 def decode_hex(s):
+    if isinstance(s, bytearray):
+        s = str(s)
     if not isinstance(s, (str, unicode)):
         raise TypeError('Value must be an instance of str or unicode')
     return s.decode('hex')
 
 
 def encode_hex(s):
+    if isinstance(s, bytearray):
+        s = str(s)
     if not isinstance(s, (str, unicode)):
         raise TypeError('Value must be an instance of str or unicode')
     return s.encode('hex')
