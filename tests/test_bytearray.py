@@ -25,8 +25,8 @@ def test_bytearray_encode_decode():
 
 
 def test_big_endian_to_int():
-    assert rlp.utils.big_endian_to_int('\x00') == 0
-    assert rlp.utils.big_endian_to_int(bytearray('\x00')) == 0
+    assert rlp.utils.big_endian_to_int(b'\x00') == 0
+    assert rlp.utils.big_endian_to_int(bytearray(b'\x00')) == 0
 
     value = struct.pack('>Q', 3141516)
     assert rlp.utils.big_endian_to_int(value) == 3141516
