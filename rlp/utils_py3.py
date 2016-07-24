@@ -3,7 +3,7 @@ import binascii
 from math import ceil
 
 
-class Atomic(metaclass = abc.ABCMeta):
+class Atomic(type.__new__(abc.ABCMeta, 'metaclass', (), {})):
     """ABC for objects that can be RLP encoded as is."""
     pass
 
