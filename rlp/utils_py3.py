@@ -31,7 +31,9 @@ def ascii_chr(value):
 
 
 def int_to_big_endian(value):
-    byte_length = ceil(value.bit_length() / 8)
+    # bit_length() returns 0 for value 0 which causes an empty string
+    # return when passed as size to to_bytes()
+    byte_length = ceil(value.bit_length() / 8) or 1
     return (value).to_bytes(byte_length, byteorder='big')
 
 
