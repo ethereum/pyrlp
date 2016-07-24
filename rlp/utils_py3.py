@@ -54,7 +54,7 @@ def decode_hex(s):
 def encode_hex(b):
     if isinstance(b, str):
         b = bytes(b, 'utf-8')
-    if isinstance(b, bytes):
+    if isinstance(b, (bytes, bytearray)):
         return binascii.hexlify(b)
     raise TypeError('Value must be an instance of str or bytes')
 
