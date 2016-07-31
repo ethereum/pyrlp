@@ -130,6 +130,8 @@ def consume_length_prefix(rlp, start):
         if rlp[start + 1:start + 2] == b'\x00':
             raise DecodingError('Length starts with zero bytes', rlp)
         l = big_endian_to_int(rlp[start + 1:start + 1 + ll])
+        if l < 56:
+            raise DecodingError('Long string prefix used for short string', rlp)
         return (str, l, start + 1 + ll)
     elif b0 < 192 + 56:  # short list
         return (list, b0 - 192, start + 1)
