@@ -22,7 +22,7 @@ encode these kinds of objects, use :func:`rlp.encode`::
     '\xb88Lorem ipsum dolor sit amet, consetetur sadipscing elitr.'
     >>> encode([])
     '\xc0'
-    >>> encode(['this', ['is', ('a', ('nested', 'list', []))]]) 
+    >>> encode(['this', ['is', ('a', ('nested', 'list', []))]])
     '\xd9\x84this\xd3\x82is\xcfa\xcd\x86nested\x84list\xc0'
 
 
@@ -70,39 +70,39 @@ pass this sedes to :func:`rlp.decode`::
     1503
 
 
-For unicode strings, there's the sedes :mod:`rlp.sedes.text`, which uses UTF-8
+For unicode strings, there's the sedes :mod:`rlp.sedes.binary`, which uses UTF-8
 to convert to and from byte strings::
 
-    >>> from rlp.text import text
-    >>> encode(u'Ðapp')
+    >>> from rlp.sedes import binary
+    >>> encode('Ðapp')
     '\x85\xc3\x90app'
-    >>> decode('\x85\xc3\x90app', text)
+    >>> decode('\x85\xc3\x90app', binary)
     u'\xd0app'
-    >>> print decode('\x85\xc3\x90app', text)
+    >>> print decode('\x85\xc3\x90app', binary)
     Ðapp
 
 
 Lists are a bit more difficult as they can contain arbitrarily complex
 combinations of types. Therefore, we need to create a sedes object specific for
 each list type. As base class for this we can use
-:class:`rlp.sedes.ListSedes`::
+:class:`rlp.sedes.List`::
 
-    >>> from rlp.sedes import ListSedes
+    >>> from rlp.sedes import List
     >>> encode([5, 'fdsa', 0])
-    '\xc7\x05\x84fdsa\x00'
-    >>> sedes = ListSedes([big_endian_int, text, big_endian_int])
-    >>> decode('\xc7\x05\x84fdsa\x00', sedes)
+    '\xc7\x05\x84fdsa\x80'
+    >>> sedes = List([big_endian_int, binary, big_endian_int])
+    >>> decode('\xc7\x05\x84fdsa\x80', sedes)
     [5, u'fdsa', 0]
 
 
-Unsurprisingly, it is also possible to nest :class:`rlp.ListSedes` objects::
+Unsurprisingly, it is also possible to nest :class:`rlp.List` objects::
 
-    >>> inner = ListSedes([text, text])
-    >>> outer = ListSedes([inner, inner, inner])
+    >>> inner = List([binary, binary])
+    >>> outer = List([inner, inner, inner])
     >>> decode(encode(['asdf', 'fdsa']), inner)
-    [u'asdf', u'fdsa']
+    ['asdf', 'fdsa']
     >>> decode(encode([['a1', 'a2'], ['b1', 'b2'], ['c1', 'c2']]), outer)
-    [[u'a1', u'a2'], [u'b1', u'b2'], [u'c1', u'c2']]
+    [['a1', 'a2'], ['b1', 'b2'], ['c1', 'c2']]
 
 
 What Sedes Objects Actually Are
@@ -121,8 +121,8 @@ representation as byte strings or sequences. The former one may be called by
 :ref:`inference-section`).
 
 For basic types, the sedes object is usually a module (e.g.
-:mod:`rlp.sedes.big_endian_int` and :mod:`rlp.sedes.text`). Instances of
-:class:`rlp.sedes.ListSedes` provide the sedes interface too, as well as the
+:mod:`rlp.sedes.big_endian_int` and :mod:`rlp.sedes.binary`). Instances of
+:class:`rlp.sedes.List` provide the sedes interface too, as well as the
 class :class:`rlp.Serializable` which is discussed in the following section.
 
 
@@ -134,10 +134,10 @@ world are transactions, blocks or anything send over the Wire. With *pyrlp*,
 this is as easy as subclassing :class:`rlp.Serializable`::
 
     >>> import rlp
-    >>> class Transaction(rlp.Serializable)
+    >>> class Transaction(rlp.Serializable):
     ...    fields = (
-    ...        ('sender', text),
-    ...        ('receiver', text),
+    ...        ('sender', binary),
+    ...        ('receiver', binary),
     ...        ('amount', big_endian_int)
     ...    )
 
@@ -189,7 +189,7 @@ this process, it follows the following steps:
 2) Check if one of the entries in :attr:`rlp.sedes.sedes_list` can serialize
    the object (via ``serializable(obj)``). If so, this is the sedes.
 3) Check if the object is a sequence. If so, build a
-   :class:`rlp.sedes.ListSedes` by recursively infering a sedes for each of its
+   :class:`rlp.sedes.List` by recursively infering a sedes for each of its
    elements.
 4) If none of these steps was successful, sedes inference has failed.
 

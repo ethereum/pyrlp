@@ -4,7 +4,7 @@ Quickstart
 ::
 
     >>> import rlp
-    >>> from rlp.sedes import big_endian_int, text, ListSedes
+    >>> from rlp.sedes import big_endian_int, binary, List
 
 ::
 
@@ -17,7 +17,7 @@ Quickstart
     >>> rlp.encode([1, [2, []]])
     '\xc4\x01\xc2\x02\xc0'
     '\xc5\x01\xc3\x02\xc1\x03'
-    >>> list_sedes = ListSedes([big_endian_int, [big_endian_int, []]])
+    >>> list_sedes = List([big_endian_int, [big_endian_int, []]])
     >>> rlp.decode('\xc4\x01\xc2\x02\xc0', list_sedes)
     [1, [2, []]]
 
@@ -25,8 +25,8 @@ Quickstart
 
     >>> class Tx(rlp.Serializable):
     ...     fields = [
-    ...         ('from', text),
-    ...         ('to', text),
+    ...         ('from', binary),
+    ...         ('to', binary),
     ...         ('amount', big_endian_int)
     ...     ]
     ...
