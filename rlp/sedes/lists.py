@@ -212,6 +212,14 @@ class Serializable(object):
         """
         make_immutable(self)
 
+    def make_mutable(self):
+        """Make it mutable to prevent accidental changes.
+
+        `obj.make_mutable` is equivalent to `make_mutable(obj)`, but doesn't return
+        anything.
+        """
+        make_mutable(self)
+
     @classmethod
     def get_sedes(cls):
         if not cls._sedes:
@@ -234,20 +242,23 @@ class Serializable(object):
             return result
 
     @classmethod
-    def deserialize(cls, serial, exclude=None, **kwargs):
+    def deserialize(cls, serial, exclude=None, mutable=False, **kwargs):
         try:
             values = cls.get_sedes().deserialize(serial)
         except ListDeserializationError as e:
             raise ObjectDeserializationError(serial=serial, sedes=cls, list_exception=e)
-        params = {field: value for (field, _), value
-                  in zip(cls.fields, values)}
-        if exclude:
-            for k in exclude:
-                if k in params:
-                    del params[k]
+
+        params = {
+            field: value
+            for (field, _), value
+            in zip(cls.fields, values)
+            if not exclude or field not in exclude
+        }
         obj = cls(**dict(list(params.items()) + list(kwargs.items())))
-        obj._mutable = False
-        return obj
+        if mutable:
+            return make_mutable(obj)
+        else:
+            return make_immutable(obj)
 
     @classmethod
     def exclude(cls, excluded_fields):
@@ -280,5 +291,29 @@ def make_immutable(x):
         return x
     elif is_sequence(x):
         return tuple(make_immutable(element) for element in x)
+    else:
+        return x
+
+
+def make_mutable(x):
+    """Do your best to make `x` as mutable as possible.
+
+    If `x` is a sequence, apply this function recursively to all elements and return a tuple
+    containing them. If `x` is an instance of :class:`rlp.Serializable`, apply this function to its
+    fields, and set :attr:`_mutable` to `False`. If `x` is neither of the above, just return `x`.
+
+    :returns: `x` after making it mmutable
+    """
+    if isinstance(x, Serializable):
+        x._mutable = True
+        for field, _ in x.fields:
+            attr = getattr(x, field)
+            try:
+                setattr(x, field, make_mutable(attr))
+            except AttributeError:
+                pass  # respect read only properties
+        return x
+    elif is_sequence(x):
+        return tuple(make_mutable(element) for element in x)
     else:
         return x
