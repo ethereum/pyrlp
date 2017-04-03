@@ -116,19 +116,19 @@ def perf():
     for j in range(100000):
         for i in random_integers:
             packl(i)
-    print 'packl elapsed {}'.format(time.time() - st)
+    print('packl elapsed {}'.format(time.time() - st))
 
     st = time.time()
     for j in range(100000):
         for i in random_integers:
             packl_ctypes(i)
-    print 'ctypes elapsed {}'.format(time.time() - st)
+    print('ctypes elapsed {}'.format(time.time() - st))
 
     st = time.time()
     for j in range(100000):
         for i in random_integers:
             int_to_big_endian(i)
-    print 'py elapsed {}'.format(time.time() - st)
+    print('py elapsed {}'.format(time.time() - st))
 
 
 if __name__ == '__main__':

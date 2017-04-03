@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import json
 import sys
 import pytest
@@ -45,7 +47,7 @@ def compare_nested(got, expected):
 with open('tests/rlptest.json') as f:
     test_data = json.loads(f.read())
     test_pieces = [(name, {'in': to_bytes(in_out['in']),
-                           'out': utils.str_to_bytes(in_out['out'])})
+                           'out': in_out['out']})
                    for name, in_out in test_data.items()]
 
 
