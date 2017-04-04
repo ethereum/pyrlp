@@ -1,5 +1,6 @@
 import abc
 import struct
+import codecs
 import binascii
 
 
@@ -13,8 +14,17 @@ Atomic.register(str)
 Atomic.register(bytearray)
 Atomic.register(unicode)
 
-str_to_bytes = bytes_to_str = str
+bytes_to_str = str
 ascii_chr = chr
+
+
+def str_to_bytes(value):
+    if isinstance(value, (bytes, bytearray)):
+        return bytes(value)
+    elif isinstance(value, unicode):
+        return codecs.encode(value, 'utf8')
+    else:
+        raise TypeError("Value must be text, bytes, or bytearray")
 
 
 def _old_int_to_big_endian(value):

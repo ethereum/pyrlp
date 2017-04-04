@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import pytest
 from rlp import SerializationError
 from rlp import infer_sedes, Serializable, encode, decode, make_immutable
@@ -67,6 +69,7 @@ def test_serializable():
     test1a_d = Test1.deserialize(serial_1a)
     test1b_d = Test1.deserialize(serial_1b)
     test2_d = Test2.deserialize(serial_2)
+
     assert not test1a_d.is_mutable()
     assert not test1b_d.is_mutable()
     assert not test2_d.is_mutable()

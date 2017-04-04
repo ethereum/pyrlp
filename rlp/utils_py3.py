@@ -31,7 +31,7 @@ def ascii_chr(value):
 
 
 def int_to_big_endian(value):
-    byte_length = ceil(value.bit_length() / 8)
+    byte_length = max(ceil(value.bit_length() / 8), 1)
     return (value).to_bytes(byte_length, byteorder='big')
 
 
@@ -46,7 +46,7 @@ def is_integer(value):
 def decode_hex(s):
     if isinstance(s, str):
         return bytes.fromhex(s)
-    if isinstance(s, bytes):
+    if isinstance(b, (bytes, bytearray)):
         return binascii.unhexlify(s)
     raise TypeError('Value must be an instance of str or bytes')
 
@@ -54,7 +54,7 @@ def decode_hex(s):
 def encode_hex(b):
     if isinstance(b, str):
         b = bytes(b, 'utf-8')
-    if isinstance(b, bytes):
+    if isinstance(b, (bytes, bytearray)):
         return str(binascii.hexlify(b), 'utf-8')
     raise TypeError('Value must be an instance of str or bytes')
 
