@@ -114,7 +114,7 @@ class CountableList(object):
                 raise ListSerializationError(obj=obj, element_exception=e, index=index)
         if self.max_length is not None and len(result) > self.max_length:
             raise ListSerializationError('Too many elements ({}, allowed '
-                                         '{})'.format(len(result), self.max_length))
+                                         '{})'.format(len(result), self.max_length), obj)
         return result
 
     def deserialize(self, serial):
