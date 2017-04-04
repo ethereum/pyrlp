@@ -1,4 +1,6 @@
 # -*- coding: UTF-8 -*-
+from __future__ import unicode_literals
+
 import pytest
 from rlp import SerializationError, utils
 from rlp.sedes import Binary

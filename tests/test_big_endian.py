@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import pytest
 from rlp import SerializationError, utils
 from rlp.sedes import big_endian_int, BigEndianInt
@@ -95,7 +97,7 @@ try:
             return int_to_big_endian(lnum)
         a = ctypes.create_string_buffer(lnum.bit_length() // 8 + 1)
         PyLong_AsByteArray(lnum, a, len(a), 0, 1)
-        return a.raw.lstrip('\0')
+        return a.raw.lstrip(b'\0')
 except AttributeError:
     packl_ctypes = packl
 

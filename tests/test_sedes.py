@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import pytest
 from rlp import SerializationError, DeserializationError
 from rlp import infer_sedes

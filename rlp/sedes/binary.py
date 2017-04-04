@@ -37,10 +37,10 @@ class Binary(object):
         if not Binary.is_valid_type(obj):
             raise SerializationError('Object is not a serializable ({})'.format(type(obj)), obj)
 
-        if isinstance(obj, str):
-            serial = str_to_bytes(obj)
-        else:
+        if isinstance(obj, (bytes, bytearray)):
             serial = obj
+        else:
+            serial = str_to_bytes(obj)
 
         if not self.is_valid_length(len(serial)):
             raise SerializationError('Object has invalid length', serial)
