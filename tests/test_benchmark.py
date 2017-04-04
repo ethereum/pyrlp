@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 from itertools import repeat, chain
-from random import randint
 import sys
 import pytest
 import rlp
@@ -66,9 +65,9 @@ def eager_test_factory(s, valid):
 def generate_test_functions():
     valid = {}
     invalid = {}
-    random_string = ''.join(chr(randint(0, 255)) for _ in repeat(None, SIZE))
-    long_list = rlp.encode([c for c in random_string])
-    invalid['long_string'] = random_string
+    long_string = bytes(bytearray((i % 256 for i in range(SIZE))))
+    long_list = rlp.encode([c for c in long_string])
+    invalid['long_string'] = long_string
     invalid['long_list'] = long_list
 
     nested_list = rlp.encode('\x00')
@@ -76,10 +75,10 @@ def generate_test_functions():
         nested_list += rlp.codec.length_prefix(len(nested_list), 0xc0)
     invalid['nested_list'] = nested_list
 
-    valid['long_string_object'] = rlp.encode(['\x00', random_string, []])
+    valid['long_string_object'] = rlp.encode([b'\x00', long_string, []])
 
     prefix = rlp.codec.length_prefix(1 + 1 + len(long_list), 0xc0)
-    invalid['long_list_object'] = prefix + rlp.encode('\x00') + rlp.encode('\x00') + long_list
+    invalid['long_list_object'] = prefix + rlp.encode(b'\x00') + rlp.encode(b'\x00') + long_list
 
     valid['friendly'] = rlp.encode(Message('hello', 'I\'m friendly', ['not', 'many', 'elements']))
 
