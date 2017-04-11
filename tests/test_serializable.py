@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import pytest
 from rlp import SerializationError
-from rlp import infer_sedes, Serializable, encode, decode, make_immutable
+from rlp import infer_sedes, Serializable, encode, decode, make_immutable, make_mutable
 from rlp.sedes import big_endian_int, binary, List
 
 
@@ -68,11 +68,10 @@ def test_serializable():
     # deserialization
     test1a_d = Test1.deserialize(serial_1a)
     test1b_d = Test1.deserialize(serial_1b)
-    test2_d = Test2.deserialize(serial_2)
-
+    test2_d = Test2.deserialize(serial_2, mutable=True)
     assert not test1a_d.is_mutable()
     assert not test1b_d.is_mutable()
-    assert not test2_d.is_mutable()
+    assert test2_d.is_mutable()
     for obj in (test1a_d, test1b_d):
         before1 = obj.field1
         before2 = obj.field2
@@ -145,3 +144,51 @@ def test_make_immutable():
     assert not test2.is_mutable()
     assert not test1a.is_mutable()
     assert not test1b.is_mutable()
+
+
+def test_make_mutable():
+    assert make_mutable(1) == 1
+    assert make_mutable('a') == 'a'
+    assert make_mutable((1, 2, 3)) == [1, 2, 3]
+    assert make_mutable([1, 2, 'a']) == [1, 2, 'a']
+    assert make_mutable([[1], [2, [3], 4], 5, 6]) == [[1,], [2, [3,], 4], 5, 6]
+
+    t1a_data = (5, 'a', (0, ''))
+    t1b_data = (9, 'b', (2, ''))
+    test1a = Test1(*t1a_data)
+    test1b = Test1(*t1b_data)
+    test2 = Test2(test1a, [test1a, test1b])
+
+    test1a.make_immutable()
+    test1b.make_immutable()
+    test2.make_immutable()
+
+    assert not test2.is_mutable()
+    assert not test2.field1.is_mutable()
+    assert not test2.field2[0].is_mutable()
+    assert not test2.field2[1].is_mutable()
+    test2.make_mutable()
+    assert test2.is_mutable()
+    assert test2.field2[0].is_mutable()
+    assert test2.field2[1].is_mutable()
+    assert test1a.is_mutable()
+    assert test1b.is_mutable()
+    assert test2.field1 == test1a
+    assert test2.field2 == [test1a, test1b]
+
+    test1a = Test1(*t1a_data)
+    test1b = Test1(*t1b_data)
+    test2 = Test2(test1a, [test1a, test1b])
+
+    test1a.make_immutable()
+    test1b.make_immutable()
+    test2.make_immutable()
+
+    assert not test2.is_mutable()
+    assert not test2.field1.is_mutable()
+    assert not test2.field2[0].is_mutable()
+    assert not test2.field2[1].is_mutable()
+    assert make_mutable([test1a, [test2, test1b]]) == [test1a, [test2, test1b]]
+    assert test2.is_mutable()
+    assert test1a.is_mutable()
+    assert test1b.is_mutable()
