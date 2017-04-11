@@ -213,7 +213,7 @@ class Serializable(object):
         make_immutable(self)
 
     def make_mutable(self):
-        """Make it mutable to prevent accidental changes.
+        """Make it mutable.
 
         `obj.make_mutable` is equivalent to `make_mutable(obj)`, but doesn't return
         anything.
@@ -302,7 +302,7 @@ def make_mutable(x):
     containing them. If `x` is an instance of :class:`rlp.Serializable`, apply this function to its
     fields, and set :attr:`_mutable` to `False`. If `x` is neither of the above, just return `x`.
 
-    :returns: `x` after making it mmutable
+    :returns: `x` after making it mutable
     """
     if isinstance(x, Serializable):
         x._mutable = True
@@ -314,6 +314,6 @@ def make_mutable(x):
                 pass  # respect read only properties
         return x
     elif is_sequence(x):
-        return tuple(make_mutable(element) for element in x)
+        return list(make_mutable(element) for element in x)
     else:
         return x
