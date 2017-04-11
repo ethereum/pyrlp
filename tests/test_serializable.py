@@ -149,9 +149,9 @@ def test_make_immutable():
 def test_make_mutable():
     assert make_mutable(1) == 1
     assert make_mutable('a') == 'a'
-    assert make_mutable((1, 2, 3)) == (1, 2, 3)
-    assert make_mutable([1, 2, 'a']) == (1, 2, 'a')
-    assert make_mutable([[1], [2, [3], 4], 5, 6]) == ((1,), (2, (3,), 4), 5, 6)
+    assert make_mutable((1, 2, 3)) == [1, 2, 3]
+    assert make_mutable([1, 2, 'a']) == [1, 2, 'a']
+    assert make_mutable([[1], [2, [3], 4], 5, 6]) == [[1,], [2, [3,], 4], 5, 6]
 
     t1a_data = (5, 'a', (0, ''))
     t1b_data = (9, 'b', (2, ''))
@@ -174,7 +174,7 @@ def test_make_mutable():
     assert test1a.is_mutable()
     assert test1b.is_mutable()
     assert test2.field1 == test1a
-    assert test2.field2 == (test1a, test1b)
+    assert test2.field2 == [test1a, test1b]
 
     test1a = Test1(*t1a_data)
     test1b = Test1(*t1b_data)
@@ -188,7 +188,7 @@ def test_make_mutable():
     assert not test2.field1.is_mutable()
     assert not test2.field2[0].is_mutable()
     assert not test2.field2[1].is_mutable()
-    assert make_mutable([test1a, [test2, test1b]]) == (test1a, (test2, test1b))
+    assert make_mutable([test1a, [test2, test1b]]) == [test1a, [test2, test1b]]
     assert test2.is_mutable()
     assert test1a.is_mutable()
     assert test1b.is_mutable()
