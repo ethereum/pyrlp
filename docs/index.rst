@@ -16,6 +16,7 @@ Ethereum world.
    quickstart
    tutorial
    api
+   releases
 
 
 
