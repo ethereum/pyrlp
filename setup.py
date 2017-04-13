@@ -33,7 +33,7 @@ test_requirements = [
 
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
 # see: https://github.com/ethereum/pyethapp/wiki/Development:-Versions-and-Releases
-version = '0.5.0'
+version = '0.5.1'
 
 setup(
     name='rlp',
