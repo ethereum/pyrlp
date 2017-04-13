@@ -46,7 +46,7 @@ def is_integer(value):
 def decode_hex(s):
     if isinstance(s, str):
         return bytes.fromhex(s)
-    if isinstance(b, (bytes, bytearray)):
+    if isinstance(s, (bytes, bytearray)):
         return binascii.unhexlify(s)
     raise TypeError('Value must be an instance of str or bytes')
 
