@@ -132,22 +132,22 @@ def main(rounds=10000):
     st = time.time()
     d = do_test_serialize(mk_block(), rounds)
     elapsed = time.time() - st
-    print 'Block serializations / sec: %.2f' % (rounds / elapsed)
+    print('Block serializations / sec: %.2f' % (rounds / elapsed))
 
     st = time.time()
     d = do_test_deserialize(d, rounds)
     elapsed = time.time() - st
-    print 'Block deserializations / sec: %.2f' % (rounds / elapsed)
+    print('Block deserializations / sec: %.2f' % (rounds / elapsed))
 
     st = time.time()
     d = do_test_serialize(mk_transaction(), rounds)
     elapsed = time.time() - st
-    print 'TX serializations / sec: %.2f' % (rounds / elapsed)
+    print('TX serializations / sec: %.2f' % (rounds / elapsed))
 
     st = time.time()
     d = do_test_deserialize(d, rounds, sedes=Transaction)
     elapsed = time.time() - st
-    print 'TX deserializations / sec: %.2f' % (rounds / elapsed)
+    print('TX deserializations / sec: %.2f' % (rounds / elapsed))
 
 
 if __name__ == '__main__':
