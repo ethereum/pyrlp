@@ -45,6 +45,17 @@ def test_string(value):
         rlp.peek(rlp.encode(value), [0])
 
 
+def test_list_getitem():
+    l = rlp.decode_lazy(rlp.encode([1,2,3]), big_endian_int)
+    assert isinstance(l, rlp.lazy.LazyList)
+    assert l[0] == 1
+    assert l[1] == 2
+    assert l[2] == 3
+    assert l[0:3] == [1,2,3]
+    assert l[0:2] == [1,2]
+    assert l[0:1] == [1]
+
+
 def test_nested_list():
     l = ((), (b'a'), (b'b', b'c', b'd'))
 
