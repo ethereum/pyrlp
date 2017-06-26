@@ -2,8 +2,9 @@ import collections
 import sys
 from .exceptions import EncodingError, DecodingError
 
-from .utils import (Atomic, str_to_bytes, is_integer, ascii_chr, safe_ord, big_endian_to_int,
-                    int_to_big_endian)
+from .utils import (Atomic, str_to_bytes, is_integer, ascii_chr,
+                    safe_ord, big_endian_to_int, int_to_big_endian,
+                    encode_hex, decode_hex)
 from .sedes.binary import Binary as BinaryClass
 from .sedes import big_endian_int, binary
 from .sedes.lists import List, Serializable, is_sedes
@@ -60,6 +61,15 @@ def encode(obj, sedes=None, infer_serializer=True, cache=False):
         obj._cached_rlp = result
         obj.make_immutable()
     return result
+
+
+def hex_encode(obj, sedes=None, infer_serializer=True, cache=False,
+               prefixed=False):
+    return ('0x' * prefixed) + \
+        encode_hex(encode(obj, sedes, infer_serializer, cache))
+
+def prefix_hex_encode(obj, sedes=None, infer_serializer=True, cache=False):
+    return '0x'+encode_hex(encode(obj, sedes, infer_serializer, cache))
 
 
 class RLPData(str):
@@ -220,6 +230,10 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
         return obj
     else:
         return item
+
+def hex_decode(rlp, sedes=None, strict=True, **kwargs):
+    return decode(decode_hex(rlp[2:] if rlp[:2] == '0x' else rlp),
+                  sedes, strict, **kwargs)
 
 def descend(rlp, *path):
     rlp = str_to_bytes(rlp)

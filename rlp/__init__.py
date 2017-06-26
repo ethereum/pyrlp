@@ -1,7 +1,9 @@
 from . import sedes
 from .codec import (
     encode,
+    hex_encode,
     decode,
+    hex_decode,
     infer_sedes,
     descend,
     append,
