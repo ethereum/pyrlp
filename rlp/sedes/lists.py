@@ -157,7 +157,7 @@ class Serializable(object):
     """
 
     fields = tuple()
-    _sedes = None
+    _cached_sedes = {}
     _mutable = True
     _cached_rlp = None
 
@@ -222,9 +222,9 @@ class Serializable(object):
 
     @classmethod
     def get_sedes(cls):
-        if not cls._sedes:
-            cls._sedes = List(sedes for _, sedes in cls.fields)
-        return cls._sedes
+        if cls not in cls._cached_sedes:
+            cls._cached_sedes[cls] = List(sedes for _, sedes in cls.fields)
+        return cls._cached_sedes[cls]
 
     @classmethod
     def serialize(cls, obj):
