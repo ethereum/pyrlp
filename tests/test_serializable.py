@@ -192,3 +192,59 @@ def test_make_mutable():
     assert test2.is_mutable()
     assert test1a.is_mutable()
     assert test1b.is_mutable()
+
+
+def test_inheritance():
+    class Parent(Serializable):
+        fields = (
+            ('field1', big_endian_int),
+            ('field2', big_endian_int),
+        )
+    class Child1(Parent):
+        fields = (
+            ('field1', big_endian_int),
+            ('field2', big_endian_int),
+            ('field3', big_endian_int),
+        )
+    class Child2(Parent):
+        fields = (
+            ('field1', big_endian_int),
+        )
+    class Child3(Parent):
+        fields = (
+            ('new_field1', big_endian_int),
+            ('field2', big_endian_int),
+        )
+    class Child4(Parent):
+        fields = (
+            ('field1', binary),
+            ('field2', binary),
+            ('field3', big_endian_int),
+        )
+
+    p = Parent(1, 2)
+    c1 = Child1(1, 2, 3)
+    c2 = Child2(1)
+    c3 = Child3(1, 2)
+    c4 = Child4(b'a', b'b', 5)
+
+    assert Parent.serialize(p) == [b'\x01', b'\x02']
+    assert Child1.serialize(c1) == [b'\x01', b'\x02', b'\x03']
+    assert Child2.serialize(c2) == [b'\x01']
+    assert Child3.serialize(c3) == [b'\x01', b'\x02']
+    assert Child4.serialize(c4) == [b'a', b'b', b'\x05']
+
+    with pytest.raises(AttributeError):
+        p.field3
+    with pytest.raises(AttributeError):
+        p.new_field1
+
+    with pytest.raises(AttributeError):
+        c2.field2
+    with pytest.raises(AttributeError):
+        c2.new_field1
+
+    with pytest.raises(AttributeError):
+        c3.field1
+    with pytest.raises(AttributeError):
+        c3.field3
