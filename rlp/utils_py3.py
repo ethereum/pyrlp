@@ -10,6 +10,7 @@ class Atomic(type.__new__(abc.ABCMeta, 'metaclass', (), {})):
 
 Atomic.register(str)
 Atomic.register(bytes)
+Atomic.register(bytearray)
 
 
 def str_to_bytes(value):

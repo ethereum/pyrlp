@@ -27,7 +27,7 @@ class Binary(object):
         if sys.version_info.major == 2:
             return isinstance(obj, (str, unicode, bytearray))
         else:
-            return isinstance(obj, (str, bytes))
+            return isinstance(obj, (str, bytes, bytearray))
 
     def is_valid_length(self, l):
         return any((self.min_length <= l <= self.max_length,
