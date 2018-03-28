@@ -21,6 +21,21 @@ class RLPType2(Serializable):
     ]
 
 
+@pytest.mark.parametrize(
+    'rlptype, fields, exception_includes',
+    (
+        (RLPType1, [8], 'field2'),
+        (RLPType1, [8], 'field3'),
+        (RLPType2, [], 'field2_1'),
+        (RLPType2, [], 'field2_2'),
+        (RLPType2, [RLPType1(8, 'a', (7, ''))], 'field2_2'),
+    ),
+)
+def test_validation(rlptype, fields, exception_includes):
+    with pytest.raises(TypeError, match=exception_includes):
+        rlptype(*fields)
+
+
 def test_serializable():
     t1a_data = (5, 'a', (0, ''))
     t1b_data = (9, 'b', (2, ''))
