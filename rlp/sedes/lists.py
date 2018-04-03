@@ -178,7 +178,7 @@ class Serializable(object):
                 field_set.remove(field)
 
         if len(field_set) != 0:
-            raise TypeError('Not all fields initialized')
+            raise TypeError('Not all fields initialized. Missing: %r' % field_set)
 
     def __setattr__(self, attr, value):
         try:

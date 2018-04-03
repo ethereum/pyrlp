@@ -6,7 +6,7 @@ from rlp import infer_sedes, Serializable, encode, decode, make_immutable, make_
 from rlp.sedes import big_endian_int, binary, List
 
 
-class Test1(Serializable):
+class RLPType1(Serializable):
     fields = [
         ('field1', big_endian_int),
         ('field2', binary),
@@ -14,19 +14,34 @@ class Test1(Serializable):
     ]
 
 
-class Test2(Serializable):
+class RLPType2(Serializable):
     fields = [
-        ('field1', Test1),
-        ('field2', List((Test1, Test1))),
+        ('field2_1', RLPType1),
+        ('field2_2', List((RLPType1, RLPType1))),
     ]
+
+
+@pytest.mark.parametrize(
+    'rlptype, fields, exception_includes',
+    (
+        (RLPType1, [8], 'field2'),
+        (RLPType1, [8], 'field3'),
+        (RLPType2, [], 'field2_1'),
+        (RLPType2, [], 'field2_2'),
+        (RLPType2, [RLPType1(8, 'a', (7, ''))], 'field2_2'),
+    ),
+)
+def test_validation(rlptype, fields, exception_includes):
+    with pytest.raises(TypeError, match=exception_includes):
+        rlptype(*fields)
 
 
 def test_serializable():
     t1a_data = (5, 'a', (0, ''))
     t1b_data = (9, 'b', (2, ''))
-    test1a = Test1(*t1a_data)
-    test1b = Test1(*t1b_data)
-    test2 = Test2(test1a, [test1a, test1b])
+    test1a = RLPType1(*t1a_data)
+    test1b = RLPType1(*t1b_data)
+    test2 = RLPType2(test1a, [test1a, test1b])
 
     # equality
     assert test1a == test1a
@@ -47,28 +62,28 @@ def test_serializable():
     assert test1a.field2 == 'a'
 
     # inference
-    assert infer_sedes(test1a) == Test1
-    assert infer_sedes(test1b) == Test1
-    assert infer_sedes(test2) == Test2
+    assert infer_sedes(test1a) == RLPType1
+    assert infer_sedes(test1b) == RLPType1
+    assert infer_sedes(test2) == RLPType2
 
     # serialization
     with pytest.raises(SerializationError):
-        Test1.serialize(test2)
+        RLPType1.serialize(test2)
     with pytest.raises(SerializationError):
-        Test2.serialize(test1a)
+        RLPType2.serialize(test1a)
     with pytest.raises(SerializationError):
-        Test2.serialize(test1b)
-    serial_1a = Test1.serialize(test1a)
-    serial_1b = Test1.serialize(test1b)
-    serial_2 = Test2.serialize(test2)
+        RLPType2.serialize(test1b)
+    serial_1a = RLPType1.serialize(test1a)
+    serial_1b = RLPType1.serialize(test1b)
+    serial_2 = RLPType2.serialize(test2)
     assert serial_1a == [b'\x05', b'a', [b'', b'']]
     assert serial_1b == [b'\x09', b'b', [b'\x02', b'']]
     assert serial_2 == [serial_1a, [serial_1a, serial_1b]]
 
     # deserialization
-    test1a_d = Test1.deserialize(serial_1a)
-    test1b_d = Test1.deserialize(serial_1b)
-    test2_d = Test2.deserialize(serial_2, mutable=True)
+    test1a_d = RLPType1.deserialize(serial_1a)
+    test1b_d = RLPType1.deserialize(serial_1b)
+    test2_d = RLPType2.deserialize(serial_2, mutable=True)
     assert not test1a_d.is_mutable()
     assert not test1b_d.is_mutable()
     assert test2_d.is_mutable()
@@ -118,28 +133,28 @@ def test_make_immutable():
 
     t1a_data = (5, 'a', (0, ''))
     t1b_data = (9, 'b', (2, ''))
-    test1a = Test1(*t1a_data)
-    test1b = Test1(*t1b_data)
-    test2 = Test2(test1a, [test1a, test1b])
+    test1a = RLPType1(*t1a_data)
+    test1b = RLPType1(*t1b_data)
+    test2 = RLPType2(test1a, [test1a, test1b])
 
     assert test2.is_mutable()
-    assert test2.field1.is_mutable()
-    assert test2.field2[0].is_mutable()
-    assert test2.field2[1].is_mutable()
+    assert test2.field2_1.is_mutable()
+    assert test2.field2_2[0].is_mutable()
+    assert test2.field2_2[1].is_mutable()
     test2.make_immutable()
     assert not test2.is_mutable()
     assert not test1a.is_mutable()
     assert not test1b.is_mutable()
-    assert test2.field1 == test1a
-    assert test2.field2 == (test1a, test1b)
+    assert test2.field2_1 == test1a
+    assert test2.field2_2 == (test1a, test1b)
 
-    test1a = Test1(*t1a_data)
-    test1b = Test1(*t1b_data)
-    test2 = Test2(test1a, [test1a, test1b])
+    test1a = RLPType1(*t1a_data)
+    test1b = RLPType1(*t1b_data)
+    test2 = RLPType2(test1a, [test1a, test1b])
     assert test2.is_mutable()
-    assert test2.field1.is_mutable()
-    assert test2.field2[0].is_mutable()
-    assert test2.field2[1].is_mutable()
+    assert test2.field2_1.is_mutable()
+    assert test2.field2_2[0].is_mutable()
+    assert test2.field2_2[1].is_mutable()
     assert make_immutable([test1a, [test2, test1b]]) == (test1a, (test2, test1b))
     assert not test2.is_mutable()
     assert not test1a.is_mutable()
@@ -155,39 +170,39 @@ def test_make_mutable():
 
     t1a_data = (5, 'a', (0, ''))
     t1b_data = (9, 'b', (2, ''))
-    test1a = Test1(*t1a_data)
-    test1b = Test1(*t1b_data)
-    test2 = Test2(test1a, [test1a, test1b])
+    test1a = RLPType1(*t1a_data)
+    test1b = RLPType1(*t1b_data)
+    test2 = RLPType2(test1a, [test1a, test1b])
 
     test1a.make_immutable()
     test1b.make_immutable()
     test2.make_immutable()
 
     assert not test2.is_mutable()
-    assert not test2.field1.is_mutable()
-    assert not test2.field2[0].is_mutable()
-    assert not test2.field2[1].is_mutable()
+    assert not test2.field2_1.is_mutable()
+    assert not test2.field2_2[0].is_mutable()
+    assert not test2.field2_2[1].is_mutable()
     test2.make_mutable()
     assert test2.is_mutable()
-    assert test2.field2[0].is_mutable()
-    assert test2.field2[1].is_mutable()
+    assert test2.field2_2[0].is_mutable()
+    assert test2.field2_2[1].is_mutable()
     assert test1a.is_mutable()
     assert test1b.is_mutable()
-    assert test2.field1 == test1a
-    assert test2.field2 == [test1a, test1b]
+    assert test2.field2_1 == test1a
+    assert test2.field2_2 == [test1a, test1b]
 
-    test1a = Test1(*t1a_data)
-    test1b = Test1(*t1b_data)
-    test2 = Test2(test1a, [test1a, test1b])
+    test1a = RLPType1(*t1a_data)
+    test1b = RLPType1(*t1b_data)
+    test2 = RLPType2(test1a, [test1a, test1b])
 
     test1a.make_immutable()
     test1b.make_immutable()
     test2.make_immutable()
 
     assert not test2.is_mutable()
-    assert not test2.field1.is_mutable()
-    assert not test2.field2[0].is_mutable()
-    assert not test2.field2[1].is_mutable()
+    assert not test2.field2_1.is_mutable()
+    assert not test2.field2_2[0].is_mutable()
+    assert not test2.field2_2[1].is_mutable()
     assert make_mutable([test1a, [test2, test1b]]) == [test1a, [test2, test1b]]
     assert test2.is_mutable()
     assert test1a.is_mutable()
