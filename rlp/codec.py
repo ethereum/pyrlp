@@ -1,17 +1,21 @@
 import collections
 import sys
-from .exceptions import EncodingError, DecodingError
 
-from .utils import (Atomic, str_to_bytes, is_integer, ascii_chr,
-                    safe_ord, big_endian_to_int, int_to_big_endian,
-                    encode_hex, decode_hex)
-from .sedes.binary import Binary as BinaryClass
-from .sedes import big_endian_int, binary
-from .sedes.lists import List, Serializable, is_sedes
-
-
-if sys.version_info.major == 2:
-    from itertools import imap as map
+from rlp.exceptions import EncodingError, DecodingError
+from rlp.utils import (
+    Atomic,
+    ascii_chr,
+    big_endian_to_int,
+    decode_hex,
+    encode_hex,
+    int_to_big_endian,
+    is_integer,
+    safe_ord,
+    str_to_bytes,
+)
+from rlp.sedes.binary import Binary as BinaryClass
+from rlp.sedes import big_endian_int, binary
+from rlp.sedes.lists import List, Serializable, is_sedes
 
 
 def encode(obj, sedes=None, infer_serializer=True, cache=False):
@@ -323,4 +327,3 @@ def compare_length(rlpdata, length):
             break
         _pos = _l + _p
     return 0 if lenlist == length else -1
-    
