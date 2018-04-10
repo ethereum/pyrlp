@@ -4,36 +4,20 @@ python:
 sudo: false
 matrix:
   include:
-    - python: "2.7"
-      env: TOXENV=py27
-    - python: "3.4"
-      env: TOXENV=py34
     - python: "3.5"
-      env: TOXENV=py35
+      env: TOX_POSARGS="-e py35"
     - python: "3.6"
-      env: TOXENV=py36
-    - python: "pypy"
-      env: TOXENV=pypy
+      env: TOX_POSARGS="-e py36"
     - python: "pypy3"
-      env: TOXENV=pypy3
-
+      env: TOX_POSARGS="-e pypy3"
+    - python: "3.6"
+      env: TOX_POSARGS="-e lint"
+cache:
+  pip: true
 install:
- - pip install tox
- - pip install coveralls
-
+  - "travis_retry pip install pip setuptools --upgrade"
+  - "travis_retry pip install tox"
+before_script:
+  - pip freeze
 script:
-  - tox
-
-after_success:
-  - coveralls
-
-deploy:
-  provider: pypi
-  user: ethereum_pypi_automated
-  password:
-    secure: "aekJDPTyOt3xFI+4nJav0Oc6PlaD6R/rmcCH+Br6G3+L5cI5TWOPmukjPw4CZ/Q6HPPZbKV4B6OYDvEcGrt+9gIWPN44cfk7iGe1MFav1B//H+vEXfUEHpNZuNyhsKkKx5RvDHAbmJZv69kgTsm9JGgv0z+Q5b46Zn6erovsBEs="
-  on:
-    tags: true
-    repo: ethereum/pyrlp
-    branch: develop
-  distributions: "sdist bdist_wheel"
+  - tox $TOX_POSARGS
