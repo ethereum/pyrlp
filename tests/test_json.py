@@ -34,11 +34,12 @@ def compare_nested(got, expected):
             return False
 
 
-with open('tests/rlptest.json') as f:
-    test_data = json.loads(f.read())
-    test_pieces = [(name, {'in': to_bytes(in_out['in']),
-                           'out': in_out['out']})
-                   for name, in_out in test_data.items()]
+with open('tests/rlptest.json') as rlptest_file:
+    test_data = json.load(rlptest_file)
+    test_pieces = [
+        (name, {'in': to_bytes(in_out['in']), 'out': in_out['out']})
+        for name, in_out in test_data.items()
+    ]
 
 
 @pytest.mark.parametrize('name, in_out', test_pieces)

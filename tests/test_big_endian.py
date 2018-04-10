@@ -2,9 +2,11 @@ import binascii
 
 import pytest
 
+from eth_utils import int_to_big_endian
+
 from rlp import SerializationError, utils
 from rlp.sedes import big_endian_int, BigEndianInt
-from rlp.utils import int_to_big_endian
+
 
 valid_data = (
     (256, b'\x01\x00'),
