@@ -42,4 +42,5 @@ class BigEndianInt(object):
         serial = serial or b'\x00'
         return big_endian_to_int(serial)
 
+
 big_endian_int = BigEndianInt()

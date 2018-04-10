@@ -1,5 +1,5 @@
 from rlp.exceptions import SerializationError, DeserializationError
-from rlp.utils import Atomic, str_to_bytes, bytes_to_str
+from rlp.utils import Atomic, str_to_bytes
 
 
 class Binary(object):
