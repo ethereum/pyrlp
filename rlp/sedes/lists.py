@@ -1,14 +1,21 @@
-"""Module for sedes objects that use lists as serialization format."""
-import sys
+"""
+Module for sedes objects that use lists as serialization format.
+"""
 from collections import Sequence
 from itertools import count
-from ..exceptions import (SerializationError, ListSerializationError, ObjectSerializationError,
-                          DeserializationError, ListDeserializationError,
-                          ObjectDeserializationError)
-from ..sedes.binary import Binary as BinaryClass
 
-if sys.version_info.major == 2:
-    from itertools import izip as zip
+from rlp.exceptions import (
+    SerializationError,
+    ListSerializationError,
+    ObjectSerializationError,
+    DeserializationError,
+    ListDeserializationError,
+    ObjectDeserializationError,
+)
+
+from .binary import (
+    Binary as BinaryClass,
+)
 
 
 def is_sedes(obj):

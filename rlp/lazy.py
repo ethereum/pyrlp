@@ -1,4 +1,5 @@
 from collections import Iterable, Sequence
+
 from .codec import consume_length_prefix, consume_payload
 from .exceptions import DecodingError
 from .utils import Atomic
