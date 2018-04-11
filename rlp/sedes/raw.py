@@ -6,13 +6,13 @@ larger structures.
 from collections import Sequence
 
 from rlp.exceptions import SerializationError
-from rlp.utils import Atomic
+from rlp.atomic import Atomic
 
 
 def serializable(obj):
     if isinstance(obj, Atomic):
         return True
-    elif isinstance(obj, Sequence):
+    elif not isinstance(obj, str) and isinstance(obj, Sequence):
         return all(map(serializable, obj))
     else:
         return False

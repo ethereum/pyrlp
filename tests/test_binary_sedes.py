@@ -1,69 +1,145 @@
 # -*- coding: UTF-8 -*-
 import pytest
-from rlp import SerializationError, utils
+from rlp import SerializationError
 from rlp.sedes import Binary
 
 
-def test_binary():
-    b1 = Binary()
-    f = {
-        '': b'',
-        'asdf': b'asdf',
-        ('\x00' * 20): (b'\x00' * 20),
-        'fdsa': b'fdsa'
-    }
-    for k in f:
-        assert b1.serialize(k) == f[k]
-    for d in ([], 5, str):
-        with pytest.raises(SerializationError):
-            b1.serialize(d)
+@pytest.mark.parametrize(
+    'value,expected',
+    (
+        (b'', b''),
+        (b'asdf', b'asdf'),
+        (b'\x00' * 20, b'\x00' * 20),
+        (b'fdsa', b'fdsa'),
+    ),
+)
+def test_simple_binary_serialization(value, expected):
+    sedes = Binary()
+    assert sedes.serialize(value) == expected
 
-    b2 = Binary.fixed_length(5)
-    f = {
-        'asdfg': b'asdfg',
-        b'\x00\x01\x02\x03\x04': b'\x00\x01\x02\x03\x04',
-        utils.str_to_bytes('ababa'): b'ababa'
-    }
-    for k in f:
-        assert b2.serialize(k) == f[k]
 
-    for d in ('asdf', 'asdfgh', '', 'bababa'):
-        with pytest.raises(SerializationError):
-            b2.serialize(d)
+@pytest.mark.parametrize(
+    'value',
+    ([], 5, str, '', 'arst'),
+)
+def test_binary_unserializable_values(value):
+    sedes = Binary()
+    with pytest.raises(SerializationError):
+        sedes.serialize(value)
 
-    b3 = Binary(2, 4)
-    f = {
-        'as': b'as',
-        'dfg': b'dfg',
-        'hjkl': b'hjkl',
-        b'\x00\x01\x02': b'\x00\x01\x02'
-    }
-    for k in f:
-        assert b3.serialize(k) == f[k]
-    for d in ('', 'a', 'abcde', 'äää'):
-        with pytest.raises(SerializationError):
-            b3.serialize(d)
 
-    b4 = Binary(min_length=3)
-    f = {'abc': b'abc', 'abcd': b'abcd', ('x' * 132): (b'x' * 132)}
-    for k in f:
-        assert b4.serialize(k) == f[k]
-    for d in ('ab', '', 'a', 'xy'):
-        with pytest.raises(SerializationError):
-            b4.serialize(d)
+@pytest.mark.parametrize(
+    'value,expected',
+    (
+        (b'asdfg', b'asdfg'),
+        (b'\x00\x01\x02\x03\x04', b'\x00\x01\x02\x03\x04'),
+        (b'ababa', b'ababa'),
+    )
+)
+def test_binary_fixed_length_serialization(value, expected):
+    sedes = Binary.fixed_length(5)
+    assert sedes.serialize(value) == expected
 
-    b5 = Binary(max_length=3)
-    f = {'': b'', 'ab': b'ab', 'abc': b'abc'}
-    for k in f:
-        assert b5.serialize(k) == f[k]
-    for d in ('abcd', 'vwxyz', 'a' * 32):
-        with pytest.raises(SerializationError):
-            b5.serialize(d)
 
-    b6 = Binary(min_length=3, max_length=5, allow_empty=True)
-    f = {'': b'', 'abc': b'abc', 'abcd': b'abcd', 'abcde': b'abcde'}
-    for k in f:
-        assert b6.serialize(k) == f[k]
-    for d in ('a', 'ab', 'abcdef', 'abcdefgh' * 10):
-        with pytest.raises(SerializationError):
-            b6.serialize(d)
+@pytest.mark.parametrize(
+    'value',
+    (b'asdf', b'asdfgh', b'', b'bababa'),
+)
+def test_binary_fixed_length_serialization_with_wrong_length(value):
+    sedes = Binary.fixed_length(5)
+    with pytest.raises(SerializationError):
+        sedes.serialize(value)
+
+
+@pytest.mark.parametrize(
+    'value,expected',
+    (
+        (b'as', b'as'),
+        (b'dfg', b'dfg'),
+        (b'hjkl', b'hjkl'),
+        (b'\x00\x01\x02', b'\x00\x01\x02'),
+    ),
+)
+def test_binary_variable_length_serialization(value, expected):
+    sedes = Binary(2, 4)
+    assert sedes.serialize(value) == expected
+
+
+@pytest.mark.parametrize(
+    'value',
+    (b'', b'a', b'abcde'),
+)
+def test_binary_variable_length_serialization_wrong_length(value):
+    sedes = Binary(2, 4)
+    with pytest.raises(SerializationError):
+        sedes.serialize(value)
+
+
+@pytest.mark.parametrize(
+    'value,expected',
+    (
+        (b'abc', b'abc'),
+        (b'abcd', b'abcd'),
+        (b'x' * 132, b'x' * 132),
+    ),
+)
+def test_binary_min_length_serialization(value, expected):
+    sedes = Binary(min_length=3)
+    assert sedes.serialize(value) == expected
+
+
+@pytest.mark.parametrize(
+    'value',
+    (b'ab', b'', b'a', b'xy'),
+)
+def test_binary_min_length_serialization_wrong_length(value):
+    sedes = Binary(min_length=3)
+    with pytest.raises(SerializationError):
+        sedes.serialize(value)
+
+
+@pytest.mark.parametrize(
+    'value,expected',
+    (
+        (b'', b''),
+        (b'ab', b'ab'),
+        (b'abc', b'abc'),
+    )
+)
+def test_binary_max_length_serialization(value, expected):
+    sedes = Binary(max_length=3)
+    assert sedes.serialize(value) == expected
+
+
+@pytest.mark.parametrize(
+    'value',
+    (b'abcd', b'vwxyz', b'a' * 32),
+)
+def test_binary_max_length_serialization_wrong_length(value):
+    sedes = Binary(max_length=3)
+    with pytest.raises(SerializationError):
+        sedes.serialize(value)
+
+
+@pytest.mark.parametrize(
+    'value,expected',
+    (
+        (b'', b''),
+        (b'abc', b'abc'),
+        (b'abcd', b'abcd'),
+        (b'abcde', b'abcde'),
+    )
+)
+def test_binary_min_and_max_length_with_allow_empty(value, expected):
+    sedes = Binary(min_length=3, max_length=5, allow_empty=True)
+    assert sedes.serialize(value) == expected
+
+
+@pytest.mark.parametrize(
+    'value',
+    (b'a', b'ab', b'abcdef', b'abcdefgh' * 10),
+)
+def test_binary_min_and_max_length_with_allow_empty_wrong_length(value):
+    sedes = Binary(min_length=3, max_length=5, allow_empty=True)
+    with pytest.raises(SerializationError):
+        sedes.serialize(value)

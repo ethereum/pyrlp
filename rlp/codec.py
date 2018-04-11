@@ -1,20 +1,15 @@
 import collections
+import struct
 
 from eth_utils import (
     int_to_big_endian,
     big_endian_to_int,
 )
 
-from rlp.exceptions import EncodingError, DecodingError
-from rlp.utils import (
+from rlp.atomic import (
     Atomic,
-    ascii_chr,
-    decode_hex,
-    encode_hex,
-    is_integer,
-    safe_ord,
-    str_to_bytes,
 )
+from rlp.exceptions import EncodingError, DecodingError
 from rlp.sedes.binary import Binary as BinaryClass
 from rlp.sedes import big_endian_int, binary
 from rlp.sedes.lists import List, Serializable, is_sedes
@@ -72,16 +67,6 @@ def encode(obj, sedes=None, infer_serializer=True, cache=False):
     return result
 
 
-def hex_encode(obj, sedes=None, infer_serializer=True, cache=False,
-               prefixed=False):
-    return ('0x' * prefixed) + \
-        encode_hex(encode(obj, sedes, infer_serializer, cache))
-
-
-def prefix_hex_encode(obj, sedes=None, infer_serializer=True, cache=False):
-    return '0x' + encode_hex(encode(obj, sedes, infer_serializer, cache))
-
-
 class RLPData(str):
 
     "wraper to mark already rlp serialized data"
@@ -93,11 +78,11 @@ def encode_raw(item):
     if isinstance(item, RLPData):
         return item
     elif isinstance(item, Atomic):
-        if len(item) == 1 and safe_ord(item[0]) < 128:
-            return str_to_bytes(item)
-        payload = str_to_bytes(item)
+        if len(item) == 1 and item[0] < 128:
+            return item
+        payload = item
         prefix_offset = 128  # string
-    elif isinstance(item, collections.Sequence):
+    elif not isinstance(item, str) and isinstance(item, collections.Sequence):
         payload = b''.join(encode_raw(x) for x in item)
         prefix_offset = 192  # list
     else:
@@ -120,10 +105,10 @@ def length_prefix(length, offset):
                    list
     """
     if length < 56:
-        return ascii_chr(offset + length)
+        return struct.pack('B', offset + length)
     elif length < 256**8:
         length_string = int_to_big_endian(length)
-        return ascii_chr(offset + 56 - 1 + len(length_string)) + length_string
+        return struct.pack('B', offset + 56 - 1 + len(length_string)) + length_string
     else:
         raise ValueError('Length greater than 256**8')
 
@@ -131,18 +116,18 @@ def length_prefix(length, offset):
 def consume_length_prefix(rlp, start):
     """Read a length prefix from an RLP string.
 
-    :param rlp: the rlp string to read from
+    :param rlp: the rlp byte string to read from
     :param start: the position at which to start reading
     :returns: a tuple ``(type, length, end)``, where ``type`` is either ``str``
               or ``list`` depending on the type of the following payload,
               ``length`` is the length of the payload in bytes, and ``end`` is
               the position of the first payload byte in the rlp string
     """
-    b0 = safe_ord(rlp[start])
+    b0 = rlp[start]
     if b0 < 128:  # single byte
         return (str, 1, start)
     elif b0 < 128 + 56:  # short string
-        if b0 - 128 == 1 and safe_ord(rlp[start + 1]) < 128:
+        if b0 - 128 == 1 and rlp[start + 1] < 128:
             raise DecodingError('Encoded as short string although single byte was possible', rlp)
         return (str, b0 - 128, start + 1)
     elif b0 < 192:  # long string
@@ -224,7 +209,6 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
              `strict` is true
     :raises: :exc:`rlp.DeserializationError` if the deserialization fails
     """
-    rlp = str_to_bytes(rlp)
     try:
         item, end = consume_item(rlp, 0)
     except IndexError:
@@ -242,13 +226,7 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
         return item
 
 
-def hex_decode(rlp, sedes=None, strict=True, **kwargs):
-    return decode(decode_hex(rlp[2:] if rlp[:2] == '0x' else rlp),
-                  sedes, strict, **kwargs)
-
-
 def descend(rlp, *path):
-    rlp = str_to_bytes(rlp)
     for p in path:
         pos = 0
         _typ, _len, pos = consume_length_prefix(rlp, pos)
@@ -274,11 +252,11 @@ def infer_sedes(obj):
     """
     if is_sedes(obj.__class__):
         return obj.__class__
-    if is_integer(obj) and obj >= 0:
+    if isinstance(obj, int) and obj >= 0:
         return big_endian_int
     if BinaryClass.is_valid_type(obj):
         return binary
-    if isinstance(obj, collections.Sequence):
+    if not isinstance(obj, str) and isinstance(obj, collections.Sequence):
         return List(map(infer_sedes, obj))
     msg = 'Did not find sedes handling type {}'.format(type(obj).__name__)
     raise TypeError(msg)

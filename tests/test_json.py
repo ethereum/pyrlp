@@ -1,7 +1,16 @@
+import codecs
 import json
+
 import pytest
+
+from eth_utils import (
+    decode_hex,
+    encode_hex,
+    add_0x_prefix,
+)
+
 import rlp
-from rlp import encode, decode, decode_lazy, infer_sedes, utils, DecodingError
+from rlp import encode, decode, decode_lazy, infer_sedes, DecodingError
 
 
 def evaluate(ll):
@@ -11,13 +20,15 @@ def evaluate(ll):
         return ll
 
 
-def to_bytes(value):
+def normalize_input(value):
     if isinstance(value, str):
-        return utils.str_to_bytes(value)
+        return codecs.encode(value, 'utf8')
     elif isinstance(value, list):
-        return [to_bytes(v) for v in value]
-    else:
+        return [normalize_input(v) for v in value]
+    elif isinstance(value, int):
         return value
+    else:
+        raise ValueError("Unsupported type")
 
 
 def compare_nested(got, expected):
@@ -37,7 +48,13 @@ def compare_nested(got, expected):
 with open('tests/rlptest.json') as rlptest_file:
     test_data = json.load(rlptest_file)
     test_pieces = [
-        (name, {'in': to_bytes(in_out['in']), 'out': in_out['out']})
+        (
+            name,
+            {
+                'in': normalize_input(in_out['in']),
+                'out': add_0x_prefix(in_out['out']),
+            },
+        )
         for name, in_out in test_data.items()
     ]
 
@@ -46,8 +63,8 @@ with open('tests/rlptest.json') as rlptest_file:
 def test_encode(name, in_out):
     msg_format = 'Test {} failed (encoded {} to {} instead of {})'
     data = in_out['in']
-    result = utils.encode_hex(encode(data)).upper()
-    expected = in_out['out'].upper()
+    result = encode_hex(encode(data)).lower()
+    expected = in_out['out'].lower()
     if result != expected:
         pytest.fail(msg_format.format(name, data, result, expected))
 
@@ -55,7 +72,7 @@ def test_encode(name, in_out):
 @pytest.mark.parametrize('name, in_out', test_pieces)
 def test_decode(name, in_out):
     msg_format = 'Test {} failed (decoded {} to {} instead of {})'
-    rlp_string = utils.decode_hex(in_out['out'])
+    rlp_string = decode_hex(in_out['out'])
     decoded = decode(rlp_string)
     with pytest.raises(DecodingError):
         decode(rlp_string + b'\x00')

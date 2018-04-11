@@ -1,9 +1,7 @@
 from . import sedes  # noqa: F401
 from .codec import (  # noqa: F401
     encode,
-    hex_encode,
     decode,
-    hex_decode,
     infer_sedes,
     descend,
     append,

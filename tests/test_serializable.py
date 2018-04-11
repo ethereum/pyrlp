@@ -26,7 +26,7 @@ class RLPType2(Serializable):
         (RLPType1, [8], 'field3'),
         (RLPType2, [], 'field2_1'),
         (RLPType2, [], 'field2_2'),
-        (RLPType2, [RLPType1(8, 'a', (7, ''))], 'field2_2'),
+        (RLPType2, [RLPType1(8, b'a', (7, ''))], 'field2_2'),
     ),
 )
 def test_validation(rlptype, fields, exception_includes):
@@ -35,8 +35,8 @@ def test_validation(rlptype, fields, exception_includes):
 
 
 def test_serializable():
-    t1a_data = (5, 'a', (0, ''))
-    t1b_data = (9, 'b', (2, ''))
+    t1a_data = (5, b'a', (0, b''))
+    t1b_data = (9, b'b', (2, b''))
     test1a = RLPType1(*t1a_data)
     test1b = RLPType1(*t1b_data)
     test2 = RLPType2(test1a, [test1a, test1b])
@@ -51,13 +51,13 @@ def test_serializable():
 
     # mutability
     test1a.field1 += 1
-    test1a.field2 = 'x'
+    test1a.field2 = b'x'
     assert test1a.field1 == 6
-    assert test1a.field2 == 'x'
+    assert test1a.field2 == b'x'
     test1a.field1 -= 1
-    test1a.field2 = 'a'
+    test1a.field2 = b'a'
     assert test1a.field1 == 5
-    assert test1a.field2 == 'a'
+    assert test1a.field2 == b'a'
 
     # inference
     assert infer_sedes(test1a) == RLPType1
@@ -91,7 +91,7 @@ def test_serializable():
         with pytest.raises(ValueError):
             obj.field1 += 1
         with pytest.raises(ValueError):
-            obj.field2 = 'x'
+            obj.field2 = b'x'
         assert obj.field1 == before1
         assert obj.field2 == before2
     assert test1a_d == test1a
@@ -124,13 +124,13 @@ def test_serializable():
 
 def test_make_immutable():
     assert make_immutable(1) == 1
-    assert make_immutable('a') == 'a'
+    assert make_immutable(b'a') == b'a'
     assert make_immutable((1, 2, 3)) == (1, 2, 3)
-    assert make_immutable([1, 2, 'a']) == (1, 2, 'a')
+    assert make_immutable([1, 2, b'a']) == (1, 2, b'a')
     assert make_immutable([[1], [2, [3], 4], 5, 6]) == ((1,), (2, (3,), 4), 5, 6)
 
-    t1a_data = (5, 'a', (0, ''))
-    t1b_data = (9, 'b', (2, ''))
+    t1a_data = (5, b'a', (0, b''))
+    t1b_data = (9, b'b', (2, b''))
     test1a = RLPType1(*t1a_data)
     test1b = RLPType1(*t1b_data)
     test2 = RLPType2(test1a, [test1a, test1b])
@@ -161,13 +161,13 @@ def test_make_immutable():
 
 def test_make_mutable():
     assert make_mutable(1) == 1
-    assert make_mutable('a') == 'a'
+    assert make_mutable(b'a') == b'a'
     assert make_mutable((1, 2, 3)) == [1, 2, 3]
-    assert make_mutable([1, 2, 'a']) == [1, 2, 'a']
+    assert make_mutable([1, 2, b'a']) == [1, 2, b'a']
     assert make_mutable([[1], [2, [3], 4], 5, 6]) == [[1], [2, [3], 4], 5, 6]
 
-    t1a_data = (5, 'a', (0, ''))
-    t1b_data = (9, 'b', (2, ''))
+    t1a_data = (5, b'a', (0, b''))
+    t1b_data = (9, b'b', (2, b''))
     test1a = RLPType1(*t1a_data)
     test1b = RLPType1(*t1b_data)
     test2 = RLPType2(test1a, [test1a, test1b])
