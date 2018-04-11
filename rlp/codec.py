@@ -1,13 +1,16 @@
 import collections
 
+from eth_utils import (
+    int_to_big_endian,
+    big_endian_to_int,
+)
+
 from rlp.exceptions import EncodingError, DecodingError
 from rlp.utils import (
     Atomic,
     ascii_chr,
-    big_endian_to_int,
     decode_hex,
     encode_hex,
-    int_to_big_endian,
     is_integer,
     safe_ord,
     str_to_bytes,
