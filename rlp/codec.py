@@ -67,7 +67,7 @@ def encode(obj, sedes=None, infer_serializer=True, cache=False):
     return result
 
 
-class RLPData(str):
+class RLPData(bytes):
 
     "wraper to mark already rlp serialized data"
     pass
@@ -97,6 +97,9 @@ def encode_raw(item):
     return prefix + payload
 
 
+LONG_LENGTH = 256**8
+
+
 def length_prefix(length, offset):
     """Construct the prefix to lists or strings denoting their length.
 
@@ -106,11 +109,14 @@ def length_prefix(length, offset):
     """
     if length < 56:
         return ALL_BYTES[offset + length]
-    elif length < 256**8:
+    elif length < LONG_LENGTH:
         length_string = int_to_big_endian(length)
         return ALL_BYTES[offset + 56 - 1 + len(length_string)] + length_string
     else:
         raise ValueError('Length greater than 256**8')
+
+
+SHORT_STRING = 128 + 56
 
 
 def consume_length_prefix(rlp, start):
@@ -125,19 +131,19 @@ def consume_length_prefix(rlp, start):
     """
     b0 = rlp[start]
     if b0 < 128:  # single byte
-        return (str, 1, start)
-    elif b0 < 128 + 56:  # short string
+        return (bytes, 1, start)
+    elif b0 < SHORT_STRING:  # short string
         if b0 - 128 == 1 and rlp[start + 1] < 128:
             raise DecodingError('Encoded as short string although single byte was possible', rlp)
-        return (str, b0 - 128, start + 1)
+        return (bytes, b0 - 128, start + 1)
     elif b0 < 192:  # long string
-        ll = b0 - 128 - 56 + 1
+        ll = b0 - 183  # - (128 + 56 - 1)
         if rlp[start + 1:start + 2] == b'\x00':
             raise DecodingError('Length starts with zero bytes', rlp)
         l = big_endian_to_int(rlp[start + 1:start + 1 + ll])
         if l < 56:
             raise DecodingError('Long string prefix used for short string', rlp)
-        return (str, l, start + 1 + ll)
+        return (bytes, l, start + 1 + ll)
     elif b0 < 192 + 56:  # short list
         return (list, b0 - 192, start + 1)
     else:  # long list
@@ -154,15 +160,15 @@ def consume_payload(rlp, start, type_, length):
     """Read the payload of an item from an RLP string.
 
     :param rlp: the rlp string to read from
-    :param type_: the type of the payload (``str`` or ``list``)
+    :param type_: the type of the payload (``bytes`` or ``list``)
     :param start: the position at which to start reading
     :param length: the length of the payload in bytes
     :returns: a tuple ``(item, end)``, where ``item`` is the read item and
               ``end`` is the position of the first unprocessed byte
     """
-    if type_ == str:
+    if type_ is bytes:
         return (rlp[start:start + length], start + length)
-    elif type_ == list:
+    elif type_ is list:
         items = []
         next_item_start = start
         end = next_item_start + length
@@ -176,7 +182,7 @@ def consume_payload(rlp, start, type_, length):
                                 'length', rlp)
         return (items, next_item_start)
     else:
-        raise TypeError('Type must be either list or str')
+        raise TypeError('Type must be either list or bytes')
 
 
 def consume_item(rlp, start):
@@ -226,20 +232,6 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
         return item
 
 
-def descend(rlp, *path):
-    for p in path:
-        pos = 0
-        _typ, _len, pos = consume_length_prefix(rlp, pos)
-        if _typ != list:
-            raise DecodingError('Trying to descend through a non-list!', rlp)
-        for i in range(p):
-            _, _l, _p = consume_length_prefix(rlp, pos)
-            pos = _l + _p
-        _, _l, _p = consume_length_prefix(rlp, pos)
-        rlp = rlp[pos: _p + _l]
-    return rlp
-
-
 def infer_sedes(obj):
     """Try to find a sedes objects suitable for a given Python object.
 
@@ -260,61 +252,3 @@ def infer_sedes(obj):
         return List(map(infer_sedes, obj))
     msg = 'Did not find sedes handling type {}'.format(type(obj).__name__)
     raise TypeError(msg)
-
-
-def append(rlpdata, obj):
-    _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
-    assert _typ is list
-    rlpdata = rlpdata[_pos:] + encode(obj)
-    prefix = length_prefix(len(rlpdata), 192)
-    return prefix + rlpdata
-
-
-def insert(rlpdata, index, obj):
-    _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
-    _beginpos = _pos
-    assert _typ is list
-    for i in range(index):
-        _, _l, _p = consume_length_prefix(rlpdata, _pos)
-        _pos = _l + _p
-        if _l + _p >= len(rlpdata):
-            break
-    rlpdata = rlpdata[_beginpos:_pos] + encode(obj) + rlpdata[_pos:]
-    prefix = length_prefix(len(rlpdata), 192)
-    return prefix + rlpdata
-
-
-def pop(rlpdata, index=2**50):
-    _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
-    _initpos = _pos
-    assert _typ is list
-    while index > 0:
-        _, _l, _p = consume_length_prefix(rlpdata, _pos)
-        if _l + _p >= len(rlpdata):
-            break
-        _pos = _l + _p
-        index -= 1
-    _, _l, _p = consume_length_prefix(rlpdata, _pos)
-    newdata = rlpdata[_initpos:_pos] + rlpdata[_l + _p:]
-    prefix = length_prefix(len(newdata), 192)
-    return prefix + newdata
-
-
-EMPTYLIST = encode([])
-
-
-def compare_length(rlpdata, length):
-    _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
-    assert _typ is list
-    lenlist = 0
-    if rlpdata == EMPTYLIST:
-        return -1 if length > 0 else 1 if length < 0 else 0
-    while 1:
-        if lenlist > length:
-            return 1
-        _, _l, _p = consume_length_prefix(rlpdata, _pos)
-        lenlist += 1
-        if _l + _p >= len(rlpdata):
-            break
-        _pos = _l + _p
-    return 0 if lenlist == length else -1
