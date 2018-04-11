@@ -100,13 +100,26 @@ class LazyList(Sequence):
         return item
 
     def __getitem__(self, i):
+        if isinstance(i, slice):
+            if i.step is not None:
+                raise TypeError("Step not supported")
+            start = i.start
+            stop = i.stop
+        else:
+            start = i
+            stop = i + 1
+
         try:
-            while len(self._elements) <= i:
-                self.next()
+            while len(self._elements) < stop:
+                e = self.next()
         except StopIteration:
             assert self.index == self.end
-            raise IndexError('Index %d out of range' % i)
-        return self._elements[i]
+            raise IndexError('Index %s out of range' % i)
+
+        if isinstance(i, slice):
+            return self._elements[start:stop]
+        else:
+            return self._elements[start]
 
     def __len__(self):
         if not self._len:
