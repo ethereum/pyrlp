@@ -1,4 +1,3 @@
-import codecs
 import json
 
 import pytest
@@ -22,7 +21,7 @@ def evaluate(ll):
 
 def normalize_input(value):
     if isinstance(value, str):
-        return codecs.encode(value, 'utf8')
+        return value.encode('utf8')
     elif isinstance(value, list):
         return [normalize_input(v) for v in value]
     elif isinstance(value, int):

@@ -17,7 +17,7 @@ class BigEndianInt(object):
         self.l = l
 
     def serialize(self, obj):
-        if not isinstance(obj, int):
+        if isinstance(obj, bool) or not isinstance(obj, int):
             raise SerializationError('Can only serialize integers', obj)
         if self.l is not None and obj >= 256**self.l:
             raise SerializationError('Integer too large (does not fit in {} '
