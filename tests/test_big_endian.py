@@ -1,10 +1,11 @@
 import binascii
+import struct
 
 import pytest
 
 from eth_utils import int_to_big_endian
 
-from rlp import SerializationError, utils
+from rlp import SerializationError
 from rlp.sedes import big_endian_int, BigEndianInt
 
 
@@ -14,7 +15,7 @@ valid_data = (
     (65535, b'\xff\xff'),
 )
 
-single_bytes = ((n, utils.ascii_chr(n)) for n in range(1, 256))
+single_bytes = ((n, struct.pack('B', n)) for n in range(1, 256))
 
 random_integers = (256, 257, 4839, 849302, 483290432, 483290483290482039482039,
                    48930248348219540325894323584235894327865439258743754893066)

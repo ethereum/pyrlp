@@ -1,4 +1,5 @@
 import collections
+import struct
 
 from eth_utils import (
     int_to_big_endian,
@@ -8,7 +9,6 @@ from eth_utils import (
 from rlp.exceptions import EncodingError, DecodingError
 from rlp.utils import (
     Atomic,
-    ascii_chr,
     is_integer,
     str_to_bytes,
 )
@@ -107,10 +107,10 @@ def length_prefix(length, offset):
                    list
     """
     if length < 56:
-        return ascii_chr(offset + length)
+        return struct.pack('B', offset + length)
     elif length < 256**8:
         length_string = int_to_big_endian(length)
-        return ascii_chr(offset + 56 - 1 + len(length_string)) + length_string
+        return struct.pack('B', offset + 56 - 1 + len(length_string)) + length_string
     else:
         raise ValueError('Length greater than 256**8')
 

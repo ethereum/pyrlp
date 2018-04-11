@@ -25,9 +25,5 @@ def bytes_to_str(value):
     return value.decode('utf-8')
 
 
-def ascii_chr(value):
-    return bytes([value])
-
-
 def is_integer(value):
     return isinstance(value, int)
