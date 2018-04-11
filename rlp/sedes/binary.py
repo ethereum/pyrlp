@@ -1,5 +1,5 @@
 from rlp.exceptions import SerializationError, DeserializationError
-from rlp.utils import Atomic, str_to_bytes
+from rlp.atomic import Atomic
 
 
 class Binary(object):
@@ -23,7 +23,7 @@ class Binary(object):
 
     @classmethod
     def is_valid_type(cls, obj):
-        return isinstance(obj, (str, bytes, bytearray))
+        return isinstance(obj, (bytes, bytearray))
 
     def is_valid_length(self, l):
         return any((self.min_length <= l <= self.max_length,
@@ -33,15 +33,10 @@ class Binary(object):
         if not Binary.is_valid_type(obj):
             raise SerializationError('Object is not a serializable ({})'.format(type(obj)), obj)
 
-        if isinstance(obj, (bytes, bytearray)):
-            serial = obj
-        else:
-            serial = str_to_bytes(obj)
+        if not self.is_valid_length(len(obj)):
+            raise SerializationError('Object has invalid length', obj)
 
-        if not self.is_valid_length(len(serial)):
-            raise SerializationError('Object has invalid length', serial)
-
-        return serial
+        return obj
 
     def deserialize(self, serial):
         if not isinstance(serial, Atomic):

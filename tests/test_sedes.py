@@ -11,12 +11,12 @@ def test_inference():
         (5, big_endian_int),
         (0, big_endian_int),
         (-1, None),
-        ('', binary),
-        ('asdf', binary),
-        ('\xe4\xf6\xfc\xea\xe2\xfb', binary),
+        (b'', binary),
+        (b'asdf', binary),
+        (b'\xe4\xf6\xfc\xea\xe2\xfb', binary),
         ([], List()),
         ([1, 2, 3], List((big_endian_int,) * 3)),
-        ([[], 'asdf'], List(([], binary))),
+        ([[], b'asdf'], List(([], binary))),
     )
 
     for obj, sedes in obj_sedes_pairs:

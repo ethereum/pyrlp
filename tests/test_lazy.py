@@ -78,7 +78,7 @@ def test_evaluation_of_lazy_decode_with_simple_value_sedes(value):
 
 def test_evaluation_of_lazy_decode_with_list_sedes_and_invalid_value():
     sedes = CountableList(big_endian_int)
-    value = [(), (1, 2), 'asdf', (3)]
+    value = [(), (1, 2), b'asdf', (3)]
     invalid_lazy = rlp.decode_lazy(rlp.encode(value), sedes)
     assert invalid_lazy[0] == value[0]
     assert invalid_lazy[1] == value[1]

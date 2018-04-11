@@ -6,11 +6,10 @@ from eth_utils import (
     big_endian_to_int,
 )
 
-from rlp.exceptions import EncodingError, DecodingError
-from rlp.utils import (
+from rlp.atomic import (
     Atomic,
-    str_to_bytes,
 )
+from rlp.exceptions import EncodingError, DecodingError
 from rlp.sedes.binary import Binary as BinaryClass
 from rlp.sedes import big_endian_int, binary
 from rlp.sedes.lists import List, Serializable, is_sedes
@@ -80,10 +79,10 @@ def encode_raw(item):
         return item
     elif isinstance(item, Atomic):
         if len(item) == 1 and item[0] < 128:
-            return str_to_bytes(item)
-        payload = str_to_bytes(item)
+            return item
+        payload = item
         prefix_offset = 128  # string
-    elif isinstance(item, collections.Sequence):
+    elif not isinstance(item, str) and isinstance(item, collections.Sequence):
         payload = b''.join(encode_raw(x) for x in item)
         prefix_offset = 192  # list
     else:
@@ -210,7 +209,6 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
              `strict` is true
     :raises: :exc:`rlp.DeserializationError` if the deserialization fails
     """
-    rlp = str_to_bytes(rlp)
     try:
         item, end = consume_item(rlp, 0)
     except IndexError:
@@ -229,7 +227,6 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
 
 
 def descend(rlp, *path):
-    rlp = str_to_bytes(rlp)
     for p in path:
         pos = 0
         _typ, _len, pos = consume_length_prefix(rlp, pos)
@@ -259,7 +256,7 @@ def infer_sedes(obj):
         return big_endian_int
     if BinaryClass.is_valid_type(obj):
         return binary
-    if isinstance(obj, collections.Sequence):
+    if not isinstance(obj, str) and isinstance(obj, collections.Sequence):
         return List(map(infer_sedes, obj))
     msg = 'Did not find sedes handling type {}'.format(type(obj).__name__)
     raise TypeError(msg)

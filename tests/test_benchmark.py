@@ -68,7 +68,7 @@ def generate_test_functions():
     invalid['long_string'] = long_string
     invalid['long_list'] = long_list
 
-    nested_list = rlp.encode('\x00')
+    nested_list = rlp.encode(b'\x00')
     for _ in repeat(None, SIZE):
         nested_list += rlp.codec.length_prefix(len(nested_list), 0xc0)
     invalid['nested_list'] = nested_list
@@ -78,7 +78,11 @@ def generate_test_functions():
     prefix = rlp.codec.length_prefix(1 + 1 + len(long_list), 0xc0)
     invalid['long_list_object'] = prefix + rlp.encode(b'\x00') + rlp.encode(b'\x00') + long_list
 
-    valid['friendly'] = rlp.encode(Message('hello', 'I\'m friendly', ['not', 'many', 'elements']))
+    valid['friendly'] = rlp.encode(Message(
+        b'hello',
+        b"I'm friendly",
+        [b'not', b'many', b'elements'],
+    ))
 
     invalid = invalid.items()
     valid = valid.items()
