@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import pytest
 import rlp
 from rlp.sedes import big_endian_int

@@ -1,13 +1,14 @@
 import collections
 
+from eth_utils import (
+    int_to_big_endian,
+    big_endian_to_int,
+)
+
 from rlp.exceptions import EncodingError, DecodingError
 from rlp.utils import (
     Atomic,
     ascii_chr,
-    big_endian_to_int,
-    decode_hex,
-    encode_hex,
-    int_to_big_endian,
     is_integer,
     safe_ord,
     str_to_bytes,
@@ -67,16 +68,6 @@ def encode(obj, sedes=None, infer_serializer=True, cache=False):
         obj._cached_rlp = result
         obj.make_immutable()
     return result
-
-
-def hex_encode(obj, sedes=None, infer_serializer=True, cache=False,
-               prefixed=False):
-    return ('0x' * prefixed) + \
-        encode_hex(encode(obj, sedes, infer_serializer, cache))
-
-
-def prefix_hex_encode(obj, sedes=None, infer_serializer=True, cache=False):
-    return '0x' + encode_hex(encode(obj, sedes, infer_serializer, cache))
 
 
 class RLPData(str):
@@ -237,11 +228,6 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
         return obj
     else:
         return item
-
-
-def hex_decode(rlp, sedes=None, strict=True, **kwargs):
-    return decode(decode_hex(rlp[2:] if rlp[:2] == '0x' else rlp),
-                  sedes, strict, **kwargs)
 
 
 def descend(rlp, *path):
