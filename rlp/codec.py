@@ -10,7 +10,6 @@ from rlp.utils import (
     Atomic,
     ascii_chr,
     is_integer,
-    safe_ord,
     str_to_bytes,
 )
 from rlp.sedes.binary import Binary as BinaryClass
@@ -81,7 +80,7 @@ def encode_raw(item):
     if isinstance(item, RLPData):
         return item
     elif isinstance(item, Atomic):
-        if len(item) == 1 and safe_ord(item[0]) < 128:
+        if len(item) == 1 and item[0] < 128:
             return str_to_bytes(item)
         payload = str_to_bytes(item)
         prefix_offset = 128  # string
@@ -119,18 +118,18 @@ def length_prefix(length, offset):
 def consume_length_prefix(rlp, start):
     """Read a length prefix from an RLP string.
 
-    :param rlp: the rlp string to read from
+    :param rlp: the rlp byte string to read from
     :param start: the position at which to start reading
     :returns: a tuple ``(type, length, end)``, where ``type`` is either ``str``
               or ``list`` depending on the type of the following payload,
               ``length`` is the length of the payload in bytes, and ``end`` is
               the position of the first payload byte in the rlp string
     """
-    b0 = safe_ord(rlp[start])
+    b0 = rlp[start]
     if b0 < 128:  # single byte
         return (str, 1, start)
     elif b0 < 128 + 56:  # short string
-        if b0 - 128 == 1 and safe_ord(rlp[start + 1]) < 128:
+        if b0 - 128 == 1 and rlp[start + 1] < 128:
             raise DecodingError('Encoded as short string although single byte was possible', rlp)
         return (str, b0 - 128, start + 1)
     elif b0 < 192:  # long string

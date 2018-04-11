@@ -31,11 +31,3 @@ def ascii_chr(value):
 
 def is_integer(value):
     return isinstance(value, int)
-
-
-def safe_ord(c):
-    try:
-        return ord(c)
-    except TypeError:
-        assert isinstance(c, int)
-        return c
