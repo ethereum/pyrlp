@@ -46,14 +46,19 @@ def test_string(value):
 
 
 def test_list_getitem():
-    l = rlp.decode_lazy(rlp.encode([1,2,3]), big_endian_int)
+    l = rlp.decode_lazy(rlp.encode([1, 2, 3]), big_endian_int)
     assert isinstance(l, rlp.lazy.LazyList)
     assert l[0] == 1
     assert l[1] == 2
     assert l[2] == 3
-    assert l[0:3] == [1,2,3]
-    assert l[0:2] == [1,2]
+    assert l[0:3] == [1, 2, 3]
+    assert l[0:2] == [1, 2]
     assert l[0:1] == [1]
+    assert l[1:2] == [2]
+    assert l[1:] == [2, 3]
+    assert l[1:-1] == [2]
+    assert l[-2:] == [2, 3]
+    assert l[:2] == [1, 2]
 
 
 def test_nested_list():
