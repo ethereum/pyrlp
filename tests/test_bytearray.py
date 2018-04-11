@@ -1,6 +1,4 @@
 # -*- coding: utf8 -*-
-from __future__ import unicode_literals
-
 import struct
 
 import rlp
@@ -8,14 +6,16 @@ import rlp
 
 def test_bytearray():
     e = rlp.encode('abc')
-    d = rlp.decode(e)
-    d = rlp.decode(bytearray(e))
+    expected = rlp.decode(e)
+    actual = rlp.decode(bytearray(e))
+    assert expected == actual
 
 
 def test_bytearray_lazy():
     e = rlp.encode('abc')
-    d = rlp.decode(e)
-    d = rlp.decode_lazy(bytearray(e))
+    expected = rlp.decode(e)
+    actual = rlp.decode_lazy(bytearray(e))
+    assert expected == actual
 
 
 def test_bytearray_encode_decode():

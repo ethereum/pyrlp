@@ -1,4 +1,5 @@
 from collections import Iterable, Sequence
+
 from .codec import consume_length_prefix, consume_payload
 from .exceptions import DecodingError
 from .utils import Atomic
@@ -54,7 +55,6 @@ def consume_item_lazy(rlp, start):
     """
     t, l, s = consume_length_prefix(rlp, start)
     if t == str:
-        #item, _ = consume_payload(rlp, s, str, l), s + l
         return consume_payload(rlp, s, str, l)
     else:
         assert t == list

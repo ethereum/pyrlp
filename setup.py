@@ -1,67 +1,65 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from setuptools import (
+    setup,
+    find_packages,
+)
 
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+extras_require = {
+    'test': [
+        "pytest==3.3.2",
+        "tox>=2.9.1,<3",
+    ],
+    'lint': [
+        "flake8==3.4.1",
+    ],
+    'doc': [
+        "Sphinx>=1.6.5,<2",
+        "sphinx_rtd_theme>=0.1.9",
+    ],
+    'dev': [
+        "bumpversion>=0.5.3,<1",
+        "pytest-xdist",
+        "pytest-watch>=4.1.0,<5",
+        "wheel",
+        "ipython",
+    ],
+}
 
 
-from setuptools.command.test import test as TestCommand
+extras_require['dev'] = (
+    extras_require['dev'] +
+    extras_require['test'] +
+    extras_require['lint'] +
+    extras_require['doc']
+)
 
-
-class PyTest(TestCommand):
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-        pytest.main(self.test_args)
-
-
-with open('README.md') as readme_file:
-    readme = readme_file.read()
-
-test_requirements = [
-    'pytest',
-]
-
-# *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-# see: https://github.com/ethereum/pyethapp/wiki/Development:-Versions-and-Releases
-version = '0.6.0'
 
 setup(
     name='rlp',
-    version=version,
-    description="A package for encoding and decoding data in and from Recursive Length Prefix notation",
-    long_description=readme,
+    # *IMPORTANT*: Don't manually change the version here. See README for more.
+    version='0.6.0',
+    description="A package for Recursive Length Prefix encoding and decoding",
+    long_description_markdown_filename='README.md',
     author="jnnk",
     author_email='jnnknnj@gmail.com',
     url='https://github.com/ethereum/pyrlp',
-    packages=[
-        'rlp', 'rlp.sedes'
-    ],
+    packages=find_packages(exclude=["tests", "tests.*"]),
     include_package_data=True,
+    setup_requires=['setuptools-markdown'],
     install_requires=[],
+    extras_require=extras_require,
     license="MIT",
     zip_safe=False,
     keywords='rlp ethereum',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',
+        'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: Implementation :: PyPy',
     ],
-    cmdclass={'test': PyTest},
-    tests_require=test_requirements
 )

@@ -1,40 +1,46 @@
 import collections
-import sys
-from .exceptions import EncodingError, DecodingError
 
-from .utils import (Atomic, str_to_bytes, is_integer, ascii_chr,
-                    safe_ord, big_endian_to_int, int_to_big_endian,
-                    encode_hex, decode_hex)
-from .sedes.binary import Binary as BinaryClass
-from .sedes import big_endian_int, binary
-from .sedes.lists import List, Serializable, is_sedes
-
-
-if sys.version_info.major == 2:
-    from itertools import imap as map
+from rlp.exceptions import EncodingError, DecodingError
+from rlp.utils import (
+    Atomic,
+    ascii_chr,
+    big_endian_to_int,
+    decode_hex,
+    encode_hex,
+    int_to_big_endian,
+    is_integer,
+    safe_ord,
+    str_to_bytes,
+)
+from rlp.sedes.binary import Binary as BinaryClass
+from rlp.sedes import big_endian_int, binary
+from rlp.sedes.lists import List, Serializable, is_sedes
 
 
 def encode(obj, sedes=None, infer_serializer=True, cache=False):
     """Encode a Python object in RLP format.
 
-    By default, the object is serialized in a suitable way first (using :func:`rlp.infer_sedes`)
-    and then encoded. Serialization can be explicitly suppressed by setting `infer_serializer` to
-    ``False`` and not passing an alternative as `sedes`.
+    By default, the object is serialized in a suitable way first (using
+    :func:`rlp.infer_sedes`) and then encoded. Serialization can be explicitly
+    suppressed by setting `infer_serializer` to ``False`` and not passing an
+    alternative as `sedes`.
 
-    If `obj` has an attribute :attr:`_cached_rlp` (as, notably, :class:`rlp.Serializable`) and its
-    value is not `None`, this value is returned bypassing serialization and encoding, unless
-    `sedes` is given (as the cache is assumed to refer to the standard serialization which can be
+    If `obj` has an attribute :attr:`_cached_rlp` (as, notably,
+    :class:`rlp.Serializable`) and its value is not `None`, this value is
+    returned bypassing serialization and encoding, unless `sedes` is given (as
+    the cache is assumed to refer to the standard serialization which can be
     replaced by specifying `sedes`).
 
-    If `obj` is a :class:`rlp.Serializable` and `cache` is true, the result of the encoding will be
-    stored in :attr:`_cached_rlp` if it is empty and :meth:`rlp.Serializable.make_immutable` will
-    be invoked on `obj`.
+    If `obj` is a :class:`rlp.Serializable` and `cache` is true, the result of
+    the encoding will be stored in :attr:`_cached_rlp` if it is empty and
+    :meth:`rlp.Serializable.make_immutable` will be invoked on `obj`.
 
     :param sedes: an object implementing a function ``serialize(obj)`` which will be used to
                   serialize ``obj`` before encoding, or ``None`` to use the infered one (if any)
     :param infer_serializer: if ``True`` an appropriate serializer will be selected using
                              :func:`rlp.infer_sedes` to serialize `obj` before encoding
-    :param cache: cache the return value in `obj._cached_rlp` if possible and make `obj` immutable
+    :param cache: cache the return value in `obj._cached_rlp` if possible and
+                  make `obj` immutable
                   (default `False`)
     :returns: the RLP encoded item
     :raises: :exc:`rlp.EncodingError` in the rather unlikely case that the item is too big to
@@ -68,8 +74,9 @@ def hex_encode(obj, sedes=None, infer_serializer=True, cache=False,
     return ('0x' * prefixed) + \
         encode_hex(encode(obj, sedes, infer_serializer, cache))
 
+
 def prefix_hex_encode(obj, sedes=None, infer_serializer=True, cache=False):
-    return '0x'+encode_hex(encode(obj, sedes, infer_serializer, cache))
+    return '0x' + encode_hex(encode(obj, sedes, infer_serializer, cache))
 
 
 class RLPData(str):
@@ -231,9 +238,11 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
     else:
         return item
 
+
 def hex_decode(rlp, sedes=None, strict=True, **kwargs):
     return decode(decode_hex(rlp[2:] if rlp[:2] == '0x' else rlp),
                   sedes, strict, **kwargs)
+
 
 def descend(rlp, *path):
     rlp = str_to_bytes(rlp)
@@ -248,6 +257,7 @@ def descend(rlp, *path):
         _, _l, _p = consume_length_prefix(rlp, pos)
         rlp = rlp[pos: _p + _l]
     return rlp
+
 
 def infer_sedes(obj):
     """Try to find a sedes objects suitable for a given Python object.
@@ -270,12 +280,14 @@ def infer_sedes(obj):
     msg = 'Did not find sedes handling type {}'.format(type(obj).__name__)
     raise TypeError(msg)
 
+
 def append(rlpdata, obj):
     _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
     assert _typ is list
     rlpdata = rlpdata[_pos:] + encode(obj)
     prefix = length_prefix(len(rlpdata), 192)
     return prefix + rlpdata
+
 
 def insert(rlpdata, index, obj):
     _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
@@ -289,6 +301,7 @@ def insert(rlpdata, index, obj):
     rlpdata = rlpdata[_beginpos:_pos] + encode(obj) + rlpdata[_pos:]
     prefix = length_prefix(len(rlpdata), 192)
     return prefix + rlpdata
+
 
 def pop(rlpdata, index=2**50):
     _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
@@ -305,11 +318,12 @@ def pop(rlpdata, index=2**50):
     prefix = length_prefix(len(newdata), 192)
     return prefix + newdata
 
+
 EMPTYLIST = encode([])
+
 
 def compare_length(rlpdata, length):
     _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
-    _initpos = _pos
     assert _typ is list
     lenlist = 0
     if rlpdata == EMPTYLIST:
@@ -323,4 +337,3 @@ def compare_length(rlpdata, length):
             break
         _pos = _l + _p
     return 0 if lenlist == length else -1
-    

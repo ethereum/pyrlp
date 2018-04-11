@@ -1,5 +1,5 @@
-from ..exceptions import DeserializationError, SerializationError
-from ..utils import int_to_big_endian, big_endian_to_int, is_integer, ascii_chr
+from rlp.exceptions import DeserializationError, SerializationError
+from rlp.utils import int_to_big_endian, big_endian_to_int, is_integer, ascii_chr
 
 
 class BigEndianInt(object):
@@ -41,5 +41,6 @@ class BigEndianInt(object):
 
         serial = serial or b'\x00'
         return big_endian_to_int(serial)
+
 
 big_endian_int = BigEndianInt()

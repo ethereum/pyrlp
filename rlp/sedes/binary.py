@@ -1,6 +1,5 @@
-import sys
-from ..exceptions import SerializationError, DeserializationError
-from ..utils import Atomic, str_to_bytes, bytes_to_str
+from rlp.exceptions import SerializationError, DeserializationError
+from rlp.utils import Atomic, str_to_bytes
 
 
 class Binary(object):
@@ -24,10 +23,7 @@ class Binary(object):
 
     @classmethod
     def is_valid_type(cls, obj):
-        if sys.version_info.major == 2:
-            return isinstance(obj, (str, unicode, bytearray))
-        else:
-            return isinstance(obj, (str, bytes, bytearray))
+        return isinstance(obj, (str, bytes, bytearray))
 
     def is_valid_length(self, l):
         return any((self.min_length <= l <= self.max_length,

@@ -1,18 +1,7 @@
-from __future__ import unicode_literals
-
 import json
-import sys
 import pytest
 import rlp
 from rlp import encode, decode, decode_lazy, infer_sedes, utils, DecodingError
-
-
-if sys.version_info.major == 2:
-    str_types = (str, unicode)
-elif sys.version_info.major == 3:
-    str_types = bytes
-else:
-    assert False
 
 
 def evaluate(ll):
@@ -32,7 +21,7 @@ def to_bytes(value):
 
 
 def compare_nested(got, expected):
-    if isinstance(got, str_types):
+    if isinstance(got, bytes):
         return got == expected
     try:
         zipped = zip(got, expected)
@@ -43,6 +32,7 @@ def compare_nested(got, expected):
             return all(compare_nested(x, y) for x, y in zipped)
         else:
             return False
+
 
 with open('tests/rlptest.json') as f:
     test_data = json.loads(f.read())
