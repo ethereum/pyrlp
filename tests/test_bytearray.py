@@ -1,9 +1,4 @@
 # -*- coding: utf8 -*-
-from eth_utils import (
-    encode_hex,
-    decode_hex,
-)
-
 from rlp import (
     encode,
     decode,
@@ -24,14 +19,6 @@ def test_bytearray_lazy():
     expected = decode(e)
     actual = decode_lazy(bytearray(e))
     assert expected == actual
-
-
-def test_bytearray_encode_decode():
-    value = bytearray(b'asdf')
-    encoded = encode_hex(value)
-    decoded = decode_hex(encoded)
-
-    assert value == decoded
 
 
 def test_encoding_bytearray():
