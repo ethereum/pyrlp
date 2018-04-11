@@ -109,9 +109,12 @@ class LazyList(Sequence):
             start = i
             stop = i + 1
 
+        if stop is None:
+            stop = self.end - 1
+
         try:
             while len(self._elements) < stop:
-                e = self.next()
+                self.next()
         except StopIteration:
             assert self.index == self.end
             raise IndexError('Index %s out of range' % i)
