@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import pytest
 from rlp import SerializationError
 from rlp import infer_sedes, Serializable, encode, decode, make_immutable, make_mutable
@@ -166,7 +164,7 @@ def test_make_mutable():
     assert make_mutable('a') == 'a'
     assert make_mutable((1, 2, 3)) == [1, 2, 3]
     assert make_mutable([1, 2, 'a']) == [1, 2, 'a']
-    assert make_mutable([[1], [2, [3], 4], 5, 6]) == [[1,], [2, [3,], 4], 5, 6]
+    assert make_mutable([[1], [2, [3], 4], 5, 6]) == [[1], [2, [3], 4], 5, 6]
 
     t1a_data = (5, 'a', (0, ''))
     t1b_data = (9, 'b', (2, ''))
@@ -215,21 +213,25 @@ def test_inheritance():
             ('field1', big_endian_int),
             ('field2', big_endian_int),
         )
+
     class Child1(Parent):
         fields = (
             ('field1', big_endian_int),
             ('field2', big_endian_int),
             ('field3', big_endian_int),
         )
+
     class Child2(Parent):
         fields = (
             ('field1', big_endian_int),
         )
+
     class Child3(Parent):
         fields = (
             ('new_field1', big_endian_int),
             ('field2', big_endian_int),
         )
+
     class Child4(Parent):
         fields = (
             ('field1', binary),

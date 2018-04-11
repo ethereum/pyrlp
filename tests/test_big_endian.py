@@ -1,6 +1,7 @@
-from __future__ import unicode_literals
+import binascii
 
 import pytest
+
 from rlp import SerializationError, utils
 from rlp.sedes import big_endian_int, BigEndianInt
 from rlp.utils import int_to_big_endian
@@ -59,9 +60,6 @@ def test_fixedlength():
     for i in (256**4, 256**4 + 1, 256**5, -1, -256, 'asdf'):
         with pytest.raises(SerializationError):
             s.serialize(i)
-
-
-import binascii
 
 
 def packl(lnum):

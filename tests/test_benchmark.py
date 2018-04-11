@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from itertools import repeat, chain
 import sys
 import pytest
@@ -9,7 +7,7 @@ from rlp.exceptions import DecodingError, DeserializationError
 
 
 try:
-    import pytest_benchmark
+    import pytest_benchmark  # noqa: F401
 except ImportError:
     do_benchmark = False
 else:

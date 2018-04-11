@@ -72,6 +72,7 @@ class Block(rlp.Serializable):
 def rand_bytes(num=32):
     return zpad(big_endian_int.serialize(random.getrandbits(num * 8)), num)
 
+
 rand_bytes32 = rand_bytes
 
 
@@ -101,11 +102,15 @@ assert Binary in rand_map
 def mk_transaction():
     return Transaction(rand_int(), rand_int(), rand_int(), rand_address(), rand_int(),
                        rand_bytes32(), 27, rand_bigint(), rand_bigint())
+
+
 rlp.decode(rlp.encode(mk_transaction()), Transaction)
 
 
 def mk_block_header():
     return BlockHeader(*[rand_map[t]() for _, t in BlockHeader.fields])
+
+
 rlp.decode(rlp.encode(mk_block_header()), BlockHeader)
 
 
@@ -113,6 +118,8 @@ def mk_block(num_transactions=10, num_uncles=1):
     return Block(mk_block_header(),
                  [mk_transaction() for i in range(num_transactions)],
                  [mk_block_header() for i in range(num_uncles)])
+
+
 rlp.decode(rlp.encode(mk_block()), Block)
 
 
@@ -132,22 +139,22 @@ def main(rounds=10000):
     st = time.time()
     d = do_test_serialize(mk_block(), rounds)
     elapsed = time.time() - st
-    print 'Block serializations / sec: %.2f' % (rounds / elapsed)
+    print('Block serializations / sec: %.2f' % (rounds / elapsed))
 
     st = time.time()
     d = do_test_deserialize(d, rounds)
     elapsed = time.time() - st
-    print 'Block deserializations / sec: %.2f' % (rounds / elapsed)
+    print('Block deserializations / sec: %.2f' % (rounds / elapsed))
 
     st = time.time()
     d = do_test_serialize(mk_transaction(), rounds)
     elapsed = time.time() - st
-    print 'TX serializations / sec: %.2f' % (rounds / elapsed)
+    print('TX serializations / sec: %.2f' % (rounds / elapsed))
 
     st = time.time()
     d = do_test_deserialize(d, rounds, sedes=Transaction)
     elapsed = time.time() - st
-    print 'TX deserializations / sec: %.2f' % (rounds / elapsed)
+    print('TX deserializations / sec: %.2f' % (rounds / elapsed))
 
 
 if __name__ == '__main__':
