@@ -4,7 +4,6 @@ from eth_utils import (
 )
 
 from rlp.exceptions import DeserializationError, SerializationError
-from rlp.utils import is_integer
 
 
 class BigEndianInt(object):
@@ -18,7 +17,7 @@ class BigEndianInt(object):
         self.l = l
 
     def serialize(self, obj):
-        if not is_integer(obj):
+        if not isinstance(obj, int):
             raise SerializationError('Can only serialize integers', obj)
         if self.l is not None and obj >= 256**self.l:
             raise SerializationError('Integer too large (does not fit in {} '

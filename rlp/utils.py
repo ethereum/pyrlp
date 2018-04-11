@@ -23,7 +23,3 @@ def bytes_to_str(value):
     if isinstance(value, str):
         return value
     return value.decode('utf-8')
-
-
-def is_integer(value):
-    return isinstance(value, int)

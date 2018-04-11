@@ -9,7 +9,6 @@ from eth_utils import (
 from rlp.exceptions import EncodingError, DecodingError
 from rlp.utils import (
     Atomic,
-    is_integer,
     str_to_bytes,
 )
 from rlp.sedes.binary import Binary as BinaryClass
@@ -256,7 +255,7 @@ def infer_sedes(obj):
     """
     if is_sedes(obj.__class__):
         return obj.__class__
-    if is_integer(obj) and obj >= 0:
+    if isinstance(obj, int) and obj >= 0:
         return big_endian_int
     if BinaryClass.is_valid_type(obj):
         return binary
