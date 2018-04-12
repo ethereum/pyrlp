@@ -1,5 +1,4 @@
 import collections
-import struct
 
 from eth_utils import (
     int_to_big_endian,
@@ -13,6 +12,7 @@ from rlp.exceptions import EncodingError, DecodingError
 from rlp.sedes.binary import Binary as BinaryClass
 from rlp.sedes import big_endian_int, binary
 from rlp.sedes.lists import List, Serializable, is_sedes
+from rlp.utils import ALL_BYTES
 
 
 def encode(obj, sedes=None, infer_serializer=True, cache=False):
@@ -105,10 +105,10 @@ def length_prefix(length, offset):
                    list
     """
     if length < 56:
-        return struct.pack('B', offset + length)
+        return ALL_BYTES[offset + length]
     elif length < 256**8:
         length_string = int_to_big_endian(length)
-        return struct.pack('B', offset + 56 - 1 + len(length_string)) + length_string
+        return ALL_BYTES[offset + 56 - 1 + len(length_string)] + length_string
     else:
         raise ValueError('Length greater than 256**8')
 
