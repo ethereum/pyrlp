@@ -5,11 +5,31 @@ from eth_utils import (
 )
 
 from rlp.exceptions import DecodingError
+from rlp.codec import consume_length_prefix
 from rlp import (
     decode,
     encode,
-    compare_length,
 )
+
+
+EMPTYLIST = encode([])
+
+
+def compare_length(rlpdata, length):
+    _typ, _len, _pos = consume_length_prefix(rlpdata, 0)
+    assert _typ is list
+    lenlist = 0
+    if rlpdata == EMPTYLIST:
+        return -1 if length > 0 else 1 if length < 0 else 0
+    while 1:
+        if lenlist > length:
+            return 1
+        _, _l, _p = consume_length_prefix(rlpdata, _pos)
+        lenlist += 1
+        if _l + _p >= len(rlpdata):
+            break
+        _pos = _l + _p
+    return 0 if lenlist == length else -1
 
 
 def test_compare_length():

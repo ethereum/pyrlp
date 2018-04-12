@@ -3,11 +3,6 @@ from .codec import (  # noqa: F401
     encode,
     decode,
     infer_sedes,
-    descend,
-    append,
-    pop,
-    compare_length,
-    insert,
 )
 from .exceptions import (  # noqa: F401
     RLPException,

@@ -2,7 +2,11 @@
 Module for sedes objects that use lists as serialization format.
 """
 from collections import Sequence
-from itertools import count
+
+from eth_utils import (
+    to_list,
+    to_tuple,
+)
 
 from rlp.exceptions import (
     SerializationError,
@@ -43,58 +47,49 @@ class List(list):
                    lists runs out of elements.
     """
 
-    def __init__(self, elements=[], strict=True):
+    def __init__(self, elements=None, strict=True):
         super(List, self).__init__()
         self.strict = strict
-        for e in elements:
-            if is_sedes(e):
-                self.append(e)
-            elif isinstance(e, Sequence):
-                self.append(List(e))
-            else:
-                raise TypeError('Instances of List must only contain sedes '
-                                'objects or nested sequences thereof.')
 
+        if elements:
+            for e in elements:
+                if is_sedes(e):
+                    self.append(e)
+                elif isinstance(e, Sequence):
+                    self.append(List(e))
+                else:
+                    raise TypeError(
+                        'Instances of List must only contain sedes objects or '
+                        'nested sequences thereof.'
+                    )
+
+    @to_list
     def serialize(self, obj):
         if not is_sequence(obj):
             raise ListSerializationError('Can only serialize sequences', obj)
-        if self.strict and len(self) != len(obj) or len(self) < len(obj):
-            raise ListSerializationError('List has wrong length', obj)
-        result = []
+        if self.strict:
+            if len(self) != len(obj) or len(self) < len(obj):
+                raise ListSerializationError('List has wrong length', obj)
+
         for index, (element, sedes) in enumerate(zip(obj, self)):
             try:
-                result.append(sedes.serialize(element))
+                yield sedes.serialize(element)
             except SerializationError as e:
                 raise ListSerializationError(obj=obj, element_exception=e, index=index)
-        return result
 
+    @to_tuple
     def deserialize(self, serial):
         if not is_sequence(serial):
             raise ListDeserializationError('Can only deserialize sequences', serial)
-        result = []
-        element_iterator = iter(serial)
-        sedes_iterator = iter(self)
-        elements_consumed = False
-        sedes_consumed = False
-        for index in count():
+
+        if self.strict and len(serial) != len(self):
+            raise ListDeserializationError('List has wrong length', serial)
+
+        for idx, (sedes, element) in enumerate(zip(self, serial)):
             try:
-                element = next(element_iterator)
-            except StopIteration:
-                elements_consumed = True
-            try:
-                sedes = next(sedes_iterator)
-            except StopIteration:
-                sedes_consumed = True
-            if not (sedes_consumed or elements_consumed):
-                try:
-                    result.append(sedes.deserialize(element))
-                except DeserializationError as e:
-                    raise ListDeserializationError(serial=serial, element_exception=e, index=index)
-            else:
-                if self.strict and not (sedes_consumed and elements_consumed):
-                    raise ListDeserializationError('List has wrong length', serial)
-                break
-        return tuple(result)
+                yield sedes.deserialize(element)
+            except DeserializationError as e:
+                raise ListDeserializationError(serial=serial, element_exception=e, index=idx)
 
 
 class CountableList(object):
@@ -110,33 +105,41 @@ class CountableList(object):
         self.element_sedes = element_sedes
         self.max_length = max_length
 
+    @to_list
     def serialize(self, obj):
         if not is_sequence(obj):
             raise ListSerializationError('Can only serialize sequences', obj)
-        result = []
+
+        if self.max_length is not None and len(obj) > self.max_length:
+            raise ListSerializationError(
+                'Too many elements ({}, allowed {})'.format(
+                    len(obj),
+                    self.max_length,
+                ),
+                obj=obj,
+            )
+
         for index, element in enumerate(obj):
             try:
-                result.append(self.element_sedes.serialize(element))
+                yield self.element_sedes.serialize(element)
             except SerializationError as e:
                 raise ListSerializationError(obj=obj, element_exception=e, index=index)
-        if self.max_length is not None and len(result) > self.max_length:
-            raise ListSerializationError('Too many elements ({}, allowed '
-                                         '{})'.format(len(result), self.max_length), obj)
-        return result
 
+    @to_tuple
     def deserialize(self, serial):
         if not is_sequence(serial):
-            raise ListDeserializationError('Can only deserialize sequences', serial)
-        result = []
+            raise ListDeserializationError('Can only deserialize sequences', serial=serial)
         for index, element in enumerate(serial):
+            if self.max_length is not None and index >= self.max_length:
+                raise ListDeserializationError(
+                    'Too many elements (more than {})'.format(self.max_length),
+                    serial=serial,
+                )
+
             try:
-                result.append(self.element_sedes.deserialize(element))
+                yield self.element_sedes.deserialize(element)
             except DeserializationError as e:
                 raise ListDeserializationError(serial=serial, element_exception=e, index=index)
-            if self.max_length is not None and index >= self.max_length:
-                raise ListDeserializationError('Too many elements (more than '
-                                               '{})'.format(self.max_length), serial)
-        return tuple(result)
 
 
 class Serializable(object):

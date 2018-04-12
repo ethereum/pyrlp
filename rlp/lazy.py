@@ -54,10 +54,10 @@ def consume_item_lazy(rlp, start):
               unprocessed byte.
     """
     t, l, s = consume_length_prefix(rlp, start)
-    if t == str:
-        return consume_payload(rlp, s, str, l)
+    if t is bytes:
+        return consume_payload(rlp, s, bytes, l)
     else:
-        assert t == list
+        assert t is list
         return LazyList(rlp, s, s + l), s + l
 
 
