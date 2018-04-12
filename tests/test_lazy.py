@@ -51,6 +51,9 @@ def test_list_getitem():
     assert l[0] == 1
     assert l[1] == 2
     assert l[2] == 3
+    assert l[-1] == 3
+    assert l[-2] == 2
+    assert l[-3] == 1
     assert l[0:3] == [1, 2, 3]
     assert l[0:2] == [1, 2]
     assert l[0:1] == [1]
