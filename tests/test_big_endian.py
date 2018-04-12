@@ -6,7 +6,7 @@ from eth_utils import int_to_big_endian
 
 from rlp import SerializationError
 from rlp.sedes import big_endian_int, BigEndianInt
-from rlp.utils import bchr
+from rlp.utils import ALL_BYTES
 
 
 valid_data = (
@@ -15,7 +15,7 @@ valid_data = (
     (65535, b'\xff\xff'),
 )
 
-single_bytes = ((n, bchr(n)) for n in range(1, 256))
+single_bytes = ((n, ALL_BYTES[n]) for n in range(1, 256))
 
 random_integers = (256, 257, 4839, 849302, 483290432, 483290483290482039482039,
                    48930248348219540325894323584235894327865439258743754893066)
