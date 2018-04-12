@@ -67,17 +67,9 @@ def encode(obj, sedes=None, infer_serializer=True, cache=False):
     return result
 
 
-class RLPData(bytes):
-
-    "wraper to mark already rlp serialized data"
-    pass
-
-
 def encode_raw(item):
     """RLP encode (a nested sequence of) :class:`Atomic`s."""
-    if isinstance(item, RLPData):
-        return item
-    elif isinstance(item, Atomic):
+    if isinstance(item, Atomic):
         if len(item) == 1 and item[0] < 128:
             return item
         payload = item
