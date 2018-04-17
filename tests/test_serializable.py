@@ -62,19 +62,30 @@ def rlp_obj(request):
 
 
 @pytest.mark.parametrize(
-    'rlptype, fields, exception_includes',
+    'rlptype,args,kwargs,exception_includes',
     (
-        (RLPType1, [8], 'field2'),
-        (RLPType1, [8], 'field3'),
-        (RLPType2, [], 'field2_1'),
-        (RLPType2, [], 'field2_2'),
-        (RLPType2, [RLPType1(8, b'a', (7, ''))], 'field2_2'),
+        # missing fields args
+        (RLPType1, [], {}, ['field1', 'field2', 'field3']),
+        (RLPType1, [8], {}, ['field2', 'field3']),
+        (RLPType1, [7, 8], {}, ['field3']),
+        # missing fields kwargs
+        (RLPType1, [], {'field1': 7}, ['field2', 'field3']),
+        (RLPType1, [], {'field1': 7, 'field2': 8}, ['field3']),
+        (RLPType1, [], {'field2': 7, 'field3': (1, b'')}, ['field1']),
+        (RLPType1, [], {'field3': (1, b'')}, ['field1', 'field2']),
+        (RLPType1, [], {'field2': 7}, ['field1', 'field3']),
+        # missing fields args and kwargs
+        (RLPType1, [7], {'field2': 8}, ['field3']),
+        (RLPType1, [7], {'field3': (1, b'')}, ['field2']),
+        # duplicate fields
+        (RLPType1, [7], {'field1': 8}, ['field1']),
+        (RLPType1, [7, 8], {'field1': 8, 'field2': 7}, ['field1', 'field2']),
     ),
 )
-def test_serializable_initialization_validation(rlptype, fields, exception_includes):
-    # TODO: expand tests to combine *args and **kwargs instantiation
-    with pytest.raises(TypeError, match=exception_includes):
-        rlptype(*fields)
+def test_serializable_initialization_validation(rlptype, args, kwargs, exception_includes):
+    for msg_part in exception_includes:
+        with pytest.raises(TypeError, match=msg_part):
+            rlptype(*args, **kwargs)
 
 
 def test_serializable_iterator():
