@@ -135,7 +135,7 @@ class ObjectDeserializationError(DeserializationError):
                            '("{}")'.format(str(list_exception)))
             else:
                 assert sedes is not None
-                field = sedes._meta.fields[list_exception.index][0]
+                field = sedes._meta.field_names[list_exception.index]
                 message = ('Deserialization failed because of field {} '
                            '("{}")'.format(field, str(list_exception.element_exception)))
         super(ObjectDeserializationError, self).__init__(message, serial)
