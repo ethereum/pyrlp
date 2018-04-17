@@ -16,7 +16,7 @@ from rlp.sedes.serializable import Serializable
 from rlp.utils import ALL_BYTES
 
 
-def encode(obj, sedes=None, infer_serializer=True, cache=False):
+def encode(obj, sedes=None, infer_serializer=True, cache=True):
     """Encode a Python object in RLP format.
 
     By default, the object is serialized in a suitable way first (using
@@ -38,9 +38,8 @@ def encode(obj, sedes=None, infer_serializer=True, cache=False):
                   serialize ``obj`` before encoding, or ``None`` to use the infered one (if any)
     :param infer_serializer: if ``True`` an appropriate serializer will be selected using
                              :func:`rlp.infer_sedes` to serialize `obj` before encoding
-    :param cache: cache the return value in `obj._cached_rlp` if possible and
-                  make `obj` immutable
-                  (default `False`)
+    :param cache: cache the return value in `obj._cached_rlp` if possible
+                  (default `True`)
     :returns: the RLP encoded item
     :raises: :exc:`rlp.EncodingError` in the rather unlikely case that the item is too big to
              encode (will not happen)

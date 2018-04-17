@@ -186,7 +186,7 @@ def test_serializable_encoding_rlp_caching(rlp_obj):
     assert rlp_obj._cached_rlp is None
 
     # obj should start out without a cache
-    rlp_code = encode(rlp_obj)
+    rlp_code = encode(rlp_obj, cache=False)
     assert rlp_obj._cached_rlp is None
     assert rlp_obj.is_mutable is True
 
