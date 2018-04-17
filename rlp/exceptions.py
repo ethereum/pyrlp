@@ -75,7 +75,7 @@ class ObjectSerializationError(SerializationError):
                            '("{}")'.format(str(list_exception)))
             else:
                 assert sedes is not None
-                field = sedes.fields[list_exception.index][0]
+                field = sedes._meta.field_names[list_exception.index]
                 message = ('Serialization failed because of field {} '
                            '("{}")'.format(field, str(list_exception.element_exception)))
         else:

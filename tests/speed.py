@@ -4,6 +4,7 @@ util to benchmark known usecase
 import random
 import rlp
 from rlp.sedes import big_endian_int, BigEndianInt, Binary, binary, CountableList
+from rlp.sedes.serializable import Serializable
 import time
 
 address = Binary.fixed_length(20, allow_empty=True)
@@ -18,7 +19,7 @@ def zpad(x, l):
     return b'\x00' * max(0, l - len(x)) + x
 
 
-class Transaction(rlp.Serializable):
+class Transaction(Serializable):
     fields = [
         ('nonce', big_endian_int),
         ('gasprice', big_endian_int),
@@ -31,11 +32,11 @@ class Transaction(rlp.Serializable):
         ('s', big_endian_int),
     ]
 
-    def __init__(self, nonce, gasprice, startgas, to, value, data, v=0, r=0, s=0):
-        super(Transaction, self).__init__(nonce, gasprice, startgas, to, value, data, v, r, s)
+    def __init__(self, nonce, gasprice, startgas, to, value, data, v=0, r=0, s=0, **kwargs):
+        super().__init__(nonce, gasprice, startgas, to, value, data, v, r, s, **kwargs)
 
 
-class BlockHeader(rlp.Serializable):
+class BlockHeader(Serializable):
     fields = [
         ('prevhash', hash32),
         ('uncles_hash', hash32),
@@ -54,19 +55,16 @@ class BlockHeader(rlp.Serializable):
         ('nonce', binary)
     ]
 
-    def __init__(self, *args, **kargs):
-        super(BlockHeader, self).__init__(*args, **kargs)
 
-
-class Block(rlp.Serializable):
+class Block(Serializable):
     fields = [
         ('header', BlockHeader),
         ('transaction_list', CountableList(Transaction)),
         ('uncles', CountableList(BlockHeader))
     ]
 
-    def __init__(self, header, transaction_list=[], uncles=[]):
-        super(Block, self).__init__(header, transaction_list, uncles)
+    def __init__(self, header, transaction_list=None, uncles=None, **kwargs):
+        super().__init__(header, transaction_list or [], uncles or [], **kwargs)
 
 
 def rand_bytes(num=32):
@@ -108,7 +106,7 @@ rlp.decode(rlp.encode(mk_transaction()), Transaction)
 
 
 def mk_block_header():
-    return BlockHeader(*[rand_map[t]() for _, t in BlockHeader.fields])
+    return BlockHeader(*[rand_map[t]() for _, t in BlockHeader._meta.fields])
 
 
 rlp.decode(rlp.encode(mk_block_header()), BlockHeader)
@@ -125,7 +123,7 @@ rlp.decode(rlp.encode(mk_block()), Block)
 
 def do_test_serialize(block, rounds=100):
     for i in range(rounds):
-        x = rlp.encode(block)
+        x = rlp.encode(block, cache=False)
     return x
 
 

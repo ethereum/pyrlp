@@ -11,11 +11,12 @@ from rlp.atomic import (
 from rlp.exceptions import EncodingError, DecodingError
 from rlp.sedes.binary import Binary as BinaryClass
 from rlp.sedes import big_endian_int, binary
-from rlp.sedes.lists import List, Serializable, is_sedes
+from rlp.sedes.lists import List, is_sedes
+from rlp.sedes.serializable import Serializable
 from rlp.utils import ALL_BYTES
 
 
-def encode(obj, sedes=None, infer_serializer=True, cache=False):
+def encode(obj, sedes=None, infer_serializer=True, cache=True):
     """Encode a Python object in RLP format.
 
     By default, the object is serialized in a suitable way first (using
@@ -37,19 +38,22 @@ def encode(obj, sedes=None, infer_serializer=True, cache=False):
                   serialize ``obj`` before encoding, or ``None`` to use the infered one (if any)
     :param infer_serializer: if ``True`` an appropriate serializer will be selected using
                              :func:`rlp.infer_sedes` to serialize `obj` before encoding
-    :param cache: cache the return value in `obj._cached_rlp` if possible and
-                  make `obj` immutable
-                  (default `False`)
+    :param cache: cache the return value in `obj._cached_rlp` if possible
+                  (default `True`)
     :returns: the RLP encoded item
     :raises: :exc:`rlp.EncodingError` in the rather unlikely case that the item is too big to
              encode (will not happen)
     :raises: :exc:`rlp.SerializationError` if the serialization fails
     """
     if isinstance(obj, Serializable):
-        if obj._cached_rlp and sedes is None:
-            return obj._cached_rlp
+        cached_rlp = obj._cached_rlp
+        if sedes is None and cached_rlp:
+            return cached_rlp
         else:
-            really_cache = cache if sedes is None else False
+            really_cache = (
+                cache and
+                sedes is None
+            )
     else:
         really_cache = False
 
@@ -63,7 +67,6 @@ def encode(obj, sedes=None, infer_serializer=True, cache=False):
     result = encode_raw(item)
     if really_cache:
         obj._cached_rlp = result
-        obj.make_immutable()
     return result
 
 
@@ -218,7 +221,6 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
         obj = sedes.deserialize(item, **kwargs)
         if hasattr(obj, '_cached_rlp'):
             obj._cached_rlp = rlp
-            assert not isinstance(obj, Serializable) or not obj.is_mutable()
         return obj
     else:
         return item
