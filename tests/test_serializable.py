@@ -21,6 +21,21 @@ class RLPType2(Serializable):
     ]
 
 
+class RLPType3(Serializable):
+    fields = [
+        ('field1', big_endian_int),
+        ('field2', big_endian_int),
+        ('field3', big_endian_int),
+    ]
+
+    def __init__(self, field2, field1, field3, **kwargs):
+        super().__init__(field1=field1, field2=field2, field3=field3, **kwargs)
+
+
+class RLPType4(RLPType3):
+    pass
+
+
 _type_1_a = RLPType1(5, b'a', (0, b''))
 _type_1_b = RLPType1(9, b'b', (2, b''))
 _type_2 = RLPType2(_type_1_a, [_type_1_a, _type_1_b])
@@ -86,6 +101,54 @@ def test_serializable_initialization_validation(rlptype, args, kwargs, exception
     for msg_part in exception_includes:
         with pytest.raises(TypeError, match=msg_part):
             rlptype(*args, **kwargs)
+
+
+@pytest.mark.parametrize(
+    'args,kwargs',
+    (
+        ([2, 1, 3], {}),
+        ([2, 1], {'field3': 3}),
+        ([2], {'field3': 3, 'field1': 1}),
+        ([], {'field3': 3, 'field1': 1, 'field2': 2}),
+    ),
+)
+def test_serializable_initialization_args_kwargs_mix(args, kwargs):
+    obj = RLPType3(*args, **kwargs)
+    assert obj.field1 == 1
+    assert obj.field2 == 2
+    assert obj.field3 == 3
+
+
+def test_serializable_subclass_retains_field_info_from_parent():
+    obj = RLPType4(2, 1, 3)
+    assert obj.field1 == 1
+    assert obj.field2 == 2
+    assert obj.field3 == 3
+
+
+def test_serializable_create_mutable():
+    obj = RLPType3.create_mutable(1, 2, 3)
+    assert obj.is_mutable
+    assert not obj.is_immutable
+
+
+def test_serializable_create_immutable():
+    obj = RLPType3.create_immutable(1, 2, 3)
+    assert obj.is_immutable
+    assert not obj.is_mutable
+
+
+def test_deserialization_for_custom_init_method():
+    type_3 = RLPType3(2, 1, 3)
+    assert type_3.field1 == 1
+    assert type_3.field2 == 2
+    assert type_3.field3 == 3
+
+    result = decode(encode(type_3), sedes=RLPType3)
+
+    assert result.field1 == 1
+    assert result.field2 == 2
+    assert result.field3 == 3
 
 
 def test_serializable_iterator():

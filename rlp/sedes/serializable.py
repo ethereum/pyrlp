@@ -3,6 +3,7 @@ import collections
 
 from eth_utils import (
     to_tuple,
+    to_dict,
 )
 
 from rlp.exceptions import (
@@ -24,19 +25,18 @@ class MetaBase:
     sedes = None
 
 
-@to_tuple
-def merge_args_and_kwargs(args, kwargs, arg_name_ordering):
-    if len(arg_name_ordering) != len(set(arg_name_ordering)):
+def validate_args_and_kwargs(args, kwargs, arg_names):
+    if len(arg_names) != len(set(arg_names)):
         raise TypeError("duplicate argument names")
 
-    needed_kwargs = arg_name_ordering[len(args):]
-    used_kwargs = set(arg_name_ordering[:len(args)])
+    needed_kwargs = arg_names[len(args):]
+    used_kwargs = set(arg_names[:len(args)])
 
     duplicate_kwargs = used_kwargs.intersection(kwargs.keys())
     if duplicate_kwargs:
         raise TypeError("Duplicate kwargs: {0}".format(sorted(duplicate_kwargs)))
 
-    unknown_kwargs = set(kwargs.keys()).difference(arg_name_ordering)
+    unknown_kwargs = set(kwargs.keys()).difference(arg_names)
     if unknown_kwargs:
         raise TypeError("Unknown kwargs: {0}".format(sorted(unknown_kwargs)))
 
@@ -44,9 +44,25 @@ def merge_args_and_kwargs(args, kwargs, arg_name_ordering):
     if missing_kwargs:
         raise TypeError("Missing kwargs: {0}".format(sorted(missing_kwargs)))
 
+
+@to_tuple
+def merge_kwargs_to_args(args, kwargs, arg_names):
+    validate_args_and_kwargs(args, kwargs, arg_names)
+
+    needed_kwargs = arg_names[len(args):]
+
     yield from args
     for arg_name in needed_kwargs:
         yield kwargs[arg_name]
+
+
+@to_dict
+def merge_args_to_kwargs(args, kwargs, arg_names):
+    validate_args_and_kwargs(args, kwargs, arg_names)
+
+    yield from kwargs.items()
+    for value, name in zip(args, arg_names):
+        yield name, value
 
 
 def _eq(left, right):
@@ -61,9 +77,9 @@ def _eq(left, right):
 
 
 class BaseSerializable(collections.Sequence):
-    def __init__(self, *args, mutable=True, **kwargs):
+    def __init__(self, *args, **kwargs):
         if kwargs:
-            field_values = merge_args_and_kwargs(args, kwargs, self._meta.field_names)
+            field_values = merge_kwargs_to_args(args, kwargs, self._meta.field_names)
         else:
             field_values = args
 
@@ -76,22 +92,36 @@ class BaseSerializable(collections.Sequence):
                 )
             )
 
-        self.is_mutable = mutable
-
         for value, attr in zip(field_values, self._meta.field_attrs):
             setattr(self, attr, value)
 
-    is_mutable = None
+    _is_mutable = None
+
+    @property
+    def is_mutable(self):
+        return bool(self._is_mutable)
 
     @property
     def is_immutable(self):
         return not self.is_mutable
 
-    def as_immutable(self):
-        return type(self)(*(make_immutable(arg) for arg in self), mutable=False)
+    @classmethod
+    def create_mutable(cls, *args, **kwargs):
+        obj = cls(*args, **kwargs)
+        obj._is_mutable = True
+        return obj
+
+    @classmethod
+    def create_immutable(cls, *args, **kwargs):
+        obj = cls(*args, **kwargs)
+        obj._is_mutable = False
+        return obj
 
     def as_mutable(self):
-        return type(self)(*(make_mutable(arg) for arg in self), mutable=True)
+        return type(self).create_mutable(*(make_mutable(arg) for arg in self))
+
+    def as_immutable(self):
+        return type(self).create_immutable(*(make_immutable(arg) for arg in self))
 
     _cached_rlp = None
 
@@ -123,7 +153,7 @@ class BaseSerializable(collections.Sequence):
         if self.is_mutable:
             return hash(tuple(make_immutable(value) for value in self))
         elif self._hash_cache is None:
-            self._hash_cache = hash(tuple(self))
+            self._hash_cache = hash(tuple(make_immutable(value) for value in self))
 
         return self._hash_cache
 
@@ -141,7 +171,13 @@ class BaseSerializable(collections.Sequence):
         except ListDeserializationError as e:
             raise ObjectDeserializationError(serial=serial, sedes=cls, list_exception=e)
 
-        return cls(*values, mutable=mutable, **kwargs)
+        if mutable:
+            value_kwargs = merge_args_to_kwargs(values, {}, cls._meta.field_names)
+            return cls.create_mutable(**value_kwargs, **kwargs)
+        else:
+            immutable_args = tuple(make_immutable(arg) for arg in values)
+            value_kwargs = merge_args_to_kwargs(immutable_args, {}, cls._meta.field_names)
+            return cls.create_immutable(**value_kwargs, **kwargs)
 
 
 def make_immutable(value):
@@ -197,14 +233,13 @@ class SerializableBase(abc.ABCMeta):
         # Ensure initialization is only performed for subclasses of SerializableBase
         # (excluding Model class itself).
         is_serializable_subclass = any(b for b in bases if isinstance(b, SerializableBase))
-        if not is_serializable_subclass:
+        declares_fields = 'fields' in attrs
+
+        if not is_serializable_subclass or not declares_fields:
             return super_new(cls, name, bases, attrs)
 
-        fields = attrs.pop('fields', tuple())
-        if fields:
-            field_names, sedes = zip(*fields)
-        else:
-            field_names, sedes = tuple(), tuple()
+        fields = attrs.pop('fields')
+        field_names, sedes = zip(*fields)
 
         field_attrs = _mk_field_attrs(field_names, attrs.keys())
 
@@ -226,7 +261,7 @@ class SerializableBase(abc.ABCMeta):
         field_props = {
             field: _mk_field_property(field, attr)
             for field, attr
-            in zip(field_names, field_attrs)
+            in zip(meta.field_names, meta.field_attrs)
         }
 
         return super_new(

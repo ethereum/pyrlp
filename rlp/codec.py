@@ -31,8 +31,7 @@ def encode(obj, sedes=None, infer_serializer=True, cache=True):
     replaced by specifying `sedes`).
 
     If `obj` is a :class:`rlp.Serializable` and `cache` is true, the result of
-    the encoding will be stored in :attr:`_cached_rlp` if it is empty and
-    :meth:`rlp.Serializable.make_immutable` will be invoked on `obj`.
+    the encoding will be stored in :attr:`_cached_rlp` if it is empty.
 
     :param sedes: an object implementing a function ``serialize(obj)`` which will be used to
                   serialize ``obj`` before encoding, or ``None`` to use the infered one (if any)
