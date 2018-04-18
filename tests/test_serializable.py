@@ -113,10 +113,14 @@ def test_serializable_initialization_validation(rlptype, args, kwargs, exception
     ),
 )
 def test_serializable_initialization_args_kwargs_mix(args, kwargs):
-    obj = RLPType3(*args, **kwargs)
-    assert obj.field1 == 1
-    assert obj.field2 == 2
-    assert obj.field3 == 3
+    o_obj = RLPType3(*args, **kwargs)
+    im_obj = o_obj.as_immutable()
+    m_obj = o_obj.as_mutable()
+
+    for obj in (o_obj, m_obj, im_obj):
+        assert obj.field1 == 1
+        assert obj.field2 == 2
+        assert obj.field3 == 3
 
 
 def test_serializable_subclass_retains_field_info_from_parent():

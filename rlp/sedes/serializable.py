@@ -118,12 +118,21 @@ class BaseSerializable(collections.Sequence):
         return obj
 
     def as_mutable(self):
-        return type(self).create_mutable(*(make_mutable(arg) for arg in self))
+        kwargs = {field: make_mutable(value) for field, value in self.as_dict().items()}
+        return type(self).create_mutable(**kwargs)
 
     def as_immutable(self):
-        return type(self).create_immutable(*(make_immutable(arg) for arg in self))
+        kwargs = {field: make_immutable(value) for field, value in self.as_dict().items()}
+        return type(self).create_immutable(**kwargs)
 
     _cached_rlp = None
+
+    def as_dict(self):
+        return dict(
+            (field, value)
+            for field, value
+            in zip(self._meta.field_names, self)
+        )
 
     def __iter__(self):
         for attr in self._meta.field_attrs:
