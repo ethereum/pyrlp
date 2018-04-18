@@ -32,6 +32,10 @@ class RLPType3(Serializable):
         super().__init__(field1=field1, field2=field2, field3=field3, **kwargs)
 
 
+class RLPType4(RLPType3):
+    pass
+
+
 _type_1_a = RLPType1(5, b'a', (0, b''))
 _type_1_b = RLPType1(9, b'b', (2, b''))
 _type_2 = RLPType2(_type_1_a, [_type_1_a, _type_1_b])
@@ -110,6 +114,13 @@ def test_serializable_initialization_validation(rlptype, args, kwargs, exception
 )
 def test_serializable_initialization_args_kwargs_mix(args, kwargs):
     obj = RLPType3(*args, **kwargs)
+    assert obj.field1 == 1
+    assert obj.field2 == 2
+    assert obj.field3 == 3
+
+
+def test_serializable_subclass_retains_field_info_from_parent():
+    obj = RLPType4(2, 1, 3)
     assert obj.field1 == 1
     assert obj.field2 == 2
     assert obj.field3 == 3

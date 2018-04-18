@@ -233,14 +233,13 @@ class SerializableBase(abc.ABCMeta):
         # Ensure initialization is only performed for subclasses of SerializableBase
         # (excluding Model class itself).
         is_serializable_subclass = any(b for b in bases if isinstance(b, SerializableBase))
-        if not is_serializable_subclass:
+        declares_fields = 'fields' in attrs
+
+        if not is_serializable_subclass or not declares_fields:
             return super_new(cls, name, bases, attrs)
 
-        fields = attrs.pop('fields', tuple())
-        if fields:
-            field_names, sedes = zip(*fields)
-        else:
-            field_names, sedes = tuple(), tuple()
+        fields = attrs.pop('fields')
+        field_names, sedes = zip(*fields)
 
         field_attrs = _mk_field_attrs(field_names, attrs.keys())
 
@@ -262,7 +261,7 @@ class SerializableBase(abc.ABCMeta):
         field_props = {
             field: _mk_field_property(field, attr)
             for field, attr
-            in zip(field_names, field_attrs)
+            in zip(meta.field_names, meta.field_attrs)
         }
 
         return super_new(
