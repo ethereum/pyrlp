@@ -77,7 +77,7 @@ def _eq(left, right):
 
 
 class BaseSerializable(collections.Sequence):
-    def __init__(self, *args, mutable=True, **kwargs):
+    def __init__(self, *args, **kwargs):
         if kwargs:
             field_values = merge_kwargs_to_args(args, kwargs, self._meta.field_names)
         else:
@@ -92,22 +92,36 @@ class BaseSerializable(collections.Sequence):
                 )
             )
 
-        self.is_mutable = mutable
-
         for value, attr in zip(field_values, self._meta.field_attrs):
             setattr(self, attr, value)
 
-    is_mutable = None
+    _is_mutable = None
+
+    @property
+    def is_mutable(self):
+        return bool(self._is_mutable)
 
     @property
     def is_immutable(self):
         return not self.is_mutable
 
-    def as_immutable(self):
-        return type(self)(*(make_immutable(arg) for arg in self), mutable=False)
+    @classmethod
+    def create_mutable(cls, *args, **kwargs):
+        obj = cls(*args, **kwargs)
+        obj._is_mutable = True
+        return obj
+
+    @classmethod
+    def create_immutable(cls, *args, **kwargs):
+        obj = cls(*args, **kwargs)
+        obj._is_mutable = False
+        return obj
 
     def as_mutable(self):
-        return type(self)(*(make_mutable(arg) for arg in self), mutable=True)
+        return type(self).create_mutable(*(make_mutable(arg) for arg in self))
+
+    def as_immutable(self):
+        return type(self).create_immutable(*(make_immutable(arg) for arg in self))
 
     _cached_rlp = None
 
@@ -139,7 +153,7 @@ class BaseSerializable(collections.Sequence):
         if self.is_mutable:
             return hash(tuple(make_immutable(value) for value in self))
         elif self._hash_cache is None:
-            self._hash_cache = hash(tuple(self))
+            self._hash_cache = hash(tuple(make_immutable(value) for value in self))
 
         return self._hash_cache
 
@@ -156,9 +170,14 @@ class BaseSerializable(collections.Sequence):
             values = cls._meta.sedes.deserialize(serial)
         except ListDeserializationError as e:
             raise ObjectDeserializationError(serial=serial, sedes=cls, list_exception=e)
-        value_kwargs = merge_args_to_kwargs(values, {}, cls._meta.field_names)
 
-        return cls(**value_kwargs, mutable=mutable, **kwargs)
+        if mutable:
+            value_kwargs = merge_args_to_kwargs(values, {}, cls._meta.field_names)
+            return cls.create_mutable(**value_kwargs, **kwargs)
+        else:
+            immutable_args = tuple(make_immutable(arg) for arg in values)
+            value_kwargs = merge_args_to_kwargs(immutable_args, {}, cls._meta.field_names)
+            return cls.create_immutable(**value_kwargs, **kwargs)
 
 
 def make_immutable(value):
