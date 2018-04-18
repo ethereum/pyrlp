@@ -88,6 +88,30 @@ def test_serializable_initialization_validation(rlptype, args, kwargs, exception
             rlptype(*args, **kwargs)
 
 
+class RLPType3(Serializable):
+    fields = [
+        ('field1', big_endian_int),
+        ('field2', big_endian_int),
+        ('field3', big_endian_int),
+    ]
+
+    def __init__(self, field2, field1, field3, **kwargs):
+        super().__init__(field1=field1, field2=field2, field3=field3, **kwargs)
+
+
+def test_deserialization_for_custom_init_method():
+    type_3 = RLPType3(2, 1, 3)
+    assert type_3.field1 == 1
+    assert type_3.field2 == 2
+    assert type_3.field3 == 3
+
+    result = decode(encode(type_3), sedes=RLPType3)
+
+    assert result.field1 == 1
+    assert result.field2 == 2
+    assert result.field3 == 3
+
+
 def test_serializable_iterator():
     values = (5, b'a', (1, b'c'))
     obj = RLPType1(*values)

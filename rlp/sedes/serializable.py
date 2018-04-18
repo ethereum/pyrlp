@@ -3,6 +3,7 @@ import collections
 
 from eth_utils import (
     to_tuple,
+    to_dict,
 )
 
 from rlp.exceptions import (
@@ -24,19 +25,18 @@ class MetaBase:
     sedes = None
 
 
-@to_tuple
-def merge_args_and_kwargs(args, kwargs, arg_name_ordering):
-    if len(arg_name_ordering) != len(set(arg_name_ordering)):
+def validate_args_and_kwargs(args, kwargs, arg_names):
+    if len(arg_names) != len(set(arg_names)):
         raise TypeError("duplicate argument names")
 
-    needed_kwargs = arg_name_ordering[len(args):]
-    used_kwargs = set(arg_name_ordering[:len(args)])
+    needed_kwargs = arg_names[len(args):]
+    used_kwargs = set(arg_names[:len(args)])
 
     duplicate_kwargs = used_kwargs.intersection(kwargs.keys())
     if duplicate_kwargs:
         raise TypeError("Duplicate kwargs: {0}".format(sorted(duplicate_kwargs)))
 
-    unknown_kwargs = set(kwargs.keys()).difference(arg_name_ordering)
+    unknown_kwargs = set(kwargs.keys()).difference(arg_names)
     if unknown_kwargs:
         raise TypeError("Unknown kwargs: {0}".format(sorted(unknown_kwargs)))
 
@@ -44,9 +44,25 @@ def merge_args_and_kwargs(args, kwargs, arg_name_ordering):
     if missing_kwargs:
         raise TypeError("Missing kwargs: {0}".format(sorted(missing_kwargs)))
 
+
+@to_tuple
+def merge_kwargs_to_args(args, kwargs, arg_names):
+    validate_args_and_kwargs(args, kwargs, arg_names)
+
+    needed_kwargs = arg_names[len(args):]
+
     yield from args
     for arg_name in needed_kwargs:
         yield kwargs[arg_name]
+
+
+@to_dict
+def merge_args_to_kwargs(args, kwargs, arg_names):
+    validate_args_and_kwargs(args, kwargs, arg_names)
+
+    yield from kwargs.items()
+    for value, name in zip(args, arg_names):
+        yield name, value
 
 
 def _eq(left, right):
@@ -63,7 +79,7 @@ def _eq(left, right):
 class BaseSerializable(collections.Sequence):
     def __init__(self, *args, mutable=True, **kwargs):
         if kwargs:
-            field_values = merge_args_and_kwargs(args, kwargs, self._meta.field_names)
+            field_values = merge_kwargs_to_args(args, kwargs, self._meta.field_names)
         else:
             field_values = args
 
@@ -140,8 +156,9 @@ class BaseSerializable(collections.Sequence):
             values = cls._meta.sedes.deserialize(serial)
         except ListDeserializationError as e:
             raise ObjectDeserializationError(serial=serial, sedes=cls, list_exception=e)
+        value_kwargs = merge_args_to_kwargs(values, {}, cls._meta.field_names)
 
-        return cls(*values, mutable=mutable, **kwargs)
+        return cls(**value_kwargs, mutable=mutable, **kwargs)
 
 
 def make_immutable(value):
