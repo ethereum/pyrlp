@@ -237,7 +237,7 @@ def infer_sedes(obj):
     """
     if is_sedes(obj.__class__):
         return obj.__class__
-    if isinstance(obj, int) and obj >= 0:
+    if not isinstance(obj, bool) and isinstance(obj, int) and obj >= 0:
         return big_endian_int
     if BinaryClass.is_valid_type(obj):
         return binary
