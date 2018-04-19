@@ -30,6 +30,12 @@ def test_neg():
             big_endian_int.serialize(n)
 
 
+@pytest.mark.parametrize('value', [True, False])
+def test_rejects_bool(value):
+    with pytest.raises(SerializationError):
+        big_endian_int.serialize(value)
+
+
 def test_serialization():
     for n in random_integers:
         serial = big_endian_int.serialize(n)
