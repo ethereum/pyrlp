@@ -93,37 +93,7 @@ class BaseSerializable(collections.Sequence):
             )
 
         for value, attr in zip(field_values, self._meta.field_attrs):
-            setattr(self, attr, value)
-
-    _is_mutable = None
-
-    @property
-    def is_mutable(self):
-        return bool(self._is_mutable)
-
-    @property
-    def is_immutable(self):
-        return not self.is_mutable
-
-    @classmethod
-    def create_mutable(cls, *args, **kwargs):
-        obj = cls(*args, **kwargs)
-        obj._is_mutable = True
-        return obj
-
-    @classmethod
-    def create_immutable(cls, *args, **kwargs):
-        obj = cls(*args, **kwargs)
-        obj._is_mutable = False
-        return obj
-
-    def as_mutable(self):
-        kwargs = {field: make_mutable(value) for field, value in self.as_dict().items()}
-        return type(self).create_mutable(**kwargs)
-
-    def as_immutable(self):
-        kwargs = {field: make_immutable(value) for field, value in self.as_dict().items()}
-        return type(self).create_immutable(**kwargs)
+            setattr(self, attr, make_immutable(value))
 
     _cached_rlp = None
 
@@ -159,10 +129,8 @@ class BaseSerializable(collections.Sequence):
     _hash_cache = None
 
     def __hash__(self):
-        if self.is_mutable:
-            return hash(tuple(make_immutable(value) for value in self))
-        elif self._hash_cache is None:
-            self._hash_cache = hash(tuple(make_immutable(value) for value in self))
+        if self._hash_cache is None:
+            self._hash_cache = hash(tuple(self))
 
         return self._hash_cache
 
@@ -174,35 +142,19 @@ class BaseSerializable(collections.Sequence):
             raise ObjectSerializationError(obj=obj, sedes=cls, list_exception=e)
 
     @classmethod
-    def deserialize(cls, serial, mutable=False, **kwargs):
+    def deserialize(cls, serial, **extra_kwargs):
         try:
             values = cls._meta.sedes.deserialize(serial)
         except ListDeserializationError as e:
             raise ObjectDeserializationError(serial=serial, sedes=cls, list_exception=e)
 
-        if mutable:
-            value_kwargs = merge_args_to_kwargs(values, {}, cls._meta.field_names)
-            return cls.create_mutable(**value_kwargs, **kwargs)
-        else:
-            immutable_args = tuple(make_immutable(arg) for arg in values)
-            value_kwargs = merge_args_to_kwargs(immutable_args, {}, cls._meta.field_names)
-            return cls.create_immutable(**value_kwargs, **kwargs)
+        args_as_kwargs = merge_args_to_kwargs(values, {}, cls._meta.field_names)
+        return cls(**args_as_kwargs, **extra_kwargs)
 
 
 def make_immutable(value):
-    if hasattr(value, 'as_immutable'):
-        return value.as_immutable()
-    elif not isinstance(value, (bytes, str)) and isinstance(value, collections.Sequence):
+    if isinstance(value, list):
         return tuple(make_immutable(item) for item in value)
-    else:
-        return value
-
-
-def make_mutable(value):
-    if hasattr(value, 'as_mutable'):
-        return value.as_mutable()
-    elif not isinstance(value, (bytes, str)) and isinstance(value, collections.Sequence):
-        return list(make_mutable(item) for item in value)
     else:
         return value
 
@@ -220,19 +172,11 @@ def _mk_field_attrs(field_names, extra_namespace):
 
 
 def _mk_field_property(field, attr):
-    @property
     def field_fn(self):
         return getattr(self, attr)
+    field_fn.__name__ = field
 
-    @field_fn.setter
-    def field_fn(self, value):
-        if self.is_mutable:
-            setattr(self, attr, value)
-            self._cached_rlp = None
-        else:
-            raise AttributeError("can't set attribute")
-
-    return field_fn
+    return property(field_fn)
 
 
 class SerializableBase(abc.ABCMeta):
