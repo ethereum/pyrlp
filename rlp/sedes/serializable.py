@@ -1,5 +1,7 @@
 import abc
 import collections
+import contextlib
+import copy
 
 from eth_utils import (
     to_tuple,
@@ -151,6 +153,46 @@ class BaseSerializable(collections.Sequence):
         args_as_kwargs = merge_args_to_kwargs(values, {}, cls._meta.field_names)
         return cls(**args_as_kwargs, **extra_kwargs)
 
+    def copy(self, *args, **kwargs):
+        missing_overrides = set(
+            self._meta.field_names
+        ).difference(
+            kwargs.keys()
+        ).difference(
+            self._meta.field_names[:len(args)]
+        )
+        unchanged_kwargs = {
+            key: copy.deepcopy(value)
+            for key, value
+            in self.as_dict().items()
+            if key in missing_overrides
+        }
+        combined_kwargs = dict(**unchanged_kwargs, **kwargs)
+        all_kwargs = merge_args_to_kwargs(args, combined_kwargs, self._meta.field_names)
+        return type(self)(**all_kwargs)
+
+    def __copy__(self):
+        return self.copy()
+
+    def __deepcopy__(self, *args):
+        return self.copy()
+
+    _in_mutable_context = False
+
+    @contextlib.contextmanager
+    def build_copy(self, *args, **kwargs):
+        c_self = self.copy(*args, **kwargs)
+        c_values = tuple(c_self)
+        c_self._in_mutable_context = True
+        try:
+            yield c_self
+        except Exception:
+            for value, attr in zip(c_values, self._meta.field_attrs):
+                setattr(c_self, attr, value)
+            raise
+        finally:
+            c_self._in_mutable_context = False
+
 
 def make_immutable(value):
     if isinstance(value, list):
@@ -172,11 +214,15 @@ def _mk_field_attrs(field_names, extra_namespace):
 
 
 def _mk_field_property(field, attr):
-    def field_fn(self):
+    def field_fn_getter(self):
         return getattr(self, attr)
-    field_fn.__name__ = field
 
-    return property(field_fn)
+    def field_fn_setter(self, value):
+        if not self._in_mutable_context:
+            raise AttributeError("can't set attribute")
+        setattr(self, attr, value)
+
+    return property(field_fn_getter, field_fn_setter)
 
 
 class SerializableBase(abc.ABCMeta):
