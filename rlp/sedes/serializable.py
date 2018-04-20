@@ -115,7 +115,7 @@ class BaseSerializable(collections.Sequence):
             attr = self._meta.field_attrs[idx]
             return getattr(self, attr)
         elif isinstance(idx, slice):
-            field_slice = self._meta.field_Gttrs[idx]
+            field_slice = self._meta.field_attrs[idx]
             return tuple(getattr(self, field) for field in field_slice)
         elif isinstance(idx, str):
             return getattr(self, idx)
