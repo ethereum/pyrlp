@@ -161,6 +161,62 @@ def test_serializable_iterator():
     assert tuple(obj) == values
 
 
+def test_serializable_transactional_updates(type_1_a):
+    assert tuple(type_1_a) == (5, b'a', [0, b''])
+    with type_1_a.change_set() as obj:
+        obj.field1 = 6
+        obj.field2 = b'b'
+
+        # context obj should reflect changes.
+        assert obj.field1 == 6
+        assert obj.field2 == b'b'
+
+        # base obj should be unchanged
+        assert type_1_a.field1 == 5
+        assert type_1_a.field2 == b'a'
+
+    # base obj should now be updated
+    assert type_1_a.field1 == 6
+    assert type_1_a.field2 == b'b'
+
+    # ensure context obj was decomissioned
+    with pytest.raises(AttributeError):
+        obj.field1
+    with pytest.raises(AttributeError):
+        obj.field1 = 5
+
+
+def test_serializable_transactional_updates_revert_on_error(type_1_a):
+    assert tuple(type_1_a) == (5, b'a', [0, b''])
+
+    try:
+        with type_1_a.change_set() as obj:
+            obj.field1 = 6
+            obj.field2 = b'b'
+
+            # context obj should reflect changes.
+            assert obj.field1 == 6
+            assert obj.field2 == b'b'
+
+            # base obj should be unchanged
+            assert type_1_a.field1 == 5
+            assert type_1_a.field2 == b'a'
+
+            raise Exception('trigger context error exit')
+    except Exception:
+        pass
+
+    # base obj should not be updated
+    assert type_1_a.field1 == 5
+    assert type_1_a.field2 == b'a'
+
+    # ensure context obj was decomissioned
+    with pytest.raises(AttributeError):
+        obj.field1
+    with pytest.raises(AttributeError):
+        obj.field1 = 5
+
+
 def test_serializable_equality(type_1_a, type_1_b, type_2):
     # equality
     assert type_1_a == type_1_a

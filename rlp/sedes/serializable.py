@@ -76,7 +76,70 @@ def _eq(left, right):
         return left == right
 
 
+class ChangeSetField:
+    field = None
+
+    def __init__(self, field):
+        self.field = field
+
+    def __get__(self, instance, type=None):
+        if instance is None:
+            return self
+        elif instance.__changeset__ is None:
+            raise AttributeError("ChangeSet is not active.  Attribute access not allowed")
+        else:
+            try:
+                return instance.__changeset__[self.field]
+            except KeyError:
+                return getattr(instance.__original__, self.field)
+
+    def __set__(self, instance, value):
+        if instance.__changeset__ is None:
+            raise AttributeError("ChangeSet is not active.  Attribute access not allowed")
+        instance.__changeset__[self.field] = value
+
+
+class BaseChangeSet:
+    __original__ = None
+    __changeset__ = None
+
+    def __init__(self, obj):
+        self.__original__ = obj
+
+    def __enter__(self):
+        self.__changeset__ = {}
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_value is None:
+            field_name_to_attr = dict(zip(
+                self.__original__._meta.field_names,
+                self.__original__._meta.field_attrs,
+            ))
+            for name, value in self.__changeset__.items():
+                setattr(self.__original__, field_name_to_attr[name], value)
+        self.__changeset__ = None
+
+
+def ChangeSet(obj):
+    namespace = {
+        name: ChangeSetField(name)
+        for name
+        in obj._meta.field_names
+    }
+    cls = abc.ABCMeta.__new__(
+        abc.ABCMeta,
+        "{0}ChangeSet".format(obj.__class__.__name__),
+        (BaseChangeSet,),
+        namespace,
+    )
+    cls.register(type(obj))
+    return cls(obj)
+
+
 class BaseSerializable(collections.Sequence):
+    _cached_rlp = None
+
     def __init__(self, *args, **kwargs):
         if kwargs:
             field_values = merge_kwargs_to_args(args, kwargs, self._meta.field_names)
@@ -95,7 +158,10 @@ class BaseSerializable(collections.Sequence):
         for value, attr in zip(field_values, self._meta.field_attrs):
             setattr(self, attr, value)
 
-    _is_mutable = None
+    # By default `Serializable` instances are not mutable.  Subclasses may
+    # overwrite this property or the `is_mutable` and `is_immutable` methods to
+    # modify this behavior.
+    _is_mutable = False
 
     @property
     def is_mutable(self):
@@ -125,7 +191,8 @@ class BaseSerializable(collections.Sequence):
         kwargs = {field: make_immutable(value) for field, value in self.as_dict().items()}
         return type(self).create_immutable(**kwargs)
 
-    _cached_rlp = None
+    def change_set(self):
+        return ChangeSet(self)
 
     def as_dict(self):
         return dict(
