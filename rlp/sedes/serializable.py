@@ -188,7 +188,7 @@ class BaseSerializable(collections.Sequence):
             yield c_self
         except Exception:
             for value, attr in zip(c_values, self._meta.field_attrs):
-                setattr(c_self, attr, value)
+                setattr(c_self, attr, make_immutable(value))
             raise
         finally:
             c_self._in_mutable_context = False

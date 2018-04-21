@@ -105,6 +105,17 @@ def test_serializable_initialization_args_kwargs_mix(args, kwargs):
     assert obj.field3 == 3
 
 
+@pytest.mark.parametrize(
+    'lookup,expected',
+    (
+        (0, 5),
+    ),
+)
+def test_serializable_getitem_lookups(type_1_a, lookup, expected):
+    actual = type_1_a[lookup]
+    assert actual == expected
+
+
 def test_serializable_subclass_retains_field_info_from_parent():
     obj = RLPType4(2, 1, 3)
     assert obj.field1 == 1
