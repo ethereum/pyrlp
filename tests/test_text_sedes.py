@@ -107,7 +107,7 @@ def test_fixed_length_text_serialization_with_wrong_length(length, value):
         (0, 1, "ࠀ", b'\xe0\xa0\x80'),
         (0, 1, "𐀀", b'\xf0\x90\x80\x80'),
         (0, 5, "�����", b'\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd'),
-        (0, 6, "������", b'\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd'),
+        (0, 6, "������", b'\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd\xef\xbf\xbd'),  # noqa: E501
     ),
 )
 def test_min_max_length_text_serialization(min_length, max_length, value, expected):
