@@ -10,6 +10,7 @@ extras_require = {
     'test': [
         "pytest==3.3.2",
         "tox>=2.9.1,<3",
+        "hypothesis==3.56.5",
     ],
     'lint': [
         "flake8==3.4.1",

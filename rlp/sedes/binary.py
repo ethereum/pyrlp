@@ -13,7 +13,10 @@ class Binary(object):
 
     def __init__(self, min_length=None, max_length=None, allow_empty=False):
         self.min_length = min_length or 0
-        self.max_length = max_length or float('inf')
+        if max_length is None:
+            self.max_length = float('inf')
+        else:
+            self.max_length = max_length
         self.allow_empty = allow_empty
 
     @classmethod
