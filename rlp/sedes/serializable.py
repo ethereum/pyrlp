@@ -1,5 +1,7 @@
 import abc
 import collections
+import copy
+import enum
 
 from eth_utils import (
     to_tuple,
@@ -25,7 +27,7 @@ class MetaBase:
     sedes = None
 
 
-def validate_args_and_kwargs(args, kwargs, arg_names):
+def validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=False):
     if len(arg_names) != len(set(arg_names)):
         raise TypeError("duplicate argument names")
 
@@ -41,13 +43,13 @@ def validate_args_and_kwargs(args, kwargs, arg_names):
         raise TypeError("Unknown kwargs: {0}".format(sorted(unknown_kwargs)))
 
     missing_kwargs = set(needed_kwargs).difference(kwargs.keys())
-    if missing_kwargs:
+    if not allow_missing and missing_kwargs:
         raise TypeError("Missing kwargs: {0}".format(sorted(missing_kwargs)))
 
 
 @to_tuple
-def merge_kwargs_to_args(args, kwargs, arg_names):
-    validate_args_and_kwargs(args, kwargs, arg_names)
+def merge_kwargs_to_args(args, kwargs, arg_names, allow_missing=False):
+    validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=allow_missing)
 
     needed_kwargs = arg_names[len(args):]
 
@@ -57,8 +59,8 @@ def merge_kwargs_to_args(args, kwargs, arg_names):
 
 
 @to_dict
-def merge_args_to_kwargs(args, kwargs, arg_names):
-    validate_args_and_kwargs(args, kwargs, arg_names)
+def merge_args_to_kwargs(args, kwargs, arg_names, allow_missing=False):
+    validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=allow_missing)
 
     yield from kwargs.items()
     for value, name in zip(args, arg_names):
@@ -74,6 +76,96 @@ def _eq(left, right):
         return len(left) == len(right) and all(_eq(*pair) for pair in zip(left, right))
     else:
         return left == right
+
+
+class ChangesetState(enum.Enum):
+    INITIALIZED = 'INITIALIZED'
+    OPEN = 'OPEN'
+    CLOSED = 'CLOSED'
+
+
+class ChangesetField:
+    field = None
+
+    def __init__(self, field):
+        self.field = field
+
+    def __get__(self, instance, type=None):
+        if instance is None:
+            return self
+        elif instance.__state__ is not ChangesetState.OPEN:
+            raise AttributeError("Changeset is not active.  Attribute access not allowed")
+        else:
+            try:
+                return instance.__diff__[self.field]
+            except KeyError:
+                return getattr(instance.__original__, self.field)
+
+    def __set__(self, instance, value):
+        if instance.__state__ is not ChangesetState.OPEN:
+            raise AttributeError("Changeset is not active.  Attribute access not allowed")
+        instance.__diff__[self.field] = value
+
+
+class BaseChangeset:
+    # reference to the original Serializable instance.
+    __original__ = None
+    # the state of this fieldset.  Initialized -> Open -> Closed
+    __state__ = None
+    # the field changes that have been made in this change
+    __diff__ = None
+
+    def __init__(self, obj, changes=None):
+        self.__original__ = obj
+        self.__state__ = ChangesetState.INITIALIZED
+        self.__diff__ = changes or {}
+
+    def commit(self):
+        if self.__state__ == ChangesetState.OPEN:
+            field_kwargs = {
+                name: self.__diff__.get(name, self.__original__[name])
+                for name
+                in self.__original__._meta.field_names
+            }
+            return type(self.__original__)(**field_kwargs)
+        else:
+            raise ValueError("Cannot open Changeset which is not in the OPEN state")
+
+    def open(self):
+        if self.__state__ == ChangesetState.INITIALIZED:
+            self.__state__ = ChangesetState.OPEN
+        else:
+            raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
+
+    def close(self):
+        if self.__state__ == ChangesetState.OPEN:
+            self.__state__ = ChangesetState.CLOSED
+        else:
+            raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
+
+    def __enter__(self):
+        if self.__state__ == ChangesetState.INITIALIZED:
+            self.open()
+            return self
+        else:
+            raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+
+def Changeset(obj, changes):
+    namespace = {
+        name: ChangesetField(name)
+        for name
+        in obj._meta.field_names
+    }
+    cls = type(
+        "{0}Changeset".format(obj.__class__.__name__),
+        (BaseChangeset,),
+        namespace,
+    )
+    return cls(obj, changes)
 
 
 class BaseSerializable(collections.Sequence):
@@ -113,7 +205,7 @@ class BaseSerializable(collections.Sequence):
             attr = self._meta.field_attrs[idx]
             return getattr(self, attr)
         elif isinstance(idx, slice):
-            field_slice = self._meta.field_Gttrs[idx]
+            field_slice = self._meta.field_attrs[idx]
             return tuple(getattr(self, field) for field in field_slice)
         elif isinstance(idx, str):
             return getattr(self, idx)
@@ -151,6 +243,41 @@ class BaseSerializable(collections.Sequence):
         args_as_kwargs = merge_args_to_kwargs(values, {}, cls._meta.field_names)
         return cls(**args_as_kwargs, **extra_kwargs)
 
+    def copy(self, *args, **kwargs):
+        missing_overrides = set(
+            self._meta.field_names
+        ).difference(
+            kwargs.keys()
+        ).difference(
+            self._meta.field_names[:len(args)]
+        )
+        unchanged_kwargs = {
+            key: copy.deepcopy(value)
+            for key, value
+            in self.as_dict().items()
+            if key in missing_overrides
+        }
+        combined_kwargs = dict(**unchanged_kwargs, **kwargs)
+        all_kwargs = merge_args_to_kwargs(args, combined_kwargs, self._meta.field_names)
+        return type(self)(**all_kwargs)
+
+    def __copy__(self):
+        return self.copy()
+
+    def __deepcopy__(self, *args):
+        return self.copy()
+
+    _in_mutable_context = False
+
+    def build_changeset(self, *args, **kwargs):
+        args_as_kwargs = merge_args_to_kwargs(
+            args,
+            kwargs,
+            self._meta.field_names,
+            allow_missing=True,
+        )
+        return Changeset(self, changes=args_as_kwargs)
+
 
 def make_immutable(value):
     if isinstance(value, list):
@@ -172,11 +299,15 @@ def _mk_field_attrs(field_names, extra_namespace):
 
 
 def _mk_field_property(field, attr):
-    def field_fn(self):
+    def field_fn_getter(self):
         return getattr(self, attr)
-    field_fn.__name__ = field
 
-    return property(field_fn)
+    def field_fn_setter(self, value):
+        if not self._in_mutable_context:
+            raise AttributeError("can't set attribute")
+        setattr(self, attr, value)
+
+    return property(field_fn_getter, field_fn_setter)
 
 
 class SerializableBase(abc.ABCMeta):

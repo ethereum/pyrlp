@@ -105,6 +105,36 @@ def test_serializable_initialization_args_kwargs_mix(args, kwargs):
     assert obj.field3 == 3
 
 
+@pytest.mark.parametrize(
+    'lookup,expected',
+    (
+        (0, 5),
+        (1, b'a'),
+        (2, (0, b'')),
+        (slice(0, 1), (5,)),
+        (slice(0, 2), (5, b'a')),
+        (slice(0, 3), (5, b'a', (0, b''))),
+        (slice(1, 3), (b'a', (0, b''))),
+        (slice(2, 3), ((0, b''),)),
+        (slice(None, 3), (5, b'a', (0, b''))),
+        (slice(None, 2), (5, b'a')),
+        (slice(None, 1), (5,)),
+        (slice(None, 0), tuple()),
+        (slice(0, None), (5, b'a', (0, b''))),
+        (slice(1, None), (b'a', (0, b''))),
+        (slice(2, None), ((0, b''),)),
+        (slice(2, None), ((0, b''),)),
+        (slice(None, None), (5, b'a', (0, b''))),
+        (slice(-1, None), ((0, b''),)),
+        (slice(-2, None), (b'a', (0, b''),)),
+        (slice(-3, None), (5, b'a', (0, b''),)),
+    ),
+)
+def test_serializable_getitem_lookups(type_1_a, lookup, expected):
+    actual = type_1_a[lookup]
+    assert actual == expected
+
+
 def test_serializable_subclass_retains_field_info_from_parent():
     obj = RLPType4(2, 1, 3)
     assert obj.field1 == 1
@@ -278,3 +308,97 @@ def test_serializable_inheritance():
         c3.field1
     with pytest.raises(AttributeError):
         c3.field3
+
+
+def test_serializable_basic_copy(type_1_a):
+    n_type_1_a = type_1_a.copy()
+    assert n_type_1_a == type_1_a
+    assert n_type_1_a is not type_1_a
+
+
+def test_serializable_copy_with_nested_serializables(type_2):
+    n_type_2 = type_2.copy()
+    assert n_type_2 == type_2
+    assert n_type_2 is not type_2
+
+    assert n_type_2.field2_1 == type_2.field2_1
+    assert n_type_2.field2_1 is not type_2.field2_1
+
+    assert n_type_2.field2_2 == type_2.field2_2
+    assert all(left == right for left, right in zip(n_type_2.field2_2, type_2.field2_2))
+    assert all(left is not right for left, right in zip(n_type_2.field2_2, type_2.field2_2))
+
+
+def test_serializable_build_changeset(type_1_a):
+    with type_1_a.build_changeset() as changeset:
+        # make changes to copy
+        changeset.field1 = 1234
+        changeset.field2 = b'arst'
+
+        # check that the copy has the new field values
+        assert changeset.field1 == 1234
+        assert changeset.field2 == b'arst'
+
+        n_type_1_a = changeset.commit()
+
+    # check that the copy has the new field values
+    assert n_type_1_a.field1 == 1234
+    assert n_type_1_a.field2 == b'arst'
+
+    # ensure the base object hasn't changed.
+    assert type_1_a.field1 == 5
+    assert type_1_a.field2 == b'a'
+
+
+def test_serializable_build_changeset_changeset_gets_decomissioned(type_1_a):
+    with type_1_a.build_changeset() as changeset:
+        changeset.field1 = 54321
+        n_type_1_a = changeset.commit()
+
+    # ensure that we also can't update the changeset
+    with pytest.raises(AttributeError):
+        changeset.field1 = 12345
+    # ensure that we also can't read values from the changeset
+    with pytest.raises(AttributeError):
+        changeset.field1
+
+    assert n_type_1_a.field1 == 54321
+
+
+def test_serializable_build_changeset_with_params(type_1_a):
+    with type_1_a.build_changeset(1234) as changeset:
+        assert changeset.field1 == 1234
+
+        n_type_1_a = changeset.commit()
+    assert n_type_1_a.field1 == 1234
+
+
+def test_serializable_build_changeset_using_open_close_api(type_1_a):
+    changeset = type_1_a.build_changeset()
+    changeset.open()
+
+    # make changes to copy
+    changeset.field1 = 1234
+    changeset.field2 = b'arst'
+
+    # check that the copy has the new field values
+    assert changeset.field1 == 1234
+    assert changeset.field2 == b'arst'
+
+    n_type_1_a = changeset.commit()
+
+    # check that the copy has the new field values
+    assert n_type_1_a.field1 == 1234
+    assert n_type_1_a.field2 == b'arst'
+
+    # ensure the base object hasn't changed.
+    assert type_1_a.field1 == 5
+    assert type_1_a.field2 == b'a'
+
+    # check we can still access the unclosed changeset
+    assert changeset.field1 == 1234
+
+    changeset.close()
+
+    with pytest.raises(AttributeError):
+        assert changeset.field1 == 1234
