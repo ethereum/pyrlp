@@ -79,9 +79,9 @@ def _eq(left, right):
 
 
 class ChangesetState(enum.Enum):
-    INITIALIZED = enum.auto()
-    OPEN = enum.auto()
-    CLOSED = enum.auto()
+    INITIALIZED = 'INITIALIZED'
+    OPEN = 'OPEN'
+    CLOSED = 'CLOSED'
 
 
 class ChangesetField:
@@ -151,8 +151,7 @@ class BaseChangeset:
             raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type is None:
-            self.close()
+        self.close()
 
 
 def Changeset(obj, changes):
