@@ -12,4 +12,4 @@ from .exceptions import (  # noqa: F401
     DeserializationError,
 )
 from .lazy import decode_lazy, peek, LazyList  # noqa: F401
-from .sedes import Serializable, make_immutable, make_mutable  # noqa: F401
+from .sedes import Serializable  # noqa: F401

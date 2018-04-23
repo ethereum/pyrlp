@@ -1,7 +1,7 @@
 import pytest
 
 from rlp import SerializationError
-from rlp import infer_sedes, encode, decode, make_immutable, make_mutable
+from rlp import infer_sedes, encode, decode
 from rlp.sedes import big_endian_int, binary, List
 from rlp.sedes.serializable import Serializable
 
@@ -42,38 +42,23 @@ _type_2 = RLPType2(_type_1_a, [_type_1_a, _type_1_b])
 
 
 @pytest.fixture
-def im_type_1_a():
-    return _type_1_a.as_immutable()
+def type_1_a():
+    return _type_1_a
 
 
 @pytest.fixture
-def im_type_1_b():
-    return _type_1_b.as_immutable()
+def type_1_b():
+    return _type_1_b
 
 
 @pytest.fixture
-def im_type_2():
-    return _type_2.as_immutable()
-
-
-@pytest.fixture
-def type_1_a(im_type_1_a):
-    return im_type_1_a.as_mutable()
-
-
-@pytest.fixture
-def type_1_b(im_type_1_b):
-    return im_type_1_b.as_mutable()
-
-
-@pytest.fixture
-def type_2(im_type_2):
-    return im_type_2.as_mutable()
+def type_2():
+    return _type_2
 
 
 @pytest.fixture(params=[_type_1_a, _type_1_b, _type_2])
 def rlp_obj(request):
-    return request.param.as_immutable().as_mutable()
+    return request.param
 
 
 @pytest.mark.parametrize(
@@ -113,14 +98,11 @@ def test_serializable_initialization_validation(rlptype, args, kwargs, exception
     ),
 )
 def test_serializable_initialization_args_kwargs_mix(args, kwargs):
-    o_obj = RLPType3(*args, **kwargs)
-    im_obj = o_obj.as_immutable()
-    m_obj = o_obj.as_mutable()
+    obj = RLPType3(*args, **kwargs)
 
-    for obj in (o_obj, m_obj, im_obj):
-        assert obj.field1 == 1
-        assert obj.field2 == 2
-        assert obj.field3 == 3
+    assert obj.field1 == 1
+    assert obj.field2 == 2
+    assert obj.field3 == 3
 
 
 def test_serializable_subclass_retains_field_info_from_parent():
@@ -128,18 +110,6 @@ def test_serializable_subclass_retains_field_info_from_parent():
     assert obj.field1 == 1
     assert obj.field2 == 2
     assert obj.field3 == 3
-
-
-def test_serializable_create_mutable():
-    obj = RLPType3.create_mutable(1, 2, 3)
-    assert obj.is_mutable
-    assert not obj.is_immutable
-
-
-def test_serializable_create_immutable():
-    obj = RLPType3.create_immutable(1, 2, 3)
-    assert obj.is_immutable
-    assert not obj.is_mutable
 
 
 def test_deserialization_for_custom_init_method():
@@ -172,17 +142,6 @@ def test_serializable_equality(type_1_a, type_1_b, type_2):
     assert type_1_a != type_1_b
     assert type_1_b != type_2
     assert type_2 != type_1_a
-
-
-def test_serializable_field_mutability(type_1_a):
-    type_1_a.field1 += 1
-    type_1_a.field2 = b'x'
-    assert type_1_a.field1 == 6
-    assert type_1_a.field2 == b'x'
-    type_1_a.field1 -= 1
-    type_1_a.field2 = b'a'
-    assert type_1_a.field1 == 5
-    assert type_1_a.field2 == b'a'
 
 
 def test_serializable_sedes_inference(type_1_a, type_1_b, type_2):
@@ -224,29 +183,21 @@ def test_serializable_deserialization(type_1_a, type_1_b, type_2):
 
 
 def test_serializable_field_immutability(type_1_a, type_1_b, type_2):
-    im_type_1_a = type_1_a.as_immutable()
+    with pytest.raises(AttributeError, match=r"can't set attribute"):
+        type_1_a.field1 += 1
+    assert type_1_a.field1 == 5
 
     with pytest.raises(AttributeError, match=r"can't set attribute"):
-        im_type_1_a.field1 += 1
-    assert im_type_1_a.field1 == 5
+        type_1_a.field2 = b'x'
+    assert type_1_a.field2 == b'a'
 
     with pytest.raises(AttributeError, match=r"can't set attribute"):
-        im_type_1_a.field2 = b'x'
-    assert im_type_1_a.field2 == b'a'
-
-    assert im_type_1_a == type_1_a
-
-    im_type_2 = type_2.as_immutable()
-
-    with pytest.raises(AttributeError, match=r"can't set attribute"):
-        im_type_2.field2_1.field1 += 1
-    assert im_type_2.field2_1.field1 == 5
+        type_2.field2_1.field1 += 1
+    assert type_2.field2_1.field1 == 5
 
     with pytest.raises(TypeError, match=r"'tuple' object does not support item assignment"):
-        im_type_2.field2_2[1] = type_1_a
-    assert im_type_2.field2_2[1] == type_1_b
-
-    assert im_type_2 == type_2
+        type_2.field2_2[1] = type_1_a
+    assert type_2.field2_2[1] == type_1_b
 
 
 def test_serializable_encoding_rlp_caching(rlp_obj):
@@ -255,12 +206,10 @@ def test_serializable_encoding_rlp_caching(rlp_obj):
     # obj should start out without a cache
     rlp_code = encode(rlp_obj, cache=False)
     assert rlp_obj._cached_rlp is None
-    assert rlp_obj.is_mutable is True
 
     # cache should be populated now.
     assert encode(rlp_obj, cache=True) == rlp_code
     assert rlp_obj._cached_rlp == rlp_code
-    assert rlp_obj.is_mutable is True
 
     # cache should still be populated and encoding should used cached_rlp value
     rlp_obj._cached_rlp = b'test-uses-cache'
@@ -268,87 +217,7 @@ def test_serializable_encoding_rlp_caching(rlp_obj):
 
     obj_decoded = decode(rlp_code, sedes=rlp_obj.__class__)
     assert obj_decoded == rlp_obj
-    assert obj_decoded.is_immutable is True
     assert obj_decoded._cached_rlp == rlp_code
-
-
-def test_serialiable_mutable_simple_object_rlp_cache_invalidation(type_1_a):
-    assert type_1_a._cached_rlp is None
-    rlp_code = encode(type_1_a, cache=True)
-    assert type_1_a._cached_rlp == rlp_code
-
-    # setting a field on the obj should invalidate the cache
-    type_1_a.field1 = 12345
-    assert type_1_a._cached_rlp is None
-
-
-def assert_mutability(obj, is_mutable):
-    if isinstance(obj, Serializable):
-        assert obj.is_mutable is is_mutable
-        assert obj.is_immutable is not is_mutable
-        for value in obj:
-            assert_mutability(value, is_mutable)
-    elif isinstance(obj, (list, tuple)):
-        if is_mutable:
-            assert isinstance(obj, list)
-        else:
-            assert isinstance(obj, tuple)
-        for item in obj:
-            assert_mutability(item, is_mutable)
-
-
-def test_serializable_as_immutable(type_1_a, type_1_b, type_2):
-    assert make_immutable(1) == 1
-    assert make_immutable(b'a') == b'a'
-    assert make_immutable((1, 2, 3)) == (1, 2, 3)
-    assert make_immutable([1, 2, b'a']) == (1, 2, b'a')
-    assert make_immutable([[1], [2, [3], 4], 5, 6]) == ((1,), (2, (3,), 4), 5, 6)
-
-    assert_mutability(type_2, True)
-    assert_mutability(type_1_a, True)
-    assert_mutability(type_1_b, True)
-
-    im_type_2 = type_2.as_immutable()
-
-    assert im_type_2 == type_2
-    assert im_type_2.field2_1 == type_1_a
-    assert im_type_2.field2_2[0] == type_1_a
-    assert im_type_2.field2_2[1] == type_1_b
-
-    # original mutability should not have changed
-    assert_mutability(type_2, True)
-    assert_mutability(type_1_a, True)
-    assert_mutability(type_1_b, True)
-
-    # new obj should be mutable
-    assert_mutability(im_type_2, False)
-
-
-def test_serializable_as_mutable(im_type_1_a, im_type_1_b, im_type_2):
-    assert make_mutable(1) == 1
-    assert make_mutable(b'a') == b'a'
-    assert make_mutable((1, 2, 3)) == [1, 2, 3]
-    assert make_mutable([1, 2, b'a']) == [1, 2, b'a']
-    assert make_mutable([[1], [2, [3], 4], 5, 6]) == [[1], [2, [3], 4], 5, 6]
-
-    assert_mutability(im_type_2, False)
-    assert_mutability(im_type_1_a, False)
-    assert_mutability(im_type_1_b, False)
-
-    type_2 = im_type_2.as_mutable()
-
-    assert type_2 == im_type_2
-    assert type_2.field2_1 == im_type_1_a
-    assert type_2.field2_2[0] == im_type_1_a
-    assert type_2.field2_2[1] == im_type_1_b
-
-    # original mutability should not have changed
-    assert_mutability(im_type_2, False)
-    assert_mutability(im_type_1_a, False)
-    assert_mutability(im_type_1_b, False)
-
-    # new obj should be mutable
-    assert_mutability(type_2, True)
 
 
 def test_serializable_inheritance():
