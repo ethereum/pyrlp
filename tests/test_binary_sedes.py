@@ -41,6 +41,16 @@ def test_binary_fixed_length_serialization(value, expected):
     assert sedes.serialize(value) == expected
 
 
+def test_binary_fixed_lenght_of_zero():
+    sedes = Binary.fixed_length(0)
+    assert sedes.serialize(b'') == b''
+
+    with pytest.raises(SerializationError):
+        sedes.serialize(b'a')
+    with pytest.raises(SerializationError):
+        sedes.serialize(b'arst')
+
+
 @pytest.mark.parametrize(
     'value',
     (b'asdf', b'asdfgh', b'', b'bababa'),
