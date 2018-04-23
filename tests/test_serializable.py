@@ -329,8 +329,8 @@ def test_serializable_copy_with_nested_serializables(type_2):
     assert all(left is not right for left, right in zip(n_type_2.field2_2, type_2.field2_2))
 
 
-def test_serializable_build_copy(type_1_a):
-    with type_1_a.build_copy() as changeset:
+def test_serializable_build_changeset(type_1_a):
+    with type_1_a.build_changeset() as changeset:
         # make changes to copy
         changeset.field1 = 1234
         changeset.field2 = b'arst'
@@ -350,8 +350,8 @@ def test_serializable_build_copy(type_1_a):
     assert type_1_a.field2 == b'a'
 
 
-def test_serializable_build_copy_changeset_gets_decomissioned(type_1_a):
-    with type_1_a.build_copy() as changeset:
+def test_serializable_build_changeset_changeset_gets_decomissioned(type_1_a):
+    with type_1_a.build_changeset() as changeset:
         changeset.field1 = 54321
         n_type_1_a = changeset.commit()
 
@@ -365,16 +365,16 @@ def test_serializable_build_copy_changeset_gets_decomissioned(type_1_a):
     assert n_type_1_a.field1 == 54321
 
 
-def test_serializable_build_copy_with_params(type_1_a):
-    with type_1_a.build_copy(1234) as changeset:
+def test_serializable_build_changeset_with_params(type_1_a):
+    with type_1_a.build_changeset(1234) as changeset:
         assert changeset.field1 == 1234
 
         n_type_1_a = changeset.commit()
     assert n_type_1_a.field1 == 1234
 
 
-def test_serializable_build_copy_using_open_close_api(type_1_a):
-    changeset = type_1_a.build_copy()
+def test_serializable_build_changeset_using_open_close_api(type_1_a):
+    changeset = type_1_a.build_changeset()
     changeset.open()
 
     # make changes to copy

@@ -84,7 +84,7 @@ class ChangesetState(enum.Enum):
     CLOSED = enum.auto()
 
 
-class ChangeSetField:
+class ChangesetField:
     field = None
 
     def __init__(self, field):
@@ -94,7 +94,7 @@ class ChangeSetField:
         if instance is None:
             return self
         elif instance.__state__ is not ChangesetState.OPEN:
-            raise AttributeError("ChangeSet is not active.  Attribute access not allowed")
+            raise AttributeError("Changeset is not active.  Attribute access not allowed")
         else:
             try:
                 return instance.__diff__[self.field]
@@ -103,11 +103,11 @@ class ChangeSetField:
 
     def __set__(self, instance, value):
         if instance.__state__ is not ChangesetState.OPEN:
-            raise AttributeError("ChangeSet is not active.  Attribute access not allowed")
+            raise AttributeError("Changeset is not active.  Attribute access not allowed")
         instance.__diff__[self.field] = value
 
 
-class BaseChangeSet:
+class BaseChangeset:
     # reference to the original Serializable instance.
     __original__ = None
     # the state of this fieldset.  Initialized -> Open -> Closed
@@ -129,41 +129,41 @@ class BaseChangeSet:
             }
             return type(self.__original__)(**field_kwargs)
         else:
-            raise ValueError("Cannot open ChangeSet which is not in the OPEN state")
+            raise ValueError("Cannot open Changeset which is not in the OPEN state")
 
     def open(self):
         if self.__state__ == ChangesetState.INITIALIZED:
             self.__state__ = ChangesetState.OPEN
         else:
-            raise ValueError("Cannot open ChangeSet which is not in the INITIALIZED state")
+            raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
 
     def close(self):
         if self.__state__ == ChangesetState.OPEN:
             self.__state__ = ChangesetState.CLOSED
         else:
-            raise ValueError("Cannot open ChangeSet which is not in the INITIALIZED state")
+            raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
 
     def __enter__(self):
         if self.__state__ == ChangesetState.INITIALIZED:
             self.open()
             return self
         else:
-            raise ValueError("Cannot open ChangeSet which is not in the INITIALIZED state")
+            raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type is None:
             self.close()
 
 
-def ChangeSet(obj, changes):
+def Changeset(obj, changes):
     namespace = {
-        name: ChangeSetField(name)
+        name: ChangesetField(name)
         for name
         in obj._meta.field_names
     }
     cls = type(
-        "{0}ChangeSet".format(obj.__class__.__name__),
-        (BaseChangeSet,),
+        "{0}Changeset".format(obj.__class__.__name__),
+        (BaseChangeset,),
         namespace,
     )
     return cls(obj, changes)
@@ -270,14 +270,14 @@ class BaseSerializable(collections.Sequence):
 
     _in_mutable_context = False
 
-    def build_copy(self, *args, **kwargs):
+    def build_changeset(self, *args, **kwargs):
         args_as_kwargs = merge_args_to_kwargs(
             args,
             kwargs,
             self._meta.field_names,
             allow_missing=True,
         )
-        return ChangeSet(self, changes=args_as_kwargs)
+        return Changeset(self, changes=args_as_kwargs)
 
 
 def make_immutable(value):
