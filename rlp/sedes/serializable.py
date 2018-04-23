@@ -1,6 +1,5 @@
 import abc
 import collections
-import contextlib
 import copy
 
 from eth_utils import (
@@ -27,7 +26,7 @@ class MetaBase:
     sedes = None
 
 
-def validate_args_and_kwargs(args, kwargs, arg_names):
+def validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=False):
     if len(arg_names) != len(set(arg_names)):
         raise TypeError("duplicate argument names")
 
@@ -43,13 +42,13 @@ def validate_args_and_kwargs(args, kwargs, arg_names):
         raise TypeError("Unknown kwargs: {0}".format(sorted(unknown_kwargs)))
 
     missing_kwargs = set(needed_kwargs).difference(kwargs.keys())
-    if missing_kwargs:
+    if not allow_missing and missing_kwargs:
         raise TypeError("Missing kwargs: {0}".format(sorted(missing_kwargs)))
 
 
 @to_tuple
-def merge_kwargs_to_args(args, kwargs, arg_names):
-    validate_args_and_kwargs(args, kwargs, arg_names)
+def merge_kwargs_to_args(args, kwargs, arg_names, allow_missing=False):
+    validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=allow_missing)
 
     needed_kwargs = arg_names[len(args):]
 
@@ -59,8 +58,8 @@ def merge_kwargs_to_args(args, kwargs, arg_names):
 
 
 @to_dict
-def merge_args_to_kwargs(args, kwargs, arg_names):
-    validate_args_and_kwargs(args, kwargs, arg_names)
+def merge_args_to_kwargs(args, kwargs, arg_names, allow_missing=False):
+    validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=allow_missing)
 
     yield from kwargs.items()
     for value, name in zip(args, arg_names):
@@ -76,6 +75,67 @@ def _eq(left, right):
         return len(left) == len(right) and all(_eq(*pair) for pair in zip(left, right))
     else:
         return left == right
+
+
+class ChangeSetField:
+    field = None
+
+    def __init__(self, field):
+        self.field = field
+
+    def __get__(self, instance, type=None):
+        if instance is None:
+            return self
+        elif instance.__changeset__ is None:
+            raise AttributeError("ChangeSet is not active.  Attribute access not allowed")
+        else:
+            try:
+                return instance.__changeset__[self.field]
+            except KeyError:
+                return getattr(instance.__original__, self.field)
+
+    def __set__(self, instance, value):
+        if instance.__changeset__ is None:
+            raise AttributeError("ChangeSet is not active.  Attribute access not allowed")
+        instance.__changeset__[self.field] = value
+
+
+class BaseChangeSet:
+    __original__ = None
+    __changeset__ = None
+
+    def __init__(self, obj, changes=None):
+        self.__original__ = obj
+        if changes is None:
+            self.__changeset__ = {}
+        else:
+            self.__changeset__ = changes
+
+    def commit(self):
+        field_kwargs = {
+            name: self.__changeset__.get(name, self.__original__[name])
+            for name
+            in self.__original__._meta.field_names
+        }
+        # decommission the changeset so no further changes can be made.
+        self.__changeset__ = None
+        return type(self.__original__)(**field_kwargs)
+
+
+def ChangeSet(obj, changes):
+    namespace = {
+        name: ChangeSetField(name)
+        for name
+        in obj._meta.field_names
+    }
+    cls = abc.ABCMeta.__new__(
+        abc.ABCMeta,
+        "{0}ChangeSet".format(obj.__class__.__name__),
+        (BaseChangeSet,),
+        namespace,
+    )
+    cls.register(type(obj))
+    return cls(obj, changes)
 
 
 class BaseSerializable(collections.Sequence):
@@ -179,19 +239,14 @@ class BaseSerializable(collections.Sequence):
 
     _in_mutable_context = False
 
-    @contextlib.contextmanager
     def build_copy(self, *args, **kwargs):
-        c_self = self.copy(*args, **kwargs)
-        c_values = tuple(c_self)
-        c_self._in_mutable_context = True
-        try:
-            yield c_self
-        except Exception:
-            for value, attr in zip(c_values, self._meta.field_attrs):
-                setattr(c_self, attr, make_immutable(value))
-            raise
-        finally:
-            c_self._in_mutable_context = False
+        args_as_kwargs = merge_args_to_kwargs(
+            args,
+            kwargs,
+            self._meta.field_names,
+            allow_missing=True,
+        )
+        return ChangeSet(self, changes=args_as_kwargs)
 
 
 def make_immutable(value):
