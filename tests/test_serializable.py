@@ -105,6 +105,17 @@ def test_serializable_initialization_args_kwargs_mix(args, kwargs):
     assert obj.field3 == 3
 
 
+@pytest.mark.parametrize(
+    'lookup,expected',
+    (
+        (0, 5),
+    ),
+)
+def test_serializable_getitem_lookups(type_1_a, lookup, expected):
+    actual = type_1_a[lookup]
+    assert actual == expected
+
+
 def test_serializable_subclass_retains_field_info_from_parent():
     obj = RLPType4(2, 1, 3)
     assert obj.field1 == 1
@@ -278,3 +289,122 @@ def test_serializable_inheritance():
         c3.field1
     with pytest.raises(AttributeError):
         c3.field3
+
+
+def test_serializable_basic_copy(type_1_a):
+    n_type_1_a = type_1_a.copy()
+    assert n_type_1_a == type_1_a
+    assert n_type_1_a is not type_1_a
+
+
+def test_serializable_copy_with_nested_serializables(type_2):
+    n_type_2 = type_2.copy()
+    assert n_type_2 == type_2
+    assert n_type_2 is not type_2
+
+    assert n_type_2.field2_1 == type_2.field2_1
+    assert n_type_2.field2_1 is not type_2.field2_1
+
+    assert n_type_2.field2_2 == type_2.field2_2
+    assert all(left == right for left, right in zip(n_type_2.field2_2, type_2.field2_2))
+    assert all(left is not right for left, right in zip(n_type_2.field2_2, type_2.field2_2))
+
+
+def test_serializable_build_copy(type_1_a):
+    with type_1_a.build_copy() as c_type_1_a:
+        # ensure that the base object remains immutable
+        with pytest.raises(AttributeError):
+            type_1_a.field1 = 12345
+        assert type_1_a.field1 == 5
+
+        # make changes to copy
+        c_type_1_a.field1 = 1234
+        c_type_1_a.field2 = b'arst'
+
+        # check that the copy has the new field values
+        assert c_type_1_a.field1 == 1234
+        assert c_type_1_a.field2 == b'arst'
+
+        # ensure the base object hasn't changed.
+        assert type_1_a.field1 == 5
+        assert type_1_a.field2 == b'a'
+
+    # check that the copy has the new field values
+    assert c_type_1_a.field1 == 1234
+    assert c_type_1_a.field2 == b'arst'
+
+    # ensure the base object hasn't changed.
+    assert type_1_a.field1 == 5
+    assert type_1_a.field2 == b'a'
+
+    # ensure that we still can't update the base obj
+    with pytest.raises(AttributeError):
+        type_1_a.field1 = 12345
+    assert type_1_a.field1 == 5
+
+    # ensure that we also can't update the copied one
+    with pytest.raises(AttributeError):
+        c_type_1_a.field1 = 12345
+    assert c_type_1_a.field1 == 1234
+
+
+def test_serializable_build_copy_with_params(type_1_a):
+    with type_1_a.build_copy(1234) as c_type_1_a:
+        assert c_type_1_a.field1 == 1234
+
+    assert c_type_1_a.field1 == 1234
+
+
+def test_serializable_build_copy_revert_on_error(type_1_a):
+    try:
+        with type_1_a.build_copy() as c_type_1_a:
+            # make changes to copy
+            c_type_1_a.field1 = 1234
+            c_type_1_a.field2 = b'arst'
+
+            # see that the changes are present
+            assert c_type_1_a.field1 == 1234
+            assert c_type_1_a.field2 == b'arst'
+
+            raise Exception('trigger revert')
+    except Exception:
+        pass
+
+    # ensure the base object hasn't changed.
+    assert type_1_a.field1 == 5
+    assert type_1_a.field2 == b'a'
+
+    # ensure the copy was reverted.
+    assert c_type_1_a.field1 == 5
+    assert c_type_1_a.field2 == b'a'
+
+
+def test_serializable_build_copy_revert_on_error_with_params(type_1_a):
+    with pytest.raises(Exception):
+        with type_1_a.build_copy(1234) as c_type_1_a:
+            # make changes to copy
+            c_type_1_a.field2 = b'arst'
+
+            # see that the changes are present
+            assert c_type_1_a.field1 == 1234
+            assert c_type_1_a.field2 == b'arst'
+
+            raise Exception('trigger revert')
+
+    # ensure the base object hasn't changed.
+    assert type_1_a.field1 == 5
+    assert type_1_a.field2 == b'a'
+
+    # ensure the copy was reverted.
+    assert c_type_1_a.field2 == b'a'
+    # ensure that the override fromt he `build_copy` was persisted.
+    assert c_type_1_a.field1 == 1234
+
+
+def test_serializable_build_copy_cannot_reenter_context(type_1_a):
+    with type_1_a.build_copy() as c_type_1_a:
+        pass
+
+    with pytest.raises(AttributeError):
+        with c_type_1_a:
+            pass
