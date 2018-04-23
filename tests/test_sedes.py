@@ -3,30 +3,40 @@ from __future__ import unicode_literals
 import pytest
 from rlp import SerializationError, DeserializationError
 from rlp import infer_sedes
-from rlp.sedes import big_endian_int, binary, List, CountableList
+from rlp.sedes import (
+    big_endian_int,
+    binary,
+    boolean,
+    CountableList,
+    List,
+)
 
 
-def test_inference():
-    obj_sedes_pairs = (
+@pytest.mark.parametrize(
+    'value,expected',
+    (
         (5, big_endian_int),
         (0, big_endian_int),
         (-1, None),
+        (True, boolean),
+        (False, boolean),
+        (None, None),
         (b'', binary),
         (b'asdf', binary),
         (b'\xe4\xf6\xfc\xea\xe2\xfb', binary),
         ([], List()),
         ([1, 2, 3], List((big_endian_int,) * 3)),
         ([[], b'asdf'], List(([], binary))),
-    )
-
-    for obj, sedes in obj_sedes_pairs:
-        if sedes is not None:
-            inferred = infer_sedes(obj)
-            assert inferred == sedes
-            sedes.serialize(obj)
-        else:
-            with pytest.raises(TypeError):
-                infer_sedes(obj)
+    ),
+)
+def test_inference(value, expected):
+    if expected is not None:
+        inferred = infer_sedes(value)
+        assert inferred == expected
+        expected.serialize(value)
+    else:
+        with pytest.raises(TypeError):
+            infer_sedes(value)
 
 
 def test_list_sedes():

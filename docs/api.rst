@@ -35,6 +35,12 @@ Sedes Objects
     A sedes object for binary data of arbitrary length (an instance of
     :class:`rlp.sedes.Binary` with default arguments).
 
+.. autoclass:: rlp.sedes.Boolean
+
+.. data:: rlp.sedes.boolean
+
+    A sedes object for boolean types.
+
 .. autoclass:: rlp.sedes.Text
 
    .. automethod:: rlp.sedes.Text.fixed_length
