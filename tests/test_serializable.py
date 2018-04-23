@@ -330,7 +330,52 @@ def test_serializable_copy_with_nested_serializables(type_2):
 
 
 def test_serializable_build_copy(type_1_a):
+    with type_1_a.build_copy() as changeset:
+        # make changes to copy
+        changeset.field1 = 1234
+        changeset.field2 = b'arst'
+
+        # check that the copy has the new field values
+        assert changeset.field1 == 1234
+        assert changeset.field2 == b'arst'
+
+        n_type_1_a = changeset.commit()
+
+    # check that the copy has the new field values
+    assert n_type_1_a.field1 == 1234
+    assert n_type_1_a.field2 == b'arst'
+
+    # ensure the base object hasn't changed.
+    assert type_1_a.field1 == 5
+    assert type_1_a.field2 == b'a'
+
+
+def test_serializable_build_copy_changeset_gets_decomissioned(type_1_a):
+    with type_1_a.build_copy() as changeset:
+        changeset.field1 = 54321
+        n_type_1_a = changeset.commit()
+
+    # ensure that we also can't update the changeset
+    with pytest.raises(AttributeError):
+        changeset.field1 = 12345
+    # ensure that we also can't read values from the changeset
+    with pytest.raises(AttributeError):
+        changeset.field1
+
+    assert n_type_1_a.field1 == 54321
+
+
+def test_serializable_build_copy_with_params(type_1_a):
+    with type_1_a.build_copy(1234) as changeset:
+        assert changeset.field1 == 1234
+
+        n_type_1_a = changeset.commit()
+    assert n_type_1_a.field1 == 1234
+
+
+def test_serializable_build_copy_using_open_close_api(type_1_a):
     changeset = type_1_a.build_copy()
+    changeset.open()
 
     # make changes to copy
     changeset.field1 = 1234
@@ -350,26 +395,10 @@ def test_serializable_build_copy(type_1_a):
     assert type_1_a.field1 == 5
     assert type_1_a.field2 == b'a'
 
-
-def test_serializable_build_copy_changeset_gets_decomissioned(type_1_a):
-    changeset = type_1_a.build_copy()
-
-    changeset.field1 = 54321
-    n_type_1_a = changeset.commit()
-
-    # ensure that we also can't update the changeset
-    with pytest.raises(AttributeError):
-        changeset.field1 = 12345
-    # ensure that we also can't access values from the changeset
-    with pytest.raises(AttributeError):
-        changeset.field1
-
-    assert n_type_1_a.field1 == 54321
-
-
-def test_serializable_build_copy_with_params(type_1_a):
-    changeset = type_1_a.build_copy(1234)
+    # check we can still access the unclosed changeset
     assert changeset.field1 == 1234
 
-    n_type_1_a = changeset.commit()
-    assert n_type_1_a.field1 == 1234
+    changeset.close()
+
+    with pytest.raises(AttributeError):
+        assert changeset.field1 == 1234

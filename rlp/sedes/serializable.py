@@ -1,6 +1,7 @@
 import abc
 import collections
 import copy
+import enum
 
 from eth_utils import (
     to_tuple,
@@ -77,6 +78,12 @@ def _eq(left, right):
         return left == right
 
 
+class ChangesetState(enum.Enum):
+    INITIALIZED = enum.auto()
+    OPEN = enum.auto()
+    CLOSED = enum.auto()
+
+
 class ChangeSetField:
     field = None
 
@@ -86,40 +93,66 @@ class ChangeSetField:
     def __get__(self, instance, type=None):
         if instance is None:
             return self
-        elif instance.__changeset__ is None:
+        elif instance.__state__ is not ChangesetState.OPEN:
             raise AttributeError("ChangeSet is not active.  Attribute access not allowed")
         else:
             try:
-                return instance.__changeset__[self.field]
+                return instance.__diff__[self.field]
             except KeyError:
                 return getattr(instance.__original__, self.field)
 
     def __set__(self, instance, value):
-        if instance.__changeset__ is None:
+        if instance.__state__ is not ChangesetState.OPEN:
             raise AttributeError("ChangeSet is not active.  Attribute access not allowed")
-        instance.__changeset__[self.field] = value
+        instance.__diff__[self.field] = value
 
 
 class BaseChangeSet:
+    # reference to the original Serializable instance.
     __original__ = None
-    __changeset__ = None
+    # the state of this fieldset.  Initialized -> Open -> Closed
+    __state__ = None
+    # the field changes that have been made in this change
+    __diff__ = None
 
     def __init__(self, obj, changes=None):
         self.__original__ = obj
-        if changes is None:
-            self.__changeset__ = {}
-        else:
-            self.__changeset__ = changes
+        self.__state__ = ChangesetState.INITIALIZED
+        self.__diff__ = changes or {}
 
     def commit(self):
-        field_kwargs = {
-            name: self.__changeset__.get(name, self.__original__[name])
-            for name
-            in self.__original__._meta.field_names
-        }
-        # decommission the changeset so no further changes can be made.
-        self.__changeset__ = None
-        return type(self.__original__)(**field_kwargs)
+        if self.__state__ == ChangesetState.OPEN:
+            field_kwargs = {
+                name: self.__diff__.get(name, self.__original__[name])
+                for name
+                in self.__original__._meta.field_names
+            }
+            return type(self.__original__)(**field_kwargs)
+        else:
+            raise ValueError("Cannot open ChangeSet which is not in the OPEN state")
+
+    def open(self):
+        if self.__state__ == ChangesetState.INITIALIZED:
+            self.__state__ = ChangesetState.OPEN
+        else:
+            raise ValueError("Cannot open ChangeSet which is not in the INITIALIZED state")
+
+    def close(self):
+        if self.__state__ == ChangesetState.OPEN:
+            self.__state__ = ChangesetState.CLOSED
+        else:
+            raise ValueError("Cannot open ChangeSet which is not in the INITIALIZED state")
+
+    def __enter__(self):
+        if self.__state__ == ChangesetState.INITIALIZED:
+            self.open()
+            return self
+        else:
+            raise ValueError("Cannot open ChangeSet which is not in the INITIALIZED state")
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None:
+            self.close()
 
 
 def ChangeSet(obj, changes):
@@ -128,13 +161,11 @@ def ChangeSet(obj, changes):
         for name
         in obj._meta.field_names
     }
-    cls = abc.ABCMeta.__new__(
-        abc.ABCMeta,
+    cls = type(
         "{0}ChangeSet".format(obj.__class__.__name__),
         (BaseChangeSet,),
         namespace,
     )
-    cls.register(type(obj))
     return cls(obj, changes)
 
 
