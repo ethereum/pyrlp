@@ -35,6 +35,15 @@ Sedes Objects
     A sedes object for binary data of arbitrary length (an instance of
     :class:`rlp.sedes.Binary` with default arguments).
 
+.. autoclass:: rlp.sedes.Text
+
+   .. automethod:: rlp.sedes.Text.fixed_length
+
+.. data:: rlp.sedes.text
+
+    A sedes object for utf encoded text data of arbitrary length (an instance of
+    :class:`rlp.sedes.Text` with default arguments).
+
 .. autoclass:: rlp.sedes.BigEndianInt
 
 .. data:: rlp.sedes.big_endian_int
