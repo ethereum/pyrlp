@@ -316,6 +316,18 @@ def _mk_field_property(field, attr):
     return property(field_fn_getter, field_fn_setter)
 
 
+class RemovedParentField:
+    name = None
+
+    def __init__(self, name):
+        self.name = name
+
+    def __get__(self, instance, owner):
+        raise AttributeError(
+            "'{0}' object has no attribute '{1}'".format(owner.__name__, self.name)
+        )
+
+
 class SerializableBase(abc.ABCMeta):
     def __new__(cls, name, bases, attrs):
         super_new = super(SerializableBase, cls).__new__
@@ -354,12 +366,19 @@ class SerializableBase(abc.ABCMeta):
             in zip(meta.field_names, meta.field_attrs)
         }
 
+        removed_parent_field_props = {
+            field_name: RemovedParentField(field_name)
+            for base in bases if issubclass(base, Serializable) if hasattr(base, '_meta')
+            for field_name in base._meta.field_names if field_names not in field_props
+        }
+
         return super_new(
             cls,
             name,
             bases,
             dict(
                 tuple(field_props.items()) +
+                tuple(removed_parent_field_props.items()) +
                 tuple(attrs.items()) +
                 (('__slots__', meta.field_attrs),)
             ),
