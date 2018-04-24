@@ -2,10 +2,12 @@ import abc
 import collections
 import copy
 import enum
+import re
 
 from eth_utils import (
-    to_tuple,
     to_dict,
+    to_set,
+    to_tuple,
 )
 
 from rlp.exceptions import (
@@ -27,9 +29,19 @@ class MetaBase:
     sedes = None
 
 
+def _get_duplicates(values):
+    counts = collections.Counter(values)
+    return tuple(
+        item
+        for item, num in counts.items()
+        if num > 1
+    )
+
+
 def validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=False):
-    if len(arg_names) != len(set(arg_names)):
-        raise TypeError("duplicate argument names")
+    duplicate_arg_names = _get_duplicates(arg_names)
+    if duplicate_arg_names:
+        raise TypeError("Duplicate argument names: {0}".format(sorted(duplicate_arg_names)))
 
     needed_kwargs = arg_names[len(args):]
     used_kwargs = set(arg_names[:len(args)])
@@ -316,23 +328,108 @@ def _mk_field_property(field, attr):
     return property(field_fn_getter, field_fn_setter)
 
 
+IDENTIFIER_REGEX = re.compile(r"^[^\d\W]\w*\Z", re.UNICODE)
+
+
+def _is_valid_identifier(value):
+    # Source: https://stackoverflow.com/questions/5474008/regular-expression-to-confirm-whether-a-string-is-a-valid-identifier-in-python  # noqa: E501
+    if not isinstance(value, str):
+        return False
+    return bool(IDENTIFIER_REGEX.match(value))
+
+
+@to_set
+def _get_class_namespace(cls):
+    if hasattr(cls, '__dict__'):
+        yield from cls.__dict__.keys()
+    if hasattr(cls, '__slots__'):
+        yield from cls.__slots__
+
+
 class SerializableBase(abc.ABCMeta):
     def __new__(cls, name, bases, attrs):
         super_new = super(SerializableBase, cls).__new__
 
-        # Ensure initialization is only performed for subclasses of SerializableBase
-        # (excluding Model class itself).
-        is_serializable_subclass = any(b for b in bases if isinstance(b, SerializableBase))
+        serializable_bases = tuple(b for b in bases if isinstance(b, SerializableBase))
+        has_multiple_serializable_parents = len(serializable_bases) > 1
+        is_serializable_subclass = any(serializable_bases)
         declares_fields = 'fields' in attrs
 
-        if not is_serializable_subclass or not declares_fields:
+        if not is_serializable_subclass:
+            # If this is the original creation of the `Serializable` class,
+            # just create the class.
             return super_new(cls, name, bases, attrs)
+        elif not declares_fields:
+            if has_multiple_serializable_parents:
+                raise TypeError(
+                    "Cannot create subclass from multiple parent `Serializable` "
+                    "classes without explicit `fields` declaration."
+                )
+            else:
+                # This is just a vanilla subclass of a `Serializable` parent class.
+                parent_serializable = serializable_bases[0]
+                fields = parent_serializable._meta.fields
+        else:
+            # ensure that the `fields` property is a tuple of tuples to ensure
+            # immutability.
+            fields = tuple(tuple(field) for field in attrs.pop('fields'))
 
-        fields = attrs.pop('fields')
+        # split the fields into names and sedes
         field_names, sedes = zip(*fields)
 
-        field_attrs = _mk_field_attrs(field_names, attrs.keys())
+        # check that field names are unique
+        duplicate_field_names = _get_duplicates(field_names)
+        if duplicate_field_names:
+            raise TypeError(
+                "The following fields are duplicated in the `fields` "
+                "declaration: "
+                "{0}".format(",".join(sorted(duplicate_field_names)))
+            )
 
+        # check that field names are valid identifiers
+        invalid_field_names = {
+            field_name
+            for field_name
+            in field_names
+            if not _is_valid_identifier(field_name)
+        }
+        if invalid_field_names:
+            raise TypeError(
+                "The following field names are not valid python identifiers: {0}".format(
+                    ",".join("`{0}`".format(item) for item in sorted(invalid_field_names))
+                )
+            )
+
+        # extract all of the fields from parent `Serializable` classes.
+        parent_field_names = {
+            field_name
+            for base in serializable_bases if hasattr(base, '_meta')
+            for field_name in base._meta.field_names
+        }
+
+        # check that all fields from parent serializable classes are
+        # represented on this class.
+        missing_fields = parent_field_names.difference(field_names)
+        if missing_fields:
+            raise TypeError(
+                "Subclasses of `Serializable` **must** contain a full superset "
+                "of the fields defined in their parent classes.  The following "
+                "fields are missing: "
+                "{0}".format(",".join(sorted(missing_fields)))
+            )
+
+        # the actual field values are stored in separate *private* attributes.
+        # This computes attribute names that don't conflict with other
+        # attributes already present on the class.
+        reserved_namespace = set(attrs.keys()).union(
+            attr
+            for base in bases
+            for parent_cls in base.__mro__
+            for attr in _get_class_namespace(parent_cls)
+        )
+        field_attrs = _mk_field_attrs(field_names, reserved_namespace)
+
+        # construct the Meta object to store field information for the class
         meta_namespace = {
             'fields': fields,
             'field_attrs': field_attrs,
@@ -348,23 +445,26 @@ class SerializableBase(abc.ABCMeta):
         )
         attrs['_meta'] = meta
 
-        field_props = {
-            field: _mk_field_property(field, attr)
+        # construct `property` attributes for read only access to the fields.
+        field_props = tuple(
+            (field, _mk_field_property(field, attr))
             for field, attr
             in zip(meta.field_names, meta.field_attrs)
-        }
+        )
 
         return super_new(
             cls,
             name,
             bases,
             dict(
-                tuple(field_props.items()) +
-                tuple(attrs.items()) +
-                (('__slots__', meta.field_attrs),)
+                field_props +
+                tuple(attrs.items())
             ),
         )
 
 
 class Serializable(BaseSerializable, metaclass=SerializableBase):
+    """
+    The base class for serializable objects.
+    """
     pass
