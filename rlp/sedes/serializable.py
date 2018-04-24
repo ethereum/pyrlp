@@ -379,8 +379,7 @@ class SerializableBase(abc.ABCMeta):
             dict(
                 tuple(field_props.items()) +
                 tuple(removed_parent_field_props.items()) +
-                tuple(attrs.items()) +
-                (('__slots__', meta.field_attrs),)
+                tuple(attrs.items())
             ),
         )
 
