@@ -121,6 +121,11 @@ class BaseChangeset:
         self.__diff__ = changes or {}
 
     def commit(self):
+        obj = self.build_rlp()
+        self.close()
+        return obj
+
+    def build_rlp(self):
         if self.__state__ == ChangesetState.OPEN:
             field_kwargs = {
                 name: self.__diff__.get(name, self.__original__[name])
@@ -151,7 +156,8 @@ class BaseChangeset:
             raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
+        if self.__state__ == ChangesetState.OPEN:
+            self.close()
 
 
 def Changeset(obj, changes):

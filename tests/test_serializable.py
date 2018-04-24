@@ -385,7 +385,7 @@ def test_serializable_build_changeset_using_open_close_api(type_1_a):
     assert changeset.field1 == 1234
     assert changeset.field2 == b'arst'
 
-    n_type_1_a = changeset.commit()
+    n_type_1_a = changeset.build_rlp()
 
     # check that the copy has the new field values
     assert n_type_1_a.field1 == 1234
