@@ -2,6 +2,7 @@ import abc
 import collections
 import copy
 import enum
+import itertools
 
 from eth_utils import (
     to_tuple,
@@ -340,10 +341,35 @@ class SerializableBase(abc.ABCMeta):
         if not is_serializable_subclass or not declares_fields:
             return super_new(cls, name, bases, attrs)
 
+        # extract the `fields` definition and split the field names and sedes
         fields = attrs.pop('fields')
         field_names, sedes = zip(*fields)
 
-        field_attrs = _mk_field_attrs(field_names, attrs.keys())
+        # extract all of the fields from parent `Serializable` classes.
+        parent_field_names = {
+            field_name
+            for base in bases if (issubclass(base, Serializable) and hasattr(base, '_meta'))
+            for field_name in base._meta.field_names
+        }
+
+        missing_fields = parent_field_names.difference(field_names)
+        if missing_fields:
+            raise TypeError(
+                "Subclasses of `Serializable` **must** contain a full superset "
+                "of the fields defined in their parent classes.  The following "
+                "fields are missing: "
+                "{0}".format(",".join(sorted(missing_fields)))
+            )
+
+        reserved_namespace = set(attrs.keys()).union(itertools.chain(*(
+            parent_cls.__dict__.keys()
+            for base in bases
+            for parent_cls in base.__mro__ if hasattr(parent_cls, '__dict__')
+        )))
+        # the actual field values are stored in separate *private* attributes.
+        # This computes attribute names that don't conflict with other
+        # attributes already present on the class.
+        field_attrs = _mk_field_attrs(field_names, reserved_namespace)
 
         meta_namespace = {
             'fields': fields,
@@ -366,19 +392,12 @@ class SerializableBase(abc.ABCMeta):
             in zip(meta.field_names, meta.field_attrs)
         }
 
-        removed_parent_field_props = {
-            field_name: RemovedParentField(field_name)
-            for base in bases if (issubclass(base, Serializable) and hasattr(base, '_meta'))
-            for field_name in base._meta.field_names if field_names not in field_props
-        }
-
         return super_new(
             cls,
             name,
             bases,
             dict(
                 tuple(field_props.items()) +
-                tuple(removed_parent_field_props.items()) +
                 tuple(attrs.items())
             ),
         )

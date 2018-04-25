@@ -267,6 +267,7 @@ def test_serializable_inheritance():
     class Child2(Parent):
         fields = (
             ('field1', big_endian_int),
+            ('field2', big_endian_int),
         )
 
     class Child3(Parent):
@@ -404,16 +405,18 @@ def test_serializable_build_changeset_using_open_close_api(type_1_a):
         assert changeset.field1 == 1234
 
 
-def test_serializable_inheritance_excludes_parent_fields():
-    # Make sure that when a Serializable is subclassed and it's fields are
-    # overwritten, that the parent fields are fully removed.
+def test_serializable_inheritance_enforces_inclusion_of_parent_fields():
     class Parent(Serializable):
-        fields = (('field_a', big_endian_int),)
+        fields = (
+            ('field_a', big_endian_int),
+            ('field_b', big_endian_int),
+            ('field_c', big_endian_int),
+            ('field_d', big_endian_int),
+        )
 
-    class Child(Parent):
-        fields = (('field_b', big_endian_int),)
-
-    child = Child(12345)
-
-    with pytest.raises(AttributeError, match="'Child' object has no attribute 'field_a'"):
-        child.field_a
+    with pytest.raises(TypeError, match="field_a,field_c"):
+        class Child(Parent):
+            fields = (
+                ('field_b', big_endian_int),
+                ('field_d', big_endian_int),
+            )
