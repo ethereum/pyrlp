@@ -368,7 +368,7 @@ class SerializableBase(abc.ABCMeta):
 
         removed_parent_field_props = {
             field_name: RemovedParentField(field_name)
-            for base in bases if issubclass(base, Serializable) if hasattr(base, '_meta')
+            for base in bases if (issubclass(base, Serializable) and hasattr(base, '_meta'))
             for field_name in base._meta.field_names if field_names not in field_props
         }
 
