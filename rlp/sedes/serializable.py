@@ -368,7 +368,13 @@ class SerializableBase(abc.ABCMeta):
             else:
                 # This is just a vanilla subclass of a `Serializable` parent class.
                 parent_serializable = serializable_bases[0]
-                fields = parent_serializable._meta.fields
+
+                if hasattr(parent_serializable, '_meta'):
+                    fields = parent_serializable._meta.fields
+                else:
+                    # This is a subclass of `Serializable` which has no
+                    # `fields`, likely intended for further subclassing.
+                    return super_new(cls, name, bases, attrs)
         else:
             # ensure that the `fields` property is a tuple of tuples to ensure
             # immutability.
