@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from rlp import SerializationError
@@ -250,66 +252,6 @@ def test_serializable_encoding_rlp_caching(rlp_obj):
     assert obj_decoded._cached_rlp == rlp_code
 
 
-def test_serializable_inheritance():
-    class Parent(Serializable):
-        fields = (
-            ('field1', big_endian_int),
-            ('field2', big_endian_int),
-        )
-
-    class Child1(Parent):
-        fields = (
-            ('field1', big_endian_int),
-            ('field2', big_endian_int),
-            ('field3', big_endian_int),
-        )
-
-    class Child2(Parent):
-        fields = (
-            ('field1', big_endian_int),
-        )
-
-    class Child3(Parent):
-        fields = (
-            ('new_field1', big_endian_int),
-            ('field2', big_endian_int),
-        )
-
-    class Child4(Parent):
-        fields = (
-            ('field1', binary),
-            ('field2', binary),
-            ('field3', big_endian_int),
-        )
-
-    p = Parent(1, 2)
-    c1 = Child1(1, 2, 3)
-    c2 = Child2(1)
-    c3 = Child3(1, 2)
-    c4 = Child4(b'a', b'b', 5)
-
-    assert Parent.serialize(p) == [b'\x01', b'\x02']
-    assert Child1.serialize(c1) == [b'\x01', b'\x02', b'\x03']
-    assert Child2.serialize(c2) == [b'\x01']
-    assert Child3.serialize(c3) == [b'\x01', b'\x02']
-    assert Child4.serialize(c4) == [b'a', b'b', b'\x05']
-
-    with pytest.raises(AttributeError):
-        p.field3
-    with pytest.raises(AttributeError):
-        p.new_field1
-
-    with pytest.raises(AttributeError):
-        c2.field2
-    with pytest.raises(AttributeError):
-        c2.new_field1
-
-    with pytest.raises(AttributeError):
-        c3.field1
-    with pytest.raises(AttributeError):
-        c3.field3
-
-
 def test_serializable_basic_copy(type_1_a):
     n_type_1_a = type_1_a.copy()
     assert n_type_1_a == type_1_a
@@ -402,3 +344,213 @@ def test_serializable_build_changeset_using_open_close_api(type_1_a):
 
     with pytest.raises(AttributeError):
         assert changeset.field1 == 1234
+
+
+def test_serializable_with_duplicate_field_names_is_error():
+    msg1 = "duplicated in the `fields` declaration: field_a"
+    with pytest.raises(TypeError, match=msg1):
+        class ParentA(Serializable):
+            fields = (
+                ('field_a', big_endian_int),
+                ('field_c', big_endian_int),
+                ('field_d', big_endian_int),
+                ('field_a', big_endian_int),
+            )
+
+    msg2 = "duplicated in the `fields` declaration: field_a,field_c"
+    with pytest.raises(TypeError, match=msg2):
+        class ParentB(Serializable):
+            fields = (
+                ('field_a', big_endian_int),
+                ('field_c', big_endian_int),
+                ('field_d', big_endian_int),
+                ('field_a', big_endian_int),
+                ('field_c', big_endian_int),
+            )
+
+
+def test_serializable_inheritance_enforces_inclusion_of_parent_fields():
+    class Parent(Serializable):
+        fields = (
+            ('field_a', big_endian_int),
+            ('field_b', big_endian_int),
+            ('field_c', big_endian_int),
+            ('field_d', big_endian_int),
+        )
+
+    with pytest.raises(TypeError, match="field_a,field_c"):
+        class Child(Parent):
+            fields = (
+                ('field_b', big_endian_int),
+                ('field_d', big_endian_int),
+            )
+
+
+def test_serializable_single_inheritance_with_no_fields():
+    class Parent(Serializable):
+        fields = (
+            ('field_a', big_endian_int),
+            ('field_b', big_endian_int),
+        )
+
+    class Child(Parent):
+        pass
+
+    parent = Parent(1, 2)
+    assert parent.field_a == 1
+    assert parent.field_b == 2
+    assert Parent.serialize(parent) == [b'\x01', b'\x02']
+
+    child = Child(3, 4)
+    assert child.field_a == 3
+    assert child.field_b == 4
+    assert Child.serialize(child) == [b'\x03', b'\x04']
+
+
+def test_serializable_single_inheritance_with_fields():
+    class Parent(Serializable):
+        fields = (
+            ('field_a', big_endian_int),
+            ('field_b', big_endian_int),
+        )
+
+    class Child(Parent):
+        fields = (
+            ('field_a', big_endian_int),
+            ('field_b', big_endian_int),
+            ('field_c', big_endian_int),
+        )
+
+    parent = Parent(1, 2)
+    assert parent.field_a == 1
+    assert parent.field_b == 2
+    assert Parent.serialize(parent) == [b'\x01', b'\x02']
+
+    with pytest.raises(TypeError):
+        # ensure that the fields don't somehow leak into the parent class.
+        Parent(1, 2, 3)
+
+    child = Child(3, 4, 5)
+    assert child.field_a == 3
+    assert child.field_b == 4
+    assert child.field_c == 5
+    assert Child.serialize(child) == [b'\x03', b'\x04', b'\x05']
+
+
+def test_serializable_inheritance_with_sedes_overrides():
+    class Parent(Serializable):
+        fields = (
+            ('field_a', big_endian_int),
+            ('field_b', big_endian_int),
+        )
+
+    class Child(Parent):
+        fields = (
+            ('field_a', binary),
+            ('field_b', binary),
+            ('field_c', binary),
+        )
+
+    parent = Parent(1, 2)
+    assert parent.field_a == 1
+    assert parent.field_b == 2
+    assert Parent.serialize(parent) == [b'\x01', b'\x02']
+
+    child = Child(b'1', b'2', b'3')
+    assert child.field_a == b'1'
+    assert child.field_b == b'2'
+    assert child.field_c == b'3'
+    assert Child.serialize(child) == [b'1', b'2', b'3']
+
+
+def test_serializable_multiple_inheritance_without_fields_declaration_is_error():
+    class ParentA(Serializable):
+        fields = (
+            ('field_a', big_endian_int),
+        )
+
+    class ParentB(Serializable):
+        fields = (
+            ('field_b', big_endian_int),
+        )
+
+    with pytest.raises(TypeError, match="explicit `fields` declaration"):
+        class Child(ParentA, ParentB):
+            pass
+
+
+def test_serializable_multiple_inheritance_allowed_with_explicit_fields():
+    class ParentA(Serializable):
+        fields = (
+            ('field_a', big_endian_int),
+        )
+
+    class ParentB(Serializable):
+        fields = (
+            ('field_b', big_endian_int),
+        )
+
+    # with same fields
+    class ChildA(ParentA, ParentB):
+        fields = (
+            ('field_a', big_endian_int),
+            ('field_b', big_endian_int),
+        )
+
+    # with extra fields
+    class ChildB(ParentA, ParentB):
+        fields = (
+            ('field_a', big_endian_int),
+            ('field_b', big_endian_int),
+            ('field_c', big_endian_int),
+        )
+
+
+def test_serializable_multiple_inheritance_requires_all_parent_fields():
+    class ParentA(Serializable):
+        fields = (
+            ('field_a', big_endian_int),
+        )
+
+    class ParentB(Serializable):
+        fields = (
+            ('field_b', big_endian_int),
+        )
+
+    with pytest.raises(TypeError, match="The following fields are missing: field_b"):
+        class ChildA(ParentA, ParentB):
+            fields = (
+                ('field_a', big_endian_int),
+            )
+
+    with pytest.raises(TypeError, match="The following fields are missing: field_a"):
+        class ChildB(ParentA, ParentB):
+            fields = (
+                ('field_b', big_endian_int),
+            )
+
+    with pytest.raises(TypeError, match="The following fields are missing: field_a,field_b"):
+        class ChildC(ParentA, ParentB):
+            fields = (
+                ('field_c', big_endian_int),
+                ('field_d', big_endian_int),
+            )
+
+
+@pytest.mark.parametrize(
+    'name',
+    (
+        '0_starts_with_digit',
+        ' starts_with_space',
+        '$starts_with_dollar',
+        'has_dollar_$_inside',
+        'has spaces',
+    )
+)
+def test_serializable_field_names_must_be_valid_identifiers(name):
+    msg = "not valid python identifiers: `{0}`".format(re.escape(name))
+    with pytest.raises(TypeError, match=msg):
+        class Klass(Serializable):
+            fields = (
+                (name, big_endian_int),
+            )
