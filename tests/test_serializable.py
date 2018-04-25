@@ -267,6 +267,7 @@ def test_serializable_inheritance():
     class Child2(Parent):
         fields = (
             ('field1', big_endian_int),
+            ('field2', big_endian_int),
         )
 
     class Child3(Parent):
@@ -402,3 +403,20 @@ def test_serializable_build_changeset_using_open_close_api(type_1_a):
 
     with pytest.raises(AttributeError):
         assert changeset.field1 == 1234
+
+
+def test_serializable_inheritance_enforces_inclusion_of_parent_fields():
+    class Parent(Serializable):
+        fields = (
+            ('field_a', big_endian_int),
+            ('field_b', big_endian_int),
+            ('field_c', big_endian_int),
+            ('field_d', big_endian_int),
+        )
+
+    with pytest.raises(TypeError, match="field_a,field_c"):
+        class Child(Parent):
+            fields = (
+                ('field_b', big_endian_int),
+                ('field_d', big_endian_int),
+            )
