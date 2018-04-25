@@ -554,3 +554,15 @@ def test_serializable_field_names_must_be_valid_identifiers(name):
             fields = (
                 (name, big_endian_int),
             )
+
+
+def test_serializable_inheritance_from_base_with_no_fields():
+    """
+    ensure that we can create base classes of the base `Serializable` without
+    declaring fields.
+    """
+    class ExtendedSerializable(Serializable):
+        pass
+
+    class FurtherExtendedSerializable(ExtendedSerializable):
+        pass
