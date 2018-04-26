@@ -12,14 +12,14 @@ class Boolean:
             raise SerializationError('Can only serialize integers', obj)
 
         if obj is False:
-            return b'\x00'
+            return b''
         elif obj is True:
             return b'\x01'
         else:
             raise Exception("Invariant: no other options for boolean values")
 
     def deserialize(self, serial):
-        if serial == b'\x00':
+        if serial == b'':
             return False
         elif serial == b'\x01':
             return True

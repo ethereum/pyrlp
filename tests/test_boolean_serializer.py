@@ -11,7 +11,7 @@ from rlp.sedes import Boolean
     'value,expected',
     (
         (True, b'\x01'),
-        (False, b'\x00'),
+        (False, b''),
     ),
 )
 def test_boolean_serialize_values(value, expected):
@@ -39,7 +39,7 @@ def test_boolean_serialize_bad_values(value):
     'value,expected',
     (
         (b'\x01', True),
-        (b'\x00', False),
+        (b'', False),
     ),
 )
 def test_boolean_deserialization(value, expected):
@@ -50,7 +50,6 @@ def test_boolean_deserialization(value, expected):
 @pytest.mark.parametrize(
     'value',
     (
-        b'',
         b' ',
         b'\x02',
         b'\x00\x00',
