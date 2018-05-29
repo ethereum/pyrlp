@@ -1,8 +1,9 @@
 import collections
 
 from eth_utils import (
-    int_to_big_endian,
     big_endian_to_int,
+    int_to_big_endian,
+    is_bytes,
 )
 
 from rlp.atomic import (
@@ -209,6 +210,8 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
              `strict` is true
     :raises: :exc:`rlp.DeserializationError` if the deserialization fails
     """
+    if not is_bytes(rlp):
+        raise DecodingError('Can only decode RLP bytes, got type %s' % type(rlp).__name__, rlp)
     try:
         item, end = consume_item(rlp, 0)
     except IndexError:
