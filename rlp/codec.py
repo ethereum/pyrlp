@@ -11,7 +11,7 @@ from rlp.atomic import (
 )
 from rlp.exceptions import EncodingError, DecodingError
 from rlp.sedes.binary import Binary as BinaryClass
-from rlp.sedes import big_endian_int, binary, boolean
+from rlp.sedes import big_endian_int, binary, boolean, text
 from rlp.sedes.lists import List, is_sedes
 from rlp.sedes.serializable import Serializable
 from rlp.utils import ALL_BYTES
@@ -248,5 +248,7 @@ def infer_sedes(obj):
         return List(map(infer_sedes, obj))
     elif isinstance(obj, bool):
         return boolean
+    elif isinstance(obj, str):
+        return text
     msg = 'Did not find sedes handling type {}'.format(type(obj).__name__)
     raise TypeError(msg)
