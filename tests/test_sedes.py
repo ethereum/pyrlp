@@ -7,6 +7,7 @@ from rlp.sedes import (
     big_endian_int,
     binary,
     boolean,
+    text,
     CountableList,
     List,
 )
@@ -24,9 +25,15 @@ from rlp.sedes import (
         (b'', binary),
         (b'asdf', binary),
         (b'\xe4\xf6\xfc\xea\xe2\xfb', binary),
+        ('', text),
+        ('asdf', text),
+        ('\xe4\xf6\xfc\xea\xe2\xfb', text),
+        ('你好世界', text),
+        ('\u4f60\u597d\u4e16\u754c', text),
         ([], List()),
         ([1, 2, 3], List((big_endian_int,) * 3)),
         ([[], b'asdf'], List(([], binary))),
+        ([1, 'asdf'], List((big_endian_int, text))),
     ),
 )
 def test_inference(value, expected):
