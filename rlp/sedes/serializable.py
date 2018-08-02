@@ -205,7 +205,23 @@ class BaseSerializable(collections.Sequence):
         for value, attr in zip(field_values, self._meta.field_attrs):
             setattr(self, attr, make_immutable(value))
 
-    _cached_rlp = None
+    _cached_rlp_data = None
+    _cached_serial = None
+
+    @property
+    def _cached_rlp(self):
+        if self._cached_rlp_data:
+            return self._cached_rlp_data
+        elif self._cached_serial:
+            from rlp.codec import encode_raw
+            self._cached_rlp_data = encode_raw(self._cached_serial)
+            return self._cached_rlp_data
+        else:
+            return None
+
+    @_cached_rlp.setter
+    def _cached_rlp(self, data):
+        self._cached_rlp_data = data
 
     def as_dict(self):
         return dict(
@@ -259,7 +275,10 @@ class BaseSerializable(collections.Sequence):
             raise ObjectDeserializationError(serial=serial, sedes=cls, list_exception=e)
 
         args_as_kwargs = merge_args_to_kwargs(values, {}, cls._meta.field_names)
-        return cls(**args_as_kwargs, **extra_kwargs)
+        obj = cls(**args_as_kwargs, **extra_kwargs)
+        if hasattr(obj, '_cached_serial'):
+            obj._cached_serial = serial
+        return obj
 
     def copy(self, *args, **kwargs):
         missing_overrides = set(

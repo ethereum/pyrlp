@@ -215,7 +215,7 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
     try:
         item, end = consume_item(rlp, 0)
     except IndexError:
-        raise DecodingError('RLP string to short', rlp)
+        raise DecodingError('RLP string too short', rlp)
     if end != len(rlp) and strict:
         msg = 'RLP string ends with {} superfluous bytes'.format(len(rlp) - end)
         raise DecodingError(msg, rlp)
