@@ -130,7 +130,7 @@ def consume_length_prefix(rlp, start):
     elif b0 < SHORT_STRING:  # short string
         if b0 - 128 == 1 and rlp[start + 1] < 128:
             raise DecodingError('Encoded as short string although single byte was possible', rlp)
-        return (int_to_big_endian(b0), bytes, b0 - 128, start + 1)
+        return (rlp[start:start + 1], bytes, b0 - 128, start + 1)
     elif b0 < 192:  # long string
         ll = b0 - 183  # - (128 + 56 - 1)
         if rlp[start + 1:start + 2] == b'\x00':
@@ -139,9 +139,9 @@ def consume_length_prefix(rlp, start):
         l = big_endian_to_int(len_prefix)  # noqa: E741
         if l < 56:
             raise DecodingError('Long string prefix used for short string', rlp)
-        return (int_to_big_endian(b0) + len_prefix, bytes, l, start + 1 + ll)
+        return (rlp[start:start + 1] + len_prefix, bytes, l, start + 1 + ll)
     elif b0 < 192 + 56:  # short list
-        return (int_to_big_endian(b0), list, b0 - 192, start + 1)
+        return (rlp[start:start + 1], list, b0 - 192, start + 1)
     else:  # long list
         ll = b0 - 192 - 56 + 1
         if rlp[start + 1:start + 2] == b'\x00':
@@ -150,7 +150,7 @@ def consume_length_prefix(rlp, start):
         l = big_endian_to_int(len_prefix)  # noqa: E741
         if l < 56:
             raise DecodingError('Long list prefix used for short list', rlp)
-        return (int_to_big_endian(b0) + len_prefix, list, l, start + 1 + ll)
+        return (rlp[start:start + 1] + len_prefix, list, l, start + 1 + ll)
 
 
 def consume_payload(rlp, prefix, start, type_, length):
@@ -251,15 +251,16 @@ def _split_rlp_from_item(item_and_rlp):
 
 def _apply_rlp_cache(obj, split_rlp):
     item_rlp = split_rlp.pop(0)
-    if hasattr(obj, '_cached_rlp'):
+    if isinstance(obj, (int, bool, str, bytes, bytearray)):
+        return
+    elif hasattr(obj, '_cached_rlp'):
         obj._cached_rlp = item_rlp
-    if is_sequence(obj):
-        for sub in obj:
-            if is_sequence(sub):
-                sub_rlp = split_rlp.pop(0)
-                _apply_rlp_cache(sub, sub_rlp)
-            else:
-                _apply_rlp_cache(sub, split_rlp)
+    for sub in obj:
+        if isinstance(sub, (int, bool, str, bytes, bytearray)):
+            split_rlp.pop(0)
+        else:
+            sub_rlp = split_rlp.pop(0)
+            _apply_rlp_cache(sub, sub_rlp)
 
 
 def infer_sedes(obj):
