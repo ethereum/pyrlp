@@ -1,6 +1,6 @@
 from collections import Iterable, Sequence
 
-from .codec import consume_length_prefix, consume_payload
+from .codec import consume_length_prefix, consume_payload, _split_rlp_from_item
 from .exceptions import DecodingError
 from .atomic import Atomic
 
@@ -53,9 +53,11 @@ def consume_item_lazy(rlp, start):
               :class:`LazyList` and ``end`` is the position of the first
               unprocessed byte.
     """
-    t, l, s = consume_length_prefix(rlp, start)
+    p, t, l, s = consume_length_prefix(rlp, start)
     if t is bytes:
-        return consume_payload(rlp, s, bytes, l)
+        item_with_rlp, end = consume_payload(rlp, p, s, bytes, l)
+        item, _ = _split_rlp_from_item(item_with_rlp)
+        return item, end
     else:
         assert t is list
         return LazyList(rlp, s, s + l), s + l

@@ -12,7 +12,7 @@ from rlp.atomic import (
 from rlp.exceptions import EncodingError, DecodingError
 from rlp.sedes.binary import Binary as BinaryClass
 from rlp.sedes import big_endian_int, binary, boolean, text
-from rlp.sedes.lists import List, is_sedes
+from rlp.sedes.lists import List, is_sedes, is_sequence
 from rlp.sedes.serializable import Serializable
 from rlp.utils import ALL_BYTES
 
@@ -119,39 +119,41 @@ def consume_length_prefix(rlp, start):
 
     :param rlp: the rlp byte string to read from
     :param start: the position at which to start reading
-    :returns: a tuple ``(type, length, end)``, where ``type`` is either ``str``
+    :returns: a tuple ``(prefix, type, length, end)``, where ``type`` is either ``str``
               or ``list`` depending on the type of the following payload,
               ``length`` is the length of the payload in bytes, and ``end`` is
               the position of the first payload byte in the rlp string
     """
     b0 = rlp[start]
     if b0 < 128:  # single byte
-        return (bytes, 1, start)
+        return (b'', bytes, 1, start)
     elif b0 < SHORT_STRING:  # short string
         if b0 - 128 == 1 and rlp[start + 1] < 128:
             raise DecodingError('Encoded as short string although single byte was possible', rlp)
-        return (bytes, b0 - 128, start + 1)
+        return (int_to_big_endian(b0), bytes, b0 - 128, start + 1)
     elif b0 < 192:  # long string
         ll = b0 - 183  # - (128 + 56 - 1)
         if rlp[start + 1:start + 2] == b'\x00':
             raise DecodingError('Length starts with zero bytes', rlp)
-        l = big_endian_to_int(rlp[start + 1:start + 1 + ll])
+        len_prefix = rlp[start + 1:start + 1 + ll]
+        l = big_endian_to_int(len_prefix)  # noqa: E741
         if l < 56:
             raise DecodingError('Long string prefix used for short string', rlp)
-        return (bytes, l, start + 1 + ll)
+        return (int_to_big_endian(b0) + len_prefix, bytes, l, start + 1 + ll)
     elif b0 < 192 + 56:  # short list
-        return (list, b0 - 192, start + 1)
+        return (int_to_big_endian(b0), list, b0 - 192, start + 1)
     else:  # long list
         ll = b0 - 192 - 56 + 1
         if rlp[start + 1:start + 2] == b'\x00':
             raise DecodingError('Length starts with zero bytes', rlp)
-        l = big_endian_to_int(rlp[start + 1:start + 1 + ll])
+        len_prefix = rlp[start + 1:start + 1 + ll]
+        l = big_endian_to_int(len_prefix)  # noqa: E741
         if l < 56:
             raise DecodingError('Long list prefix used for short list', rlp)
-        return (list, l, start + 1 + ll)
+        return (int_to_big_endian(b0) + len_prefix, list, l, start + 1 + ll)
 
 
-def consume_payload(rlp, start, type_, length):
+def consume_payload(rlp, prefix, start, type_, length):
     """Read the payload of an item from an RLP string.
 
     :param rlp: the rlp string to read from
@@ -162,20 +164,22 @@ def consume_payload(rlp, start, type_, length):
               ``end`` is the position of the first unprocessed byte
     """
     if type_ is bytes:
-        return (rlp[start:start + length], start + length)
+        item = rlp[start: start + length]
+        return ((item, prefix + item), start + length)
     elif type_ is list:
         items = []
+        list_rlp = prefix
         next_item_start = start
         end = next_item_start + length
         while next_item_start < end:
-            # item, next_item_start = consume_item(rlp, next_item_start)
-            t, l, s = consume_length_prefix(rlp, next_item_start)
-            item, next_item_start = consume_payload(rlp, s, t, l)
+            p, t, l, s = consume_length_prefix(rlp, next_item_start)
+            item, next_item_start = consume_payload(rlp, p, s, t, l)
+            list_rlp += item[1]
             items.append(item)
         if next_item_start > end:
             raise DecodingError('List length prefix announced a too small '
                                 'length', rlp)
-        return (items, next_item_start)
+        return ((items, list_rlp), next_item_start)
     else:
         raise TypeError('Type must be either list or bytes')
 
@@ -188,8 +192,8 @@ def consume_item(rlp, start):
     :returns: a tuple ``(item, end)`` where ``item`` is the read item and
               ``end`` is the position of the first unprocessed byte
     """
-    t, l, s = consume_length_prefix(rlp, start)
-    return consume_payload(rlp, s, t, l)
+    p, t, l, s = consume_length_prefix(rlp, start)
+    return consume_payload(rlp, p, s, t, l)
 
 
 def decode(rlp, sedes=None, strict=True, **kwargs):
@@ -213,19 +217,49 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
     if not is_bytes(rlp):
         raise DecodingError('Can only decode RLP bytes, got type %s' % type(rlp).__name__, rlp)
     try:
-        item, end = consume_item(rlp, 0)
+        item_with_rlp, end = consume_item(rlp, 0)
     except IndexError:
-        raise DecodingError('RLP string to short', rlp)
+        raise DecodingError('RLP string too short', rlp)
     if end != len(rlp) and strict:
         msg = 'RLP string ends with {} superfluous bytes'.format(len(rlp) - end)
         raise DecodingError(msg, rlp)
+    item, per_item_rlp = _split_rlp_from_item(item_with_rlp)
     if sedes:
         obj = sedes.deserialize(item, **kwargs)
-        if hasattr(obj, '_cached_rlp'):
-            obj._cached_rlp = rlp
+        if is_sequence(obj) or hasattr(obj, '_cached_rlp'):
+            _apply_rlp_cache(obj, per_item_rlp)
         return obj
     else:
         return item
+
+
+def _split_rlp_from_item(item_and_rlp):
+    item, rlp = item_and_rlp
+    if BinaryClass.is_valid_type(item):
+        return item, rlp
+    elif isinstance(item, list):
+        items = []
+        rlp_items = [rlp]
+        for sub in item:
+            sub_item, sub_rlp = _split_rlp_from_item(sub)
+            items.append(sub_item)
+            rlp_items.append(sub_rlp)
+        return items, rlp_items
+    else:
+        raise TypeError('Type must be either list or bytes, got: {}'.format(type(item)))
+
+
+def _apply_rlp_cache(obj, split_rlp):
+    item_rlp = split_rlp.pop(0)
+    if hasattr(obj, '_cached_rlp'):
+        obj._cached_rlp = item_rlp
+    if is_sequence(obj):
+        for sub in obj:
+            if is_sequence(sub):
+                sub_rlp = split_rlp.pop(0)
+                _apply_rlp_cache(sub, sub_rlp)
+            else:
+                _apply_rlp_cache(sub, split_rlp)
 
 
 def infer_sedes(obj):
