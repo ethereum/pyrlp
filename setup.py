@@ -25,6 +25,7 @@ extras_require = {
         "pytest-watch>=4.1.0,<5",
         "wheel",
         "ipython",
+        "twine",
     ],
 }
 
