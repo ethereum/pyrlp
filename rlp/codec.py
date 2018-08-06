@@ -204,7 +204,7 @@ def consume_item(rlp, start):
     return consume_payload(rlp, p, s, t, l)
 
 
-def decode(rlp, sedes=None, strict=True, **kwargs):
+def decode(rlp, sedes=None, strict=True, recursive_cache=False, **kwargs):
     """Decode an RLP encoded object.
 
     If the deserialized result `obj` has an attribute :attr:`_cached_rlp` (e.g. if `sedes` is a
@@ -234,24 +234,26 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
     if sedes:
         obj = sedes.deserialize(item, **kwargs)
         if is_sequence(obj) or hasattr(obj, '_cached_rlp'):
-            _apply_rlp_cache(obj, per_item_rlp)
+            _apply_rlp_cache(obj, per_item_rlp, recursive_cache)
         return obj
     else:
         return item
 
 
-def _apply_rlp_cache(obj, split_rlp):
+def _apply_rlp_cache(obj, split_rlp, recursive):
     item_rlp = split_rlp.pop(0)
     if isinstance(obj, (int, bool, str, bytes, bytearray)):
         return
     elif hasattr(obj, '_cached_rlp'):
         obj._cached_rlp = item_rlp
+    if not recursive:
+        return
     for sub in obj:
         if isinstance(sub, (int, bool, str, bytes, bytearray)):
             split_rlp.pop(0)
         else:
             sub_rlp = split_rlp.pop(0)
-            _apply_rlp_cache(sub, sub_rlp)
+            _apply_rlp_cache(sub, sub_rlp, recursive)
 
 
 def infer_sedes(obj):

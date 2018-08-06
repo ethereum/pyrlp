@@ -257,7 +257,7 @@ def test_list_of_serializable_decoding_rlp_caching(rlp_obj):
     L = [rlp_obj, rlp_obj]
     list_code = encode(L, cache=False)
 
-    L2 = decode(list_code, sedes=List((type(rlp_obj), type(rlp_obj))))
+    L2 = decode(list_code, sedes=List((type(rlp_obj), type(rlp_obj))), recursive_cache=True)
     assert L2[0]._cached_rlp == rlp_obj_code
     assert L2[1]._cached_rlp == rlp_obj_code
 
