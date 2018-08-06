@@ -1,6 +1,6 @@
 from collections import Iterable, Sequence
 
-from .codec import consume_length_prefix, consume_payload, _split_rlp_from_item
+from .codec import consume_length_prefix, consume_payload
 from .exceptions import DecodingError
 from .atomic import Atomic
 
@@ -55,8 +55,7 @@ def consume_item_lazy(rlp, start):
     """
     p, t, l, s = consume_length_prefix(rlp, start)
     if t is bytes:
-        item_with_rlp, end = consume_payload(rlp, p, s, bytes, l)
-        item, _ = _split_rlp_from_item(item_with_rlp)
+        item, _, end = consume_payload(rlp, p, s, bytes, l)
         return item, end
     else:
         assert t is list

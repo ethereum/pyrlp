@@ -160,26 +160,34 @@ def consume_payload(rlp, prefix, start, type_, length):
     :param type_: the type of the payload (``bytes`` or ``list``)
     :param start: the position at which to start reading
     :param length: the length of the payload in bytes
-    :returns: a tuple ``(item, end)``, where ``item`` is the read item and
-              ``end`` is the position of the first unprocessed byte
+    :returns: a tuple ``(item, per_item_rlp, end)``, where ``item`` is
+              the read item, per_item_rlp is a list containing the RLP
+              encoding of each item and ``end`` is the position of the
+              first unprocessed byte
     """
     if type_ is bytes:
         item = rlp[start: start + length]
-        return ((item, prefix + item), start + length)
+        return (item, [prefix + item], start + length)
     elif type_ is list:
         items = []
+        per_item_rlp = []
         list_rlp = prefix
         next_item_start = start
         end = next_item_start + length
         while next_item_start < end:
             p, t, l, s = consume_length_prefix(rlp, next_item_start)
-            item, next_item_start = consume_payload(rlp, p, s, t, l)
-            list_rlp += item[1]
+            item, item_rlp, next_item_start = consume_payload(rlp, p, s, t, l)
+            per_item_rlp.append(item_rlp)
+            # When the item returned above is a single element, item_rlp will also contain a
+            # single element, but when it's a list, the first element will be the RLP of the
+            # whole List, which is what we want here.
+            list_rlp += item_rlp[0]
             items.append(item)
+        per_item_rlp.insert(0, list_rlp)
         if next_item_start > end:
             raise DecodingError('List length prefix announced a too small '
                                 'length', rlp)
-        return ((items, list_rlp), next_item_start)
+        return (items, per_item_rlp, next_item_start)
     else:
         raise TypeError('Type must be either list or bytes')
 
@@ -217,13 +225,12 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
     if not is_bytes(rlp):
         raise DecodingError('Can only decode RLP bytes, got type %s' % type(rlp).__name__, rlp)
     try:
-        item_with_rlp, end = consume_item(rlp, 0)
+        item, per_item_rlp, end = consume_item(rlp, 0)
     except IndexError:
         raise DecodingError('RLP string too short', rlp)
     if end != len(rlp) and strict:
         msg = 'RLP string ends with {} superfluous bytes'.format(len(rlp) - end)
         raise DecodingError(msg, rlp)
-    item, per_item_rlp = _split_rlp_from_item(item_with_rlp)
     if sedes:
         obj = sedes.deserialize(item, **kwargs)
         if is_sequence(obj) or hasattr(obj, '_cached_rlp'):
@@ -231,22 +238,6 @@ def decode(rlp, sedes=None, strict=True, **kwargs):
         return obj
     else:
         return item
-
-
-def _split_rlp_from_item(item_and_rlp):
-    item, rlp = item_and_rlp
-    if BinaryClass.is_valid_type(item):
-        return item, rlp
-    elif isinstance(item, list):
-        items = []
-        rlp_items = [rlp]
-        for sub in item:
-            sub_item, sub_rlp = _split_rlp_from_item(sub)
-            items.append(sub_item)
-            rlp_items.append(sub_rlp)
-        return items, rlp_items
-    else:
-        raise TypeError('Type must be either list or bytes, got: {}'.format(type(item)))
 
 
 def _apply_rlp_cache(obj, split_rlp):
