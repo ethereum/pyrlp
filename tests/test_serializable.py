@@ -40,27 +40,27 @@ class RLPType4(RLPType3):
 
 _type_1_a = RLPType1(5, b'a', (0, b''))
 _type_1_b = RLPType1(9, b'b', (2, b''))
-_type_2 = RLPType2(_type_1_a, [_type_1_a, _type_1_b])
+_type_2 = RLPType2(_type_1_a.copy(), [_type_1_a.copy(), _type_1_b.copy()])
 
 
 @pytest.fixture
 def type_1_a():
-    return _type_1_a
+    return _type_1_a.copy()
 
 
 @pytest.fixture
 def type_1_b():
-    return _type_1_b
+    return _type_1_b.copy()
 
 
 @pytest.fixture
 def type_2():
-    return _type_2
+    return _type_2.copy()
 
 
 @pytest.fixture(params=[_type_1_a, _type_1_b, _type_2])
 def rlp_obj(request):
-    return request.param
+    return request.param.copy()
 
 
 @pytest.mark.parametrize(
@@ -250,6 +250,16 @@ def test_serializable_encoding_rlp_caching(rlp_obj):
     obj_decoded = decode(rlp_code, sedes=rlp_obj.__class__)
     assert obj_decoded == rlp_obj
     assert obj_decoded._cached_rlp == rlp_code
+
+
+def test_list_of_serializable_decoding_rlp_caching(rlp_obj):
+    rlp_obj_code = encode(rlp_obj, cache=False)
+    L = [rlp_obj, rlp_obj]
+    list_code = encode(L, cache=False)
+
+    L2 = decode(list_code, sedes=List((type(rlp_obj), type(rlp_obj))), recursive_cache=True)
+    assert L2[0]._cached_rlp == rlp_obj_code
+    assert L2[1]._cached_rlp == rlp_obj_code
 
 
 def test_serializable_basic_copy(type_1_a):

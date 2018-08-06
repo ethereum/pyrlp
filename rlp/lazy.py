@@ -53,9 +53,10 @@ def consume_item_lazy(rlp, start):
               :class:`LazyList` and ``end`` is the position of the first
               unprocessed byte.
     """
-    t, l, s = consume_length_prefix(rlp, start)
+    p, t, l, s = consume_length_prefix(rlp, start)
     if t is bytes:
-        return consume_payload(rlp, s, bytes, l)
+        item, _, end = consume_payload(rlp, p, s, bytes, l)
+        return item, end
     else:
         assert t is list
         return LazyList(rlp, s, s + l), s + l

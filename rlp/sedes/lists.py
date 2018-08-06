@@ -26,13 +26,13 @@ def is_sedes(obj):
     A sedes object is characterized by having the methods `serialize(obj)` and
     `deserialize(serial)`.
     """
-    # return all(hasattr(obj, m) for m in ('serialize', 'deserialize'))
     return hasattr(obj, 'serialize') and hasattr(obj, 'deserialize')
 
 
 def is_sequence(obj):
     """Check if `obj` is a sequence, but not a string or bytes."""
-    return isinstance(obj, Sequence) and not BinaryClass.is_valid_type(obj)
+    return isinstance(obj, Sequence) and not (
+        isinstance(obj, str) or BinaryClass.is_valid_type(obj))
 
 
 class List(list):
