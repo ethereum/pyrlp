@@ -143,6 +143,7 @@ def peek(rlp, index, sedes=None):
 
     Usage example::
 
+        >>> import rlp
         >>> rlpdata = rlp.encode([1, 2, [3, [4, 5]]])
         >>> rlp.peek(rlpdata, 0, rlp.sedes.big_endian_int)
         1

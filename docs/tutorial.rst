@@ -15,36 +15,36 @@ encode these kinds of objects, use :func:`rlp.encode`::
 
     >>> from rlp import encode
     >>> encode('ethereum')
-    '\x88ethereum'
+    b'\x88ethereum'
     >>> encode('')
-    '\x80'
+    b'\x80'
     >>> encode('Lorem ipsum dolor sit amet, consetetur sadipscing elitr.')
-    '\xb88Lorem ipsum dolor sit amet, consetetur sadipscing elitr.'
+    b'\xb88Lorem ipsum dolor sit amet, consetetur sadipscing elitr.'
     >>> encode([])
-    '\xc0'
+    b'\xc0'
     >>> encode(['this', ['is', ('a', ('nested', 'list', []))]]) 
-    '\xd9\x84this\xd3\x82is\xcfa\xcd\x86nested\x84list\xc0'
+    b'\xd9\x84this\xd3\x82is\xcfa\xcd\x86nested\x84list\xc0'
 
 
 Decoding is just as simple::
 
     >>> from rlp import decode
-    >>> decode('\x88ethereum')
-    'ethereum'
-    >>> decode('\x80')
-    ''
-    >>> decode('\xc0')
+    >>> decode(b'\x88ethereum')
+    b'ethereum'
+    >>> decode(b'\x80')
+    b''
+    >>> decode(b'\xc0')
     []
-    >>> decode('\xd9\x84this\xd3\x82is\xcfa\xcd\x86nested\x84list\xc0')
-    ['this', ['is', ['a', ['nested', 'list', []]]]]
+    >>> decode(b'\xd9\x84this\xd3\x82is\xcfa\xcd\x86nested\x84list\xc0')
+    [b'this', [b'is', [b'a', [b'nested', b'list', []]]]]
 
 
 Now, what if we want to encode a different object, say, an integer? Let's try::
 
     >>> encode(1503)
-    '\x82\x05\xdf'
-    >>> decode('\x82\x05\xdf')
-    '\x05\xdf'
+    b'\x82\x05\xdf'
+    >>> decode(b'\x82\x05\xdf')
+    b'\x05\xdf'
 
 
 Oops, what happened? Encoding worked fine, but :func:`rlp.decode` refused to
@@ -66,7 +66,7 @@ Serialization and its couterpart, deserialization, is done by, what we call,
 pass this sedes to :func:`rlp.decode`::
 
     >>> from rlp.sedes import big_endian_int
-    >>> decode('\x82\x05\xdf', big_endian_int)
+    >>> decode(b'\x82\x05\xdf', big_endian_int)
     1503
 
 
@@ -75,10 +75,10 @@ to convert to and from byte strings::
 
     >>> from rlp.sedes import binary
     >>> encode(u'Ðapp')
-    '\x85\xc3\x90app'
-    >>> decode('\x85\xc3\x90app', binary)
-    u'\xd0app'
-    >>> print decode('\x85\xc3\x90app', binary)
+    b'\x85\xc3\x90app'
+    >>> decode(b'\x85\xc3\x90app', binary)
+    b'\xc3\x90app'
+    >>> print(decode(b'\x85\xc3\x90app', binary).decode('utf-8'))
     Ðapp
 
 
@@ -89,10 +89,10 @@ each list type. As base class for this we can use
 
     >>> from rlp.sedes import List
     >>> encode([5, 'fdsa', 0])
-    '\xc7\x05\x84fdsa\x00'
+    b'\xc7\x05\x84fdsa\x80'
     >>> sedes = List([big_endian_int, binary, big_endian_int])
-    >>> decode('\xc7\x05\x84fdsa\x00', sedes)
-    [5, u'fdsa', 0]
+    >>> decode(b'\xc7\x05\x84fdsa\x80', sedes)
+    (5, b'fdsa', 0)
 
 
 Unsurprisingly, it is also possible to nest :class:`rlp.List` objects::
@@ -100,9 +100,9 @@ Unsurprisingly, it is also possible to nest :class:`rlp.List` objects::
     >>> inner = List([binary, binary])
     >>> outer = List([inner, inner, inner])
     >>> decode(encode(['asdf', 'fdsa']), inner)
-    [u'asdf', u'fdsa']
+    (b'asdf', b'fdsa')
     >>> decode(encode([['a1', 'a2'], ['b1', 'b2'], ['c1', 'c2']]), outer)
-    [[u'a1', u'a2'], [u'b1', u'b2'], [u'c1', u'c2']]
+    ((b'a1', b'a2'), (b'b1', b'b2'), (b'c1', b'c2'))
 
 
 What Sedes Objects Actually Are
@@ -134,7 +134,7 @@ world are transactions, blocks or anything send over the Wire. With *pyrlp*,
 this is as easy as subclassing :class:`rlp.Serializable`::
 
     >>> import rlp
-    >>> class Transaction(rlp.Serializable)
+    >>> class Transaction(rlp.Serializable):
     ...    fields = (
     ...        ('sender', binary),
     ...        ('receiver', binary),
@@ -147,8 +147,8 @@ defining the field names and the corresponding sedes. For each name an instance
 attribute is created, that can conveniently be initialized with
 :meth:`~rlp.Serializable.__init__`::
 
-    >>> tx1 = Transaction('me', 'you', 255)
-    >>> tx2 = Transaction(amount=255, sender='you', receiver='me')
+    >>> tx1 = Transaction(b'me', b'you', 255)
+    >>> tx2 = Transaction(amount=255, sender=b'you', receiver=b'me')
     >>> tx1.amount
     255
 
@@ -158,10 +158,8 @@ list, where the provided sedes objects are used to serialize the object
 attributes::
 
     >>> Transaction.serialize(tx1)
-    ['me', 'you', '\xff']
-    >>> tx1 == Transaction.deserialize(['me', 'you', '\xff'])
-    True
-    >>> Transaction.serializable(tx1)
+    [b'me', b'you', b'\xff']
+    >>> tx1 == Transaction.deserialize([b'me', b'you', b'\xff'])
     True
 
 
@@ -170,8 +168,8 @@ responsible for its instances. Therefore, we can use :func:`rlp.encode` and
 :func:`rlp.decode` as expected::
 
     >>> encode(tx1)
-    '\xc9\x82me\x83you\x81\xff'
-    >>> decode('\xc9\x82me\x83you\x81\xff', Transaction) == tx1
+    b'\xc9\x82me\x83you\x81\xff'
+    >>> decode(b'\xc9\x82me\x83you\x81\xff', Transaction) == tx1
     True
 
 

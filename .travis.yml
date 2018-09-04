@@ -10,6 +10,12 @@ matrix:
       env: TOX_POSARGS="-e py36"
     - python: "pypy3.5"
       env: TOX_POSARGS="-e pypy3"
+    - python: "3.5"
+      env: TOX_POSARGS="-e py35-doctest"
+    - python: "3.6"
+      env: TOX_POSARGS="-e py36-doctest"
+    - python: "pypy3.5"
+      env: TOX_POSARGS="-e pypy3-doctest"
     - python: "3.6"
       env: TOX_POSARGS="-e lint"
 cache:
