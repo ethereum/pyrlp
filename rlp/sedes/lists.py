@@ -65,9 +65,11 @@ class List(list):
     def serialize(self, obj):
         if not is_sequence(obj):
             raise ListSerializationError('Can only serialize sequences', obj)
-        if self.strict:
-            if len(self) != len(obj) or len(self) < len(obj):
-                raise ListSerializationError('List has wrong length', obj)
+        if self.strict and len(self) != len(obj):
+            raise ListSerializationError(
+                'Serializing list length (%d) does not match sedes (%d)' % (
+                    len(obj), len(self)),
+                obj)
 
         for index, (element, sedes) in enumerate(zip(obj, self)):
             try:
@@ -81,7 +83,10 @@ class List(list):
             raise ListDeserializationError('Can only deserialize sequences', serial)
 
         if self.strict and len(serial) != len(self):
-            raise ListDeserializationError('List has wrong length', serial)
+            raise ListDeserializationError(
+                'Deserializing list length (%d) does not match sedes (%d)' % (
+                    len(serial), len(self)),
+                serial)
 
         for idx, (sedes, element) in enumerate(zip(self, serial)):
             try:
