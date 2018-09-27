@@ -1,3 +1,5 @@
+from multiprocessing import get_context
+import pickle
 import re
 
 import pytest
@@ -174,6 +176,23 @@ def test_serializable_equality(type_1_a, type_1_b, type_2):
     assert type_1_a != type_1_b
     assert type_1_b != type_2
     assert type_2 != type_1_a
+
+
+def test_serializable_pickling_across_processes(type_1_a):
+    # Ensure the hash is what we expect *and* populate the cache.
+    assert hash(type_1_a) == hash(tuple(type_1_a))
+
+    pickled_obj = pickle.dumps(type_1_a)
+    for method in ['fork', 'spawn']:
+        ctx = get_context(method)
+        p = ctx.Process(target=_assert_hash_cache_equal, args=(pickled_obj,))
+        p.start()
+        p.join()
+
+
+def _assert_hash_cache_equal(pickled_obj):
+    obj = pickle.loads(pickled_obj)
+    assert hash(obj) == hash(tuple(obj))
 
 
 def test_serializable_sedes_inference(type_1_a, type_1_b, type_2):
