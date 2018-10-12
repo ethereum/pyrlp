@@ -197,8 +197,10 @@ def consume_item(rlp, start):
 
     :param rlp: the rlp string to read from
     :param start: the position at which to start reading
-    :returns: a tuple ``(item, end)`` where ``item`` is the read item and
-              ``end`` is the position of the first unprocessed byte
+    :returns: a tuple ``(item, per_item_rlp, end)``, where ``item`` is
+              the read item, per_item_rlp is a list containing the RLP
+              encoding of each item and ``end`` is the position of the
+              first unprocessed byte
     """
     p, t, l, s = consume_length_prefix(rlp, start)
     return consume_payload(rlp, p, s, t, l)
