@@ -44,9 +44,14 @@ class RLPEmptyFieldsType(Serializable):
     fields = ()
 
 
+class RLPUndeclaredFieldsType(Serializable):
+    pass
+
+
 _type_1_a = RLPType1(5, b'a', (0, b''))
 _type_1_b = RLPType1(9, b'b', (2, b''))
 _type_2 = RLPType2(_type_1_a.copy(), [_type_1_a.copy(), _type_1_b.copy()])
+_type_undeclared_fields = RLPUndeclaredFieldsType()
 
 
 @pytest.fixture
@@ -148,6 +153,13 @@ def test_serializable_subclass_retains_field_info_from_parent():
     assert obj.field1 == 1
     assert obj.field2 == 2
     assert obj.field3 == 3
+
+
+def test_undeclared_fields_serializable_class():
+    assert RLPUndeclaredFieldsType.serialize(_type_undeclared_fields) == []
+    assert RLPUndeclaredFieldsType.deserialize(
+        RLPUndeclaredFieldsType.serialize(_type_undeclared_fields)
+    ) == _type_undeclared_fields
 
 
 def test_deserialization_for_custom_init_method():
