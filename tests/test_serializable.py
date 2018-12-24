@@ -40,6 +40,10 @@ class RLPType4(RLPType3):
     pass
 
 
+class RLPEmptyFieldsType(Serializable):
+    fields = ()
+
+
 _type_1_a = RLPType1(5, b'a', (0, b''))
 _type_1_b = RLPType1(9, b'b', (2, b''))
 _type_2 = RLPType2(_type_1_a.copy(), [_type_1_a.copy(), _type_1_b.copy()])
@@ -204,10 +208,9 @@ def test_serializable_sedes_inference(type_1_a, type_1_b, type_2):
 def test_serializable_invalid_serialization_value(type_1_a, type_1_b, type_2):
     with pytest.raises(SerializationError):
         RLPType1.serialize(type_2)
-    with pytest.raises(SerializationError):
         RLPType2.serialize(type_1_a)
-    with pytest.raises(SerializationError):
         RLPType2.serialize(type_1_b)
+        RLPEmptyFieldsType.serialize(type_1_a)
 
 
 def test_serializable_serialization(type_1_a, type_1_b, type_2):
