@@ -390,7 +390,10 @@ class SerializableBase(abc.ABCMeta):
             fields = tuple(tuple(field) for field in attrs.pop('fields'))
 
         # split the fields into names and sedes
-        field_names, sedes = zip(*fields)
+        if fields:
+            field_names, sedes = zip(*fields)
+        else:
+            field_names, sedes = (), ()
 
         # check that field names are unique
         duplicate_field_names = _get_duplicates(field_names)
