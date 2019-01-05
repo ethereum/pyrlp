@@ -383,7 +383,7 @@ class SerializableBase(abc.ABCMeta):
                 else:
                     # This is a subclass of `Serializable` which has no
                     # `fields`, likely intended for further subclassing.
-                    return super_new(cls, name, bases, attrs)
+                    fields = ()
         else:
             # ensure that the `fields` property is a tuple of tuples to ensure
             # immutability.
