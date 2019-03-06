@@ -158,7 +158,7 @@ class BaseChangeset:
         if self.__state__ == ChangesetState.OPEN:
             self.__state__ = ChangesetState.CLOSED
         else:
-            raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
+            raise ValueError("Cannot close Changeset which is not in the OPEN state")
 
     def __enter__(self):
         if self.__state__ == ChangesetState.INITIALIZED:
