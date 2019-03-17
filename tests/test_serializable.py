@@ -16,14 +16,19 @@ class RLPType1(Serializable):
         ('field2', binary),
         ('field3', List((big_endian_int, binary)))
     ]
-
+class AnnotatedRLPType1(Serializable):
+    field1: big_endian_int
+    field2: binary
+    field3: List((big_endian_int, binary))
 
 class RLPType2(Serializable):
     fields = [
         ('field2_1', RLPType1),
         ('field2_2', List((RLPType1, RLPType1))),
     ]
-
+class AnnotatedRLPType2(Serializable):
+    field2_1: AnnotatedRLPType1
+    field2_2: List((AnnotatedRLPType1, AnnotatedRLPType1))
 
 class RLPType3(Serializable):
     fields = [
@@ -35,8 +40,19 @@ class RLPType3(Serializable):
     def __init__(self, field2, field1, field3, **kwargs):
         super().__init__(field1=field1, field2=field2, field3=field3, **kwargs)
 
+class AnnotatedRLPType3(Serializable):
+    field1: big_endian_int
+    field2: big_endian_int
+    field3: big_endian_int
+
+    def __init__(self, field2, field1, field3, **kwargs):
+        super().__init__(field1=field1, field2=field2, field3=field3, **kwargs)
+
 
 class RLPType4(RLPType3):
+    pass
+
+class AnnotatedRLPType4(AnnotatedRLPType3):
     pass
 
 
@@ -49,27 +65,45 @@ class RLPUndeclaredFieldsType(Serializable):
 
 
 _type_1_a = RLPType1(5, b'a', (0, b''))
+_annotated_type_1_a = AnnotatedRLPType1(5, b'a', (0, b''))
 _type_1_b = RLPType1(9, b'b', (2, b''))
+_annotated_type_1_b = AnnotatedRLPType1(9, b'b', (2, b''))
 _type_2 = RLPType2(_type_1_a.copy(), [_type_1_a.copy(), _type_1_b.copy()])
+_annotated_type_2 = AnnotatedRLPType2(_annotated_type_1_a.copy(), [_annotated_type_1_a.copy(), _annotated_type_1_b.copy()])
 _type_undeclared_fields = RLPUndeclaredFieldsType()
 
 
-@pytest.fixture
-def type_1_a():
-    return _type_1_a.copy()
+@pytest.fixture(params=[
+    _type_1_a,
+    _annotated_type_1_a
+])
+def type_1_a(request):
+    return request.param.copy()
 
 
-@pytest.fixture
-def type_1_b():
-    return _type_1_b.copy()
+@pytest.fixture(params=[
+    _type_1_b,
+    _annotated_type_1_b
+])
+def type_1_b(request):
+    return request.param.copy()
+
+@pytest.fixture(params=[
+    _type_2,
+    _annotated_type_2
+])
+def type_2(request):
+    return request.param.copy()
 
 
-@pytest.fixture
-def type_2():
-    return _type_2.copy()
-
-
-@pytest.fixture(params=[_type_1_a, _type_1_b, _type_2])
+@pytest.fixture(params=[
+    _type_1_a,
+    _annotated_type_1_a,
+    _type_1_b,
+    _annotated_type_1_b,
+    _type_2,
+    _annotated_type_2
+])
 def rlp_obj(request):
     return request.param.copy()
 
@@ -81,18 +115,33 @@ def rlp_obj(request):
         (RLPType1, [], {}, ['field1', 'field2', 'field3']),
         (RLPType1, [8], {}, ['field2', 'field3']),
         (RLPType1, [7, 8], {}, ['field3']),
+        (AnnotatedRLPType1, [], {}, ['field1', 'field2', 'field3']),
+        (AnnotatedRLPType1, [8], {}, ['field2', 'field3']),
+        (AnnotatedRLPType1, [7, 8], {}, ['field3']),
+
         # missing fields kwargs
         (RLPType1, [], {'field1': 7}, ['field2', 'field3']),
         (RLPType1, [], {'field1': 7, 'field2': 8}, ['field3']),
         (RLPType1, [], {'field2': 7, 'field3': (1, b'')}, ['field1']),
         (RLPType1, [], {'field3': (1, b'')}, ['field1', 'field2']),
         (RLPType1, [], {'field2': 7}, ['field1', 'field3']),
+        (AnnotatedRLPType1, [], {'field1': 7}, ['field2', 'field3']),
+        (AnnotatedRLPType1, [], {'field1': 7, 'field2': 8}, ['field3']),
+        (AnnotatedRLPType1, [], {'field2': 7, 'field3': (1, b'')}, ['field1']),
+        (AnnotatedRLPType1, [], {'field3': (1, b'')}, ['field1', 'field2']),
+        (AnnotatedRLPType1, [], {'field2': 7}, ['field1', 'field3']),
+
         # missing fields args and kwargs
         (RLPType1, [7], {'field2': 8}, ['field3']),
         (RLPType1, [7], {'field3': (1, b'')}, ['field2']),
-        # duplicate fields
+        (AnnotatedRLPType1, [7], {'field2': 8}, ['field3']),
+        (AnnotatedRLPType1, [7], {'field3': (1, b'')}, ['field2']),
+
+        # duplicate fields (not to be confused with duplicate field definitions)
         (RLPType1, [7], {'field1': 8}, ['field1']),
         (RLPType1, [7, 8], {'field1': 8, 'field2': 7}, ['field1', 'field2']),
+        (AnnotatedRLPType1, [7], {'field1': 8}, ['field1']),
+        (AnnotatedRLPType1, [7, 8], {'field1': 8, 'field2': 7}, ['field1', 'field2']),
     ),
 )
 def test_serializable_initialization_validation(rlptype, args, kwargs, exception_includes):
@@ -102,6 +151,13 @@ def test_serializable_initialization_validation(rlptype, args, kwargs, exception
 
 
 @pytest.mark.parametrize(
+    'rlpcls',
+    (
+        RLPType3,
+        AnnotatedRLPType3
+    )
+)
+@pytest.mark.parametrize(
     'args,kwargs',
     (
         ([2, 1, 3], {}),
@@ -110,8 +166,8 @@ def test_serializable_initialization_validation(rlptype, args, kwargs, exception
         ([], {'field3': 3, 'field1': 1, 'field2': 2}),
     ),
 )
-def test_serializable_initialization_args_kwargs_mix(args, kwargs):
-    obj = RLPType3(*args, **kwargs)
+def test_serializable_initialization_args_kwargs_mix(rlpcls, args, kwargs):
+    obj = rlpcls(*args, **kwargs)
 
     assert obj.field1 == 1
     assert obj.field2 == 2
@@ -148,8 +204,15 @@ def test_serializable_getitem_lookups(type_1_a, lookup, expected):
     assert actual == expected
 
 
-def test_serializable_subclass_retains_field_info_from_parent():
-    obj = RLPType4(2, 1, 3)
+@pytest.mark.parametrize(
+    'rlpcls',
+    (
+        RLPType4,
+        AnnotatedRLPType4
+    )
+)
+def test_serializable_subclass_retains_field_info_from_parent(rlpcls):
+    obj = rlpcls(2, 1, 3)
     assert obj.field1 == 1
     assert obj.field2 == 2
     assert obj.field3 == 3
@@ -162,30 +225,45 @@ def test_undeclared_fields_serializable_class():
     ) == _type_undeclared_fields
 
 
-def test_deserialization_for_custom_init_method():
-    type_3 = RLPType3(2, 1, 3)
+@pytest.mark.parametrize(
+    'rlpcls',
+    (
+        RLPType3,
+        AnnotatedRLPType3
+    )
+)
+def test_deserialization_for_custom_init_method(rlpcls):
+    type_3 = rlpcls(2, 1, 3)
     assert type_3.field1 == 1
     assert type_3.field2 == 2
     assert type_3.field3 == 3
 
-    result = decode(encode(type_3), sedes=RLPType3)
+    result = decode(encode(type_3), sedes=rlpcls)
 
     assert result.field1 == 1
     assert result.field2 == 2
     assert result.field3 == 3
 
-
-def test_serializable_iterator():
+@pytest.mark.parametrize(
+    'rlpcls',
+    (
+        RLPType1,
+        AnnotatedRLPType1
+    )
+)
+def test_serializable_iterator(rlpcls):
     values = (5, b'a', (1, b'c'))
-    obj = RLPType1(*values)
+    obj = rlpcls(*values)
     assert tuple(obj) == values
 
 
 def test_serializable_equality(type_1_a, type_1_b, type_2):
     # equality
     assert type_1_a == type_1_a
+    # [FIXME] - Infer Sedes instead of hardcoding the class
     assert type_1_a == RLPType1(*type_1_a)
     assert type_1_b == type_1_b
+    # [FIXME] - Infer Sedes instead of hardcoding the class
     assert type_1_b == RLPType1(*type_1_b)
 
     assert type_2 == type_2
@@ -212,13 +290,14 @@ def _assert_hash_cache_equal(pickled_obj):
 
 
 def test_serializable_sedes_inference(type_1_a, type_1_b, type_2):
-    assert infer_sedes(type_1_a) == RLPType1
-    assert infer_sedes(type_1_b) == RLPType1
-    assert infer_sedes(type_2) == RLPType2
+    assert infer_sedes(type_1_a) in (RLPType1, AnnotatedRLPType1)
+    assert infer_sedes(type_1_b) in (RLPType1, AnnotatedRLPType1)
+    assert infer_sedes(type_2) in (RLPType2, AnnotatedRLPType2)
 
 
 def test_serializable_invalid_serialization_value(type_1_a, type_1_b, type_2):
     with pytest.raises(SerializationError):
+        # [FIXME] - Infer Sedes instead of hardcoding the class
         RLPType1.serialize(type_2)
         RLPType2.serialize(type_1_a)
         RLPType2.serialize(type_1_b)
@@ -226,6 +305,7 @@ def test_serializable_invalid_serialization_value(type_1_a, type_1_b, type_2):
 
 
 def test_serializable_serialization(type_1_a, type_1_b, type_2):
+    # [FIXME] - Infer Sedes instead of hardcoding the class
     serial_1_a = RLPType1.serialize(type_1_a)
     serial_1_b = RLPType1.serialize(type_1_b)
     serial_2 = RLPType2.serialize(type_2)
@@ -235,6 +315,7 @@ def test_serializable_serialization(type_1_a, type_1_b, type_2):
 
 
 def test_serializable_deserialization(type_1_a, type_1_b, type_2):
+    # [FIXME] - Infer Sedes instead of hardcoding the class
     serial_1_a = RLPType1.serialize(type_1_a)
     serial_1_b = RLPType1.serialize(type_1_b)
     serial_2 = RLPType2.serialize(type_2)
@@ -412,6 +493,26 @@ def test_serializable_with_duplicate_field_names_is_error():
                 ('field_c', big_endian_int),
             )
 
+def test_annotated_serializable_with_duplicate_field_names():
+    # RLP classes with annotated fields ignore duplicates
+
+    class AnnotatedParentA(Serializable):
+        field_a: big_endian_int
+        field_c: big_endian_int
+        field_d: big_endian_int
+        field_a: big_endian_int
+
+    assert AnnotatedParentA._meta.field_names == ('field_a', 'field_c', 'field_d')
+
+    class AnnotatedParentB(Serializable):
+        field_a: big_endian_int
+        field_c: big_endian_int
+        field_d: big_endian_int
+        field_a: big_endian_int
+        field_c: big_endian_int
+
+    assert AnnotatedParentB._meta.field_names == ('field_a', 'field_c', 'field_d')
+
 
 def test_serializable_inheritance_enforces_inclusion_of_parent_fields():
     class Parent(Serializable):
@@ -421,6 +522,11 @@ def test_serializable_inheritance_enforces_inclusion_of_parent_fields():
             ('field_c', big_endian_int),
             ('field_d', big_endian_int),
         )
+    class AnnotatedParent(Serializable):
+        field_a: big_endian_int
+        field_b: big_endian_int
+        field_c: big_endian_int
+        field_d: big_endian_int
 
     with pytest.raises(TypeError, match="field_a,field_c"):
         class Child(Parent):
@@ -429,6 +535,11 @@ def test_serializable_inheritance_enforces_inclusion_of_parent_fields():
                 ('field_d', big_endian_int),
             )
 
+    with pytest.raises(TypeError, match="field_a,field_c"):
+        class AnnotatedChild(AnnotatedParent):
+            field_b: big_endian_int
+            field_d: big_endian_int
+
 
 def test_serializable_single_inheritance_with_no_fields():
     class Parent(Serializable):
@@ -436,8 +547,13 @@ def test_serializable_single_inheritance_with_no_fields():
             ('field_a', big_endian_int),
             ('field_b', big_endian_int),
         )
+    class AnnotatedParent(Serializable):
+        field_a: big_endian_int
+        field_b: big_endian_int
 
     class Child(Parent):
+        pass
+    class AnnotatedChild(AnnotatedParent):
         pass
 
     parent = Parent(1, 2)
@@ -445,10 +561,20 @@ def test_serializable_single_inheritance_with_no_fields():
     assert parent.field_b == 2
     assert Parent.serialize(parent) == [b'\x01', b'\x02']
 
+    annotated_parent = AnnotatedParent(1, 2)
+    assert annotated_parent.field_a == 1
+    assert annotated_parent.field_b == 2
+    assert AnnotatedParent.serialize(annotated_parent) == [b'\x01', b'\x02']
+
     child = Child(3, 4)
     assert child.field_a == 3
     assert child.field_b == 4
     assert Child.serialize(child) == [b'\x03', b'\x04']
+
+    annotated_child = AnnotatedChild(3, 4)
+    assert annotated_child.field_a == 3
+    assert annotated_child.field_b == 4
+    assert AnnotatedChild.serialize(annotated_child) == [b'\x03', b'\x04']
 
 
 def test_serializable_single_inheritance_with_fields():
@@ -457,6 +583,9 @@ def test_serializable_single_inheritance_with_fields():
             ('field_a', big_endian_int),
             ('field_b', big_endian_int),
         )
+    class AnnotatedParent(Serializable):
+        field_a: big_endian_int
+        field_b: big_endian_int
 
     class Child(Parent):
         fields = (
@@ -464,21 +593,40 @@ def test_serializable_single_inheritance_with_fields():
             ('field_b', big_endian_int),
             ('field_c', big_endian_int),
         )
+    class AnnotatedChild(Parent):
+        field_a: big_endian_int
+        field_b: big_endian_int
+        field_c: big_endian_int
 
     parent = Parent(1, 2)
     assert parent.field_a == 1
     assert parent.field_b == 2
     assert Parent.serialize(parent) == [b'\x01', b'\x02']
 
+    annotated_parent = AnnotatedParent(1, 2)
+    assert annotated_parent.field_a == 1
+    assert annotated_parent.field_b == 2
+    assert AnnotatedParent.serialize(annotated_parent) == [b'\x01', b'\x02']
+
     with pytest.raises(TypeError):
         # ensure that the fields don't somehow leak into the parent class.
         Parent(1, 2, 3)
+
+    with pytest.raises(TypeError):
+        # ensure that the fields don't somehow leak into the parent class.
+        AnnotatedParent(1, 2, 3)
 
     child = Child(3, 4, 5)
     assert child.field_a == 3
     assert child.field_b == 4
     assert child.field_c == 5
     assert Child.serialize(child) == [b'\x03', b'\x04', b'\x05']
+
+    annotated_child = AnnotatedChild(3, 4, 5)
+    assert annotated_child.field_a == 3
+    assert annotated_child.field_b == 4
+    assert annotated_child.field_c == 5
+    assert AnnotatedChild.serialize(annotated_child) == [b'\x03', b'\x04', b'\x05']
 
 
 def test_serializable_inheritance_with_sedes_overrides():
@@ -487,6 +635,9 @@ def test_serializable_inheritance_with_sedes_overrides():
             ('field_a', big_endian_int),
             ('field_b', big_endian_int),
         )
+    class AnnotatedParent(Serializable):
+        field_a: big_endian_int
+        field_b: big_endian_int
 
     class Child(Parent):
         fields = (
@@ -494,11 +645,20 @@ def test_serializable_inheritance_with_sedes_overrides():
             ('field_b', binary),
             ('field_c', binary),
         )
+    class AnnotatedChild(AnnotatedParent):
+        field_a: binary
+        field_b: binary
+        field_c: binary
 
     parent = Parent(1, 2)
     assert parent.field_a == 1
     assert parent.field_b == 2
     assert Parent.serialize(parent) == [b'\x01', b'\x02']
+
+    annotated_parent = AnnotatedParent(1, 2)
+    assert annotated_parent.field_a == 1
+    assert annotated_parent.field_b == 2
+    assert AnnotatedParent.serialize(annotated_parent) == [b'\x01', b'\x02']
 
     child = Child(b'1', b'2', b'3')
     assert child.field_a == b'1'
@@ -506,20 +666,34 @@ def test_serializable_inheritance_with_sedes_overrides():
     assert child.field_c == b'3'
     assert Child.serialize(child) == [b'1', b'2', b'3']
 
+    annotated_child = AnnotatedChild(b'1', b'2', b'3')
+    assert annotated_child.field_a == b'1'
+    assert annotated_child.field_b == b'2'
+    assert annotated_child.field_c == b'3'
+    assert AnnotatedChild.serialize(annotated_child) == [b'1', b'2', b'3']
+
 
 def test_serializable_multiple_inheritance_without_fields_declaration_is_error():
     class ParentA(Serializable):
         fields = (
             ('field_a', big_endian_int),
         )
+    class AnnotatedParentA(Serializable):
+        field_a: big_endian_int
 
     class ParentB(Serializable):
         fields = (
             ('field_b', big_endian_int),
         )
+    class AnnotatedParentB(Serializable):
+        field_b: big_endian_int
 
     with pytest.raises(TypeError, match="explicit `fields` declaration"):
         class Child(ParentA, ParentB):
+            pass
+
+    with pytest.raises(TypeError, match="explicit `fields` declaration"):
+        class AnnotatedChild(AnnotatedParentA, AnnotatedParentB):
             pass
 
 
@@ -529,10 +703,15 @@ def test_serializable_multiple_inheritance_allowed_with_explicit_fields():
             ('field_a', big_endian_int),
         )
 
+    class AnnotatedParentA(Serializable):
+        field_a: big_endian_int
+
     class ParentB(Serializable):
         fields = (
             ('field_b', big_endian_int),
         )
+    class AnnotatedParentB(Serializable):
+        field_b: big_endian_int
 
     # with same fields
     class ChildA(ParentA, ParentB):
@@ -540,6 +719,9 @@ def test_serializable_multiple_inheritance_allowed_with_explicit_fields():
             ('field_a', big_endian_int),
             ('field_b', big_endian_int),
         )
+    class AnnotatedChildA(AnnotatedParentA, AnnotatedParentB):
+        field_a: big_endian_int
+        field_b: big_endian_int
 
     # with extra fields
     class ChildB(ParentA, ParentB):
@@ -548,6 +730,10 @@ def test_serializable_multiple_inheritance_allowed_with_explicit_fields():
             ('field_b', big_endian_int),
             ('field_c', big_endian_int),
         )
+    class AnnotatedChildB(AnnotatedParentA, AnnotatedParentB):
+        field_a: big_endian_int
+        field_b: big_endian_int
+        field_c: big_endian_int
 
 
 def test_serializable_multiple_inheritance_requires_all_parent_fields():
@@ -556,10 +742,16 @@ def test_serializable_multiple_inheritance_requires_all_parent_fields():
             ('field_a', big_endian_int),
         )
 
+    class AnnotatedParentA(Serializable):
+        field_a: big_endian_int
+
     class ParentB(Serializable):
         fields = (
             ('field_b', big_endian_int),
         )
+
+    class AnnotatedParentB(Serializable):
+        field_b: big_endian_int
 
     with pytest.raises(TypeError, match="The following fields are missing: field_b"):
         class ChildA(ParentA, ParentB):
@@ -567,11 +759,20 @@ def test_serializable_multiple_inheritance_requires_all_parent_fields():
                 ('field_a', big_endian_int),
             )
 
+    with pytest.raises(TypeError, match="The following fields are missing: field_b"):
+        class AnnotatedChildA(AnnotatedParentA, AnnotatedParentB):
+            field_a: big_endian_int
+
     with pytest.raises(TypeError, match="The following fields are missing: field_a"):
         class ChildB(ParentA, ParentB):
             fields = (
                 ('field_b', big_endian_int),
             )
+
+    with pytest.raises(TypeError, match="The following fields are missing: field_a"):
+        class AnnotatedChildB(AnnotatedParentA, AnnotatedParentB):
+            field_b: big_endian_int
+
 
     with pytest.raises(TypeError, match="The following fields are missing: field_a,field_b"):
         class ChildC(ParentA, ParentB):
@@ -579,6 +780,11 @@ def test_serializable_multiple_inheritance_requires_all_parent_fields():
                 ('field_c', big_endian_int),
                 ('field_d', big_endian_int),
             )
+
+    with pytest.raises(TypeError, match="The following fields are missing: field_a,field_b"):
+        class AnnotatedChildC(AnnotatedParentA, AnnotatedParentB):
+            field_c: big_endian_int
+            field_d: big_endian_int
 
 
 @pytest.mark.parametrize(
@@ -599,6 +805,9 @@ def test_serializable_field_names_must_be_valid_identifiers(name):
                 (name, big_endian_int),
             )
 
+        # Not testing Serializable classes with annotated fields since Python
+        # will throw SyntaxError while generating the AST.
+
 
 def test_serializable_inheritance_from_base_with_no_fields():
     """
@@ -610,3 +819,26 @@ def test_serializable_inheritance_from_base_with_no_fields():
 
     class FurtherExtendedSerializable(ExtendedSerializable):
         pass
+
+
+def test_annotated_serializable_non_sede_annotations():
+    class Parent(Serializable):
+        field: big_endian_int
+        number: int
+        string: str
+
+    assert Parent._meta.field_names == ('field',)
+
+
+def test_annotated_serializable_can_extend_old_style_parents():
+    class Parent(Serializable):
+        fields = (
+            ('field_a', big_endian_int),
+        )
+
+    class Child(Parent):
+        field_a: big_endian_int
+        field_b: big_endian_int
+
+    assert Parent._meta.field_names == ('field_a',)
+    assert Child._meta.field_names == ('field_a', 'field_b')
