@@ -368,8 +368,23 @@ class SerializableBase(abc.ABCMeta):
             # If this is the original creation of the `Serializable` class,
             # just create the class.
             return super_new(cls, name, bases, attrs)
+
+        # The class being constructed is a subclass of `Serializable`.
+
+        annotated_fields = tuple(
+            (field, sede)
+            for field, sede in attrs.get('__annotations__', {}).items()
+            if hasattr(sede, 'serialize') and hasattr(sede, 'deserialize')
+        )
+
+        if declares_fields and annotated_fields:
+            raise TypeError(
+                f"{name} defines both a 'fields' attribute as well as annotated fields."
+            )
         elif not declares_fields:
-            if has_multiple_serializable_parents:
+            if annotated_fields:
+                fields = annotated_fields
+            elif has_multiple_serializable_parents:
                 raise TypeError(
                     "Cannot create subclass from multiple parent `Serializable` "
                     "classes without explicit `fields` declaration."
