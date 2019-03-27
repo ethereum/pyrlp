@@ -218,11 +218,18 @@ def test_serializable_sedes_inference(type_1_a, type_1_b, type_2):
 
 
 def test_serializable_invalid_serialization_value(type_1_a, type_1_b, type_2):
-    with pytest.raises(SerializationError):
-        RLPType1.serialize(type_2)
-        RLPType2.serialize(type_1_a)
-        RLPType2.serialize(type_1_b)
-        RLPEmptyFieldsType.serialize(type_1_a)
+    # Note this is not done in parametrize because the values are pytest.fixtures
+    value_fixtures = (
+        (RLPType2, type_1_a),
+        (RLPType2, type_1_b),
+        (RLPType1, type_2),
+        (RLPEmptyFieldsType, type_1_a),
+        (RLPEmptyFieldsType, type_1_b),
+        (RLPEmptyFieldsType, type_2),
+    )
+    for serializer, invalid_value in value_fixtures:
+        with pytest.raises(SerializationError):
+            serializer.serialize(invalid_value)
 
 
 def test_serializable_serialization(type_1_a, type_1_b, type_2):
