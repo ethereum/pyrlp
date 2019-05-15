@@ -253,6 +253,13 @@ class BaseSerializable(collections.abc.Sequence):
 
         return self._hash_cache
 
+    def __repr__(self):
+        keyword_args = tuple("{}={!r}".format(k, v) for k, v in self.as_dict().items())
+        return "{}({})".format(
+            type(self).__name__,
+            ", ".join(keyword_args),
+        )
+
     @classmethod
     def serialize(cls, obj):
         try:

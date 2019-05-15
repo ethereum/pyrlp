@@ -74,6 +74,11 @@ def rlp_obj(request):
     return request.param.copy()
 
 
+def test_serializeable_repr_evaluatable(rlp_obj):
+    evaluated = eval(repr(rlp_obj))
+    assert evaluated == rlp_obj
+
+
 @pytest.mark.parametrize(
     'rlptype,args,kwargs,exception_includes',
     (
