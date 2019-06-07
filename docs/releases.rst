@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Unreleased (latest source)
+--------------------------
+
+- `repr()` now returns an evaluatable string, like ``MyRLPObj(my_int_field=1, my_str_field="a_str")`` -
+  `#117 <https://github.com/ethereum/pyrlp/pull/117>`_
+
 .. _v0.4.8-release-notes:
 
 0.4.8
