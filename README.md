@@ -1,6 +1,6 @@
 # pyrlp
 
-[![Build Status](https://travis-ci.org/ethereum/pyrlp.svg?branch=develop)](https://travis-ci.org/ethereum/pyrlp)
+[![Build Status](https://circleci.com/gh/ethereum/pyrlp/tree/master.svg?style=svg)](https://circleci.com/gh/ethereum/pyrlp)
 [![Coverage Status](https://coveralls.io/repos/ethereum/pyrlp/badge.svg)](https://coveralls.io/r/ethereum/pyrlp)
 [![PyPI version](https://badge.fury.io/py/rlp.svg)](http://badge.fury.io/py/rlp)
 
