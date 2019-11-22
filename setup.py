@@ -9,7 +9,7 @@ from setuptools import (
 extras_require = {
     'test': [
         "pytest==5.3.0",
-        "tox",
+        "tox>=3.14.0,<3.15.0",
         "hypothesis==4.46.0",
     ],
     'lint': [
