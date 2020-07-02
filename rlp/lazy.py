@@ -1,11 +1,12 @@
 from collections.abc import Iterable, Sequence
+from typing import Any, Union, Tuple, Optional, List  # noqa: F401
 
 from .codec import consume_length_prefix, consume_payload
 from .exceptions import DecodingError
 from .atomic import Atomic
 
 
-def decode_lazy(rlp, sedes=None, **sedes_kwargs):
+def decode_lazy(rlp: bytes, sedes: Any=None, **sedes_kwargs: Any) -> Any:
     """Decode an RLP encoded object in a lazy fashion.
 
     If the encoded object is a bytestring, this function acts similar to
@@ -41,7 +42,7 @@ def decode_lazy(rlp, sedes=None, **sedes_kwargs):
         return item
 
 
-def consume_item_lazy(rlp, start):
+def consume_item_lazy(rlp: bytes, start: int) -> Union[Tuple[bytes, int], Tuple['LazyList', int]]:
     """Read an item from an RLP string lazily.
 
     If the length prefix announces a string, the string is read; if it
@@ -62,7 +63,7 @@ def consume_item_lazy(rlp, start):
         return LazyList(rlp, s, s + l), s + l
 
 
-class LazyList(Sequence):
+class LazyList(Sequence[Any]):
     """A RLP encoded list which decodes itself when necessary.
 
     Both indexing with positive indices and iterating are supported.
@@ -78,29 +79,29 @@ class LazyList(Sequence):
                              deserializer
     """
 
-    def __init__(self, rlp, start, end, sedes=None, **sedes_kwargs):
+    def __init__(self, rlp: bytes, start: int, end: int, sedes: Any=None, **sedes_kwargs: Any):
         self.rlp = rlp
         self.start = start
         self.end = end
-        self.index = start
-        self._elements = []
-        self._len = None
+        self._index: int = start
+        self._elements: List[Any] = []
+        self._len: Optional[int] = None
         self.sedes = sedes
         self.sedes_kwargs = sedes_kwargs
 
-    def next(self):
-        if self.index == self.end:
+    def next(self) -> Union[bytes, 'LazyList']:
+        if self._index == self.end:
             self._len = len(self._elements)
             raise StopIteration
-        assert self.index < self.end
-        item, end = consume_item_lazy(self.rlp, self.index)
-        self.index = end
+        assert self._index < self.end
+        item, end = consume_item_lazy(self.rlp, self._index)
+        self._index = end
         if self.sedes:
             item = self.sedes.deserialize(item, **self.sedes_kwargs)
         self._elements.append(item)
         return item
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: Union[slice, int]) -> Any:
         if isinstance(i, slice):
             if i.step is not None:
                 raise TypeError("Step not supported")
@@ -117,7 +118,7 @@ class LazyList(Sequence):
             while len(self._elements) < stop:
                 self.next()
         except StopIteration:
-            assert self.index == self.end
+            assert self._index == self.end
             raise IndexError('Index %s out of range' % i)
 
         if isinstance(i, slice):
@@ -125,7 +126,7 @@ class LazyList(Sequence):
         else:
             return self._elements[start]
 
-    def __len__(self):
+    def __len__(self) -> int:
         if not self._len:
             try:
                 while True:
@@ -135,7 +136,7 @@ class LazyList(Sequence):
         return self._len
 
 
-def peek(rlp, index, sedes=None):
+def peek(rlp: bytes, index: Union[int, Iterable[int]], sedes: Any=None) -> Any:
     """Get a specific element from an rlp encoded nested list.
 
     This function uses :func:`rlp.decode_lazy` and, thus, decodes only the

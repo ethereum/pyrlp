@@ -3,6 +3,8 @@ import collections
 import copy
 import enum
 import re
+from inspect import Traceback
+from typing import Dict, Any, Hashable, Iterable, Tuple, Sequence, Type, Union, Optional
 
 from eth_utils import (
     to_dict,
@@ -29,7 +31,7 @@ class MetaBase:
     sedes = None
 
 
-def _get_duplicates(values):
+def _get_duplicates(values: Iterable[str]) -> Tuple[str, ...]:
     counts = collections.Counter(values)
     return tuple(
         item
@@ -38,7 +40,10 @@ def _get_duplicates(values):
     )
 
 
-def validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=False):
+def validate_args_and_kwargs(args: Any,
+                             kwargs: Any,
+                             arg_names: Sequence[str],
+                             allow_missing: bool=False) -> None:
     duplicate_arg_names = _get_duplicates(arg_names)
     if duplicate_arg_names:
         raise TypeError("Duplicate argument names: {0}".format(sorted(duplicate_arg_names)))
@@ -60,7 +65,10 @@ def validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=False):
 
 
 @to_tuple
-def merge_kwargs_to_args(args, kwargs, arg_names, allow_missing=False):
+def merge_kwargs_to_args(args: Any,
+                         kwargs: Any,
+                         arg_names: Sequence[str],
+                         allow_missing: bool=False) -> Iterable[str]:
     validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=allow_missing)
 
     needed_kwargs = arg_names[len(args):]
@@ -71,7 +79,10 @@ def merge_kwargs_to_args(args, kwargs, arg_names, allow_missing=False):
 
 
 @to_dict
-def merge_args_to_kwargs(args, kwargs, arg_names, allow_missing=False):
+def merge_args_to_kwargs(args: Any,
+                         kwargs: Any,
+                         arg_names: Sequence[str],
+                         allow_missing: bool = False) -> Iterable[Tuple[str, Any]]:
     validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=allow_missing)
 
     yield from kwargs.items()
@@ -79,7 +90,7 @@ def merge_args_to_kwargs(args, kwargs, arg_names, allow_missing=False):
         yield name, value
 
 
-def _eq(left, right):
+def _eq(left: Any, right: Any) -> bool:
     """
     Equality comparison that allows for equality between tuple and list types
     with equivalent elements.
@@ -87,7 +98,7 @@ def _eq(left, right):
     if isinstance(left, (tuple, list)) and isinstance(right, (tuple, list)):
         return len(left) == len(right) and all(_eq(*pair) for pair in zip(left, right))
     else:
-        return left == right
+        return left == right  # type: ignore  # there's no Comparable protocol
 
 
 class ChangesetState(enum.Enum):
@@ -97,12 +108,12 @@ class ChangesetState(enum.Enum):
 
 
 class ChangesetField:
-    field = None
+    field: Optional[str] = None
 
-    def __init__(self, field):
+    def __init__(self, field: str) -> None:
         self.field = field
 
-    def __get__(self, instance, type=None):
+    def __get__(self, instance: Any, type: Any=None) -> Any:
         if instance is None:
             return self
         elif instance.__state__ is not ChangesetState.OPEN:
@@ -111,9 +122,9 @@ class ChangesetField:
             try:
                 return instance.__diff__[self.field]
             except KeyError:
-                return getattr(instance.__original__, self.field)
+                return getattr(instance.__original__, self.field)  # type: ignore
 
-    def __set__(self, instance, value):
+    def __set__(self, instance: Any, value: Any) -> None:
         if instance.__state__ is not ChangesetState.OPEN:
             raise AttributeError("Changeset is not active.  Attribute access not allowed")
         instance.__diff__[self.field] = value
@@ -121,23 +132,23 @@ class ChangesetField:
 
 class BaseChangeset:
     # reference to the original Serializable instance.
-    __original__ = None
+    __original__: Any = None
     # the state of this fieldset.  Initialized -> Open -> Closed
-    __state__ = None
+    __state__: Any = None
     # the field changes that have been made in this change
-    __diff__ = None
+    __diff__: Any = None
 
-    def __init__(self, obj, changes=None):
+    def __init__(self, obj: Any, changes: Any=None) -> None:
         self.__original__ = obj
         self.__state__ = ChangesetState.INITIALIZED
         self.__diff__ = changes or {}
 
-    def commit(self):
+    def commit(self) -> Any:
         obj = self.build_rlp()
         self.close()
         return obj
 
-    def build_rlp(self):
+    def build_rlp(self) -> Any:
         if self.__state__ == ChangesetState.OPEN:
             field_kwargs = {
                 name: self.__diff__.get(name, self.__original__[name])
@@ -148,31 +159,34 @@ class BaseChangeset:
         else:
             raise ValueError("Cannot open Changeset which is not in the OPEN state")
 
-    def open(self):
+    def open(self) -> None:
         if self.__state__ == ChangesetState.INITIALIZED:
             self.__state__ = ChangesetState.OPEN
         else:
             raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
 
-    def close(self):
+    def close(self) -> None:
         if self.__state__ == ChangesetState.OPEN:
             self.__state__ = ChangesetState.CLOSED
         else:
             raise ValueError("Cannot close Changeset which is not in the OPEN state")
 
-    def __enter__(self):
+    def __enter__(self) -> 'BaseChangeset':
         if self.__state__ == ChangesetState.INITIALIZED:
             self.open()
             return self
         else:
             raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self,
+                 exc_type: Type[Exception],
+                 exc_value: Exception,
+                 traceback: Traceback) -> None:
         if self.__state__ == ChangesetState.OPEN:
             self.close()
 
 
-def Changeset(obj, changes):
+def Changeset(obj: Any, changes: Any) -> Any:
     namespace = {
         name: ChangesetField(name)
         for name
@@ -186,8 +200,10 @@ def Changeset(obj, changes):
     return cls(obj, changes)
 
 
-class BaseSerializable(collections.abc.Sequence):
-    def __init__(self, *args, **kwargs):
+class BaseSerializable(collections.abc.Sequence[Any]):
+    _meta: Any
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         if kwargs:
             field_values = merge_kwargs_to_args(args, kwargs, self._meta.field_names)
         else:
@@ -207,18 +223,18 @@ class BaseSerializable(collections.abc.Sequence):
 
     _cached_rlp = None
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[Hashable, Any]:
         return dict(
             (field, value)
             for field, value
             in zip(self._meta.field_names, self)
         )
 
-    def __iter__(self):
+    def __iter__(self) -> Any:
         for attr in self._meta.field_attrs:
             yield getattr(self, attr)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: Union[int, str, slice]) -> Any:
         if isinstance(idx, int):
             attr = self._meta.field_attrs[idx]
             return getattr(self, attr)
@@ -230,13 +246,13 @@ class BaseSerializable(collections.abc.Sequence):
         else:
             raise IndexError("Unsupported type for __getitem__: {0}".format(type(idx)))
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._meta.fields)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return isinstance(other, Serializable) and hash(self) == hash(other)
 
-    def __getstate__(self):
+    def __getstate__(self) -> Any:
         state = self.__dict__.copy()
         # The hash() builtin is not stable across processes
         # (https://docs.python.org/3/reference/datamodel.html#object.__hash__), so we do this here
@@ -247,13 +263,13 @@ class BaseSerializable(collections.abc.Sequence):
 
     _hash_cache = None
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         if self._hash_cache is None:
             self._hash_cache = hash(tuple(self))
 
         return self._hash_cache
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         keyword_args = tuple("{}={!r}".format(k, v) for k, v in self.as_dict().items())
         return "{}({})".format(
             type(self).__name__,
@@ -261,14 +277,14 @@ class BaseSerializable(collections.abc.Sequence):
         )
 
     @classmethod
-    def serialize(cls, obj):
+    def serialize(cls, obj: Any) -> Any:
         try:
             return cls._meta.sedes.serialize(obj)
         except ListSerializationError as e:
             raise ObjectSerializationError(obj=obj, sedes=cls, list_exception=e)
 
     @classmethod
-    def deserialize(cls, serial, **extra_kwargs):
+    def deserialize(cls, serial: bytes, **extra_kwargs: Any) -> Any:
         try:
             values = cls._meta.sedes.deserialize(serial)
         except ListDeserializationError as e:
@@ -277,7 +293,7 @@ class BaseSerializable(collections.abc.Sequence):
         args_as_kwargs = merge_args_to_kwargs(values, {}, cls._meta.field_names)
         return cls(**args_as_kwargs, **extra_kwargs)
 
-    def copy(self, *args, **kwargs):
+    def copy(self, *args: Any, **kwargs: Any) -> Any:
         missing_overrides = set(
             self._meta.field_names
         ).difference(
@@ -291,19 +307,19 @@ class BaseSerializable(collections.abc.Sequence):
             in self.as_dict().items()
             if key in missing_overrides
         }
-        combined_kwargs = dict(**unchanged_kwargs, **kwargs)
+        combined_kwargs = dict(**unchanged_kwargs, **kwargs)  # type: ignore #???
         all_kwargs = merge_args_to_kwargs(args, combined_kwargs, self._meta.field_names)
         return type(self)(**all_kwargs)
 
-    def __copy__(self):
+    def __copy__(self) -> Any:
         return self.copy()
 
-    def __deepcopy__(self, *args):
+    def __deepcopy__(self, *args: Any) -> Any:
         return self.copy()
 
     _in_mutable_context = False
 
-    def build_changeset(self, *args, **kwargs):
+    def build_changeset(self, *args: Any, **kwargs: Any) -> Any:
         args_as_kwargs = merge_args_to_kwargs(
             args,
             kwargs,
@@ -313,7 +329,7 @@ class BaseSerializable(collections.abc.Sequence):
         return Changeset(self, changes=args_as_kwargs)
 
 
-def make_immutable(value):
+def make_immutable(value: Any) -> Any:
     if isinstance(value, list):
         return tuple(make_immutable(item) for item in value)
     else:
@@ -321,7 +337,7 @@ def make_immutable(value):
 
 
 @to_tuple
-def _mk_field_attrs(field_names, extra_namespace):
+def _mk_field_attrs(field_names: Any, extra_namespace: Any) -> Iterable[str]:
     namespace = set(field_names).union(extra_namespace)
     for field in field_names:
         while True:
@@ -332,11 +348,11 @@ def _mk_field_attrs(field_names, extra_namespace):
                 break
 
 
-def _mk_field_property(field, attr):
-    def field_fn_getter(self):
+def _mk_field_property(field: str, attr: str) -> Any:
+    def field_fn_getter(self: Any) -> Any:
         return getattr(self, attr)
 
-    def field_fn_setter(self, value):
+    def field_fn_setter(self: Any, value: Any) -> None:
         if not self._in_mutable_context:
             raise AttributeError("can't set attribute")
         setattr(self, attr, value)
@@ -347,7 +363,7 @@ def _mk_field_property(field, attr):
 IDENTIFIER_REGEX = re.compile(r"^[^\d\W]\w*\Z", re.UNICODE)
 
 
-def _is_valid_identifier(value):
+def _is_valid_identifier(value: bool) -> bool:
     # Source: https://stackoverflow.com/questions/5474008/regular-expression-to-confirm-whether-a-string-is-a-valid-identifier-in-python  # noqa: E501
     if not isinstance(value, str):
         return False
@@ -355,7 +371,7 @@ def _is_valid_identifier(value):
 
 
 @to_set
-def _get_class_namespace(cls):
+def _get_class_namespace(cls: Any) -> Iterable[Any]:
     if hasattr(cls, '__dict__'):
         yield from cls.__dict__.keys()
     if hasattr(cls, '__slots__'):
@@ -363,7 +379,7 @@ def _get_class_namespace(cls):
 
 
 class SerializableBase(abc.ABCMeta):
-    def __new__(cls, name, bases, attrs):
+    def __new__(cls, name: str, bases: Any, attrs: Any) -> Any:
         super_new = super(SerializableBase, cls).__new__
 
         serializable_bases = tuple(b for b in bases if isinstance(b, SerializableBase))
@@ -386,7 +402,7 @@ class SerializableBase(abc.ABCMeta):
                 parent_serializable = serializable_bases[0]
 
                 if hasattr(parent_serializable, '_meta'):
-                    fields = parent_serializable._meta.fields
+                    fields = parent_serializable._meta.fields  # type: ignore
                 else:
                     # This is a subclass of `Serializable` which has no
                     # `fields`, likely intended for further subclassing.
@@ -429,7 +445,7 @@ class SerializableBase(abc.ABCMeta):
         parent_field_names = {
             field_name
             for base in serializable_bases if hasattr(base, '_meta')
-            for field_name in base._meta.field_names
+            for field_name in base._meta.field_names  # type: ignore
         }
 
         # check that all fields from parent serializable classes are
@@ -474,7 +490,7 @@ class SerializableBase(abc.ABCMeta):
         field_props = tuple(
             (field, _mk_field_property(field, attr))
             for field, attr
-            in zip(meta.field_names, meta.field_attrs)
+            in zip(meta.field_names, meta.field_attrs)  # type: ignore
         )
 
         return super_new(

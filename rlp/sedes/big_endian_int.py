@@ -13,10 +13,10 @@ class BigEndianInt(object):
               use the shortest possible one
     """
 
-    def __init__(self, l=None):
-        self.l = l
+    def __init__(self, length: int=None):
+        self.l = length
 
-    def serialize(self, obj):
+    def serialize(self, obj: int) -> bytes:
         if isinstance(obj, bool) or not isinstance(obj, int):
             raise SerializationError('Can only serialize integers', obj)
         if self.l is not None and obj >= 256**self.l:
@@ -35,7 +35,7 @@ class BigEndianInt(object):
         else:
             return s
 
-    def deserialize(self, serial):
+    def deserialize(self, serial: bytes) -> int:
         if self.l is not None and len(serial) != self.l:
             raise DeserializationError('Invalid serialization (wrong size)',
                                        serial)

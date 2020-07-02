@@ -1,3 +1,5 @@
+from typing import Union, Any
+
 from rlp.exceptions import SerializationError, DeserializationError
 from rlp.atomic import Atomic
 
@@ -11,7 +13,10 @@ class Binary(object):
                         a minimum length is required otherwise
     """
 
-    def __init__(self, min_length=None, max_length=None, allow_empty=False):
+    def __init__(self,
+                 min_length: int = None,
+                 max_length: int = None,
+                 allow_empty: bool = False) -> None:
         self.min_length = min_length or 0
         if max_length is None:
             self.max_length = float('inf')
@@ -20,19 +25,19 @@ class Binary(object):
         self.allow_empty = allow_empty
 
     @classmethod
-    def fixed_length(cls, l, allow_empty=False):
-        """Create a sedes for binary data with exactly `l` bytes."""
-        return cls(l, l, allow_empty=allow_empty)
+    def fixed_length(cls, length: int, allow_empty: bool = False) -> 'Binary':
+        """Create a sedes for binary data with exactly ``length`` bytes."""
+        return cls(length, length, allow_empty=allow_empty)
 
     @classmethod
-    def is_valid_type(cls, obj):
+    def is_valid_type(cls, obj: Any) -> bool:
         return isinstance(obj, (bytes, bytearray))
 
-    def is_valid_length(self, l):
-        return any((self.min_length <= l <= self.max_length,
-                    self.allow_empty and l == 0))
+    def is_valid_length(self, length: int) -> bool:
+        return any((self.min_length <= length <= self.max_length,
+                    self.allow_empty and length == 0))
 
-    def serialize(self, obj):
+    def serialize(self, obj: Union[bytes, bytearray]) -> bytes:
         if not Binary.is_valid_type(obj):
             raise SerializationError('Object is not a serializable ({})'.format(type(obj)), obj)
 
@@ -41,7 +46,7 @@ class Binary(object):
 
         return obj
 
-    def deserialize(self, serial):
+    def deserialize(self, serial: bytes) -> bytes:
         if not isinstance(serial, Atomic):
             m = 'Objects of type {} cannot be deserialized'
             raise DeserializationError(m.format(type(serial).__name__), serial)

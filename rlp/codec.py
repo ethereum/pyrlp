@@ -1,5 +1,7 @@
 import collections
+from typing import Any, Tuple, Union  # noqa: F401
 
+import typing
 from eth_utils import (
     big_endian_to_int,
     int_to_big_endian,
@@ -17,7 +19,7 @@ from rlp.sedes.serializable import Serializable
 from rlp.utils import ALL_BYTES
 
 
-def encode(obj, sedes=None, infer_serializer=True, cache=True):
+def encode(obj: Any, sedes: Any = None, infer_serializer: bool = True, cache: bool = True) -> Any:
     """Encode a Python object in RLP format.
 
     By default, the object is serialized in a suitable way first (using
@@ -70,12 +72,12 @@ def encode(obj, sedes=None, infer_serializer=True, cache=True):
     return result
 
 
-def encode_raw(item):
+def encode_raw(item: Any) -> bytes:
     """RLP encode (a nested sequence of) :class:`Atomic`s."""
     if isinstance(item, Atomic):
-        if len(item) == 1 and item[0] < 128:
-            return item
-        payload = item
+        if len(item) == 1 and item[0] < 128:  # type: ignore # doesn't recognize Atomic as index
+            return item  # type: ignore
+        payload: Union[Atomic, bytes] = item
         prefix_offset = 128  # string
     elif not isinstance(item, str) and isinstance(item, collections.abc.Sequence):
         payload = b''.join(encode_raw(x) for x in item)
@@ -85,17 +87,17 @@ def encode_raw(item):
         raise EncodingError(msg, item)
 
     try:
-        prefix = length_prefix(len(payload), prefix_offset)
+        prefix = length_prefix(len(payload), prefix_offset)  # type: ignore # Atomic isn't Sized
     except ValueError:
         raise EncodingError('Item too big to encode', item)
 
-    return prefix + payload
+    return prefix + payload  # type: ignore  # doesn't recognize + as legal for Atomic
 
 
 LONG_LENGTH = 256**8
 
 
-def length_prefix(length, offset):
+def length_prefix(length: int, offset: int) -> bytes:
     """Construct the prefix to lists or strings denoting their length.
 
     :param length: the length of the item in bytes
@@ -114,7 +116,7 @@ def length_prefix(length, offset):
 SHORT_STRING = 128 + 56
 
 
-def consume_length_prefix(rlp, start):
+def consume_length_prefix(rlp: bytes, start: int) -> Tuple[bytes, type, int, int]:
     """Read a length prefix from an RLP string.
 
     :param rlp: the rlp byte string to read from
@@ -153,7 +155,11 @@ def consume_length_prefix(rlp, start):
         return (rlp[start:start + 1] + len_prefix, list, l, start + 1 + ll)
 
 
-def consume_payload(rlp, prefix, start, type_, length):
+def consume_payload(rlp: bytes,
+                    prefix: bytes,
+                    start: int,
+                    type_: type,
+                    length: int) -> Tuple[Any, typing.List[Any], int]:
     """Read the payload of an item from an RLP string.
 
     :param rlp: the rlp string to read from
@@ -170,7 +176,7 @@ def consume_payload(rlp, prefix, start, type_, length):
         return (item, [prefix + item], start + length)
     elif type_ is list:
         items = []
-        per_item_rlp = []
+        per_item_rlp: typing.List[Any] = []
         list_rlp = prefix
         next_item_start = start
         end = next_item_start + length
@@ -192,7 +198,7 @@ def consume_payload(rlp, prefix, start, type_, length):
         raise TypeError('Type must be either list or bytes')
 
 
-def consume_item(rlp, start):
+def consume_item(rlp: bytes, start: int) -> Tuple[Any, typing.List[Any], int]:
     """Read an item from an RLP string.
 
     :param rlp: the rlp string to read from
@@ -206,7 +212,11 @@ def consume_item(rlp, start):
     return consume_payload(rlp, p, s, t, l)
 
 
-def decode(rlp, sedes=None, strict=True, recursive_cache=False, **kwargs):
+def decode(rlp: bytes,
+           sedes: Any = None,
+           strict: bool = True,
+           recursive_cache: bool = False,
+           **kwargs: Any) -> Any:
     """Decode an RLP encoded object.
 
     If the deserialized result `obj` has an attribute :attr:`_cached_rlp` (e.g. if `sedes` is a
@@ -242,7 +252,7 @@ def decode(rlp, sedes=None, strict=True, recursive_cache=False, **kwargs):
         return item
 
 
-def _apply_rlp_cache(obj, split_rlp, recursive):
+def _apply_rlp_cache(obj: Any, split_rlp: Any, recursive: bool) -> None:
     item_rlp = split_rlp.pop(0)
     if isinstance(obj, (int, bool, str, bytes, bytearray)):
         return
@@ -258,7 +268,7 @@ def _apply_rlp_cache(obj, split_rlp, recursive):
             _apply_rlp_cache(sub, sub_rlp, recursive)
 
 
-def infer_sedes(obj):
+def infer_sedes(obj: Any) -> Any:
     """Try to find a sedes objects suitable for a given Python object.
 
     The sedes objects considered are `obj`'s class, `big_endian_int` and

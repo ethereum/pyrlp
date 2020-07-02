@@ -4,12 +4,13 @@ is serializable. This sedes can be used as a placeholder when deserializing
 larger structures.
 """
 from collections.abc import Sequence
+from typing import Any
 
 from rlp.exceptions import SerializationError
 from rlp.atomic import Atomic
 
 
-def serializable(obj):
+def serializable(obj: Any) -> bool:
     if isinstance(obj, Atomic):
         return True
     elif not isinstance(obj, str) and isinstance(obj, Sequence):
@@ -18,12 +19,12 @@ def serializable(obj):
         return False
 
 
-def serialize(obj):
+def serialize(obj: Any) -> Any:
     if not serializable(obj):
         raise SerializationError('Can only serialize nested lists of strings',
                                  obj)
     return obj
 
 
-def deserialize(serial):
+def deserialize(serial: Any) -> Any:
     return serial

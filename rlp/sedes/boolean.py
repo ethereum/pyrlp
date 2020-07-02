@@ -7,7 +7,7 @@ from rlp.exceptions import (
 class Boolean:
     """A sedes for booleans
     """
-    def serialize(self, obj):
+    def serialize(self, obj: bool) -> bytes:
         if not isinstance(obj, bool):
             raise SerializationError('Can only serialize integers', obj)
 
@@ -18,7 +18,7 @@ class Boolean:
         else:
             raise Exception("Invariant: no other options for boolean values")
 
-    def deserialize(self, serial):
+    def deserialize(self, serial: bytes) -> bool:
         if serial == b'':
             return False
         elif serial == b'\x01':

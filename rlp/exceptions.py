@@ -1,3 +1,6 @@
+from typing import Any, Optional
+
+
 class RLPException(Exception):
     """Base class for exceptions raised by this package."""
     pass
@@ -9,7 +12,7 @@ class EncodingError(RLPException):
     :ivar obj: the object that could not be encoded
     """
 
-    def __init__(self, message, obj):
+    def __init__(self, message: str, obj: Any) -> None:
         super(EncodingError, self).__init__(message)
         self.obj = obj
 
@@ -20,7 +23,7 @@ class DecodingError(RLPException):
     :ivar rlp: the RLP string that could not be decoded
     """
 
-    def __init__(self, message, rlp):
+    def __init__(self, message: str, rlp: bytes) -> None:
         super(DecodingError, self).__init__(message)
         self.rlp = rlp
 
@@ -31,7 +34,7 @@ class SerializationError(RLPException):
     :ivar obj: the object that could not be serialized
     """
 
-    def __init__(self, message, obj):
+    def __init__(self, message: str, obj: Any) -> None:
         super(SerializationError, self).__init__(message)
         self.obj = obj
 
@@ -45,7 +48,12 @@ class ListSerializationError(SerializationError):
                  to a specific element
     """
 
-    def __init__(self, message=None, obj=None, element_exception=None, index=None):
+    def __init__(self,
+                 message: str=None,
+                 obj: Any=None,
+                 element_exception:
+                 Exception=None,
+                 index: int=None):
         if message is None:
             assert index is not None
             assert element_exception is not None
@@ -66,7 +74,11 @@ class ObjectSerializationError(SerializationError):
                  responsible for the error
     """
 
-    def __init__(self, message=None, obj=None, sedes=None, list_exception=None):
+    def __init__(self,
+                 message: str=None,
+                 obj: Any=None,
+                 sedes: Any=None,
+                 list_exception: ListSerializationError=None):
         if message is None:
             assert list_exception is not None
             if list_exception.element_exception is None:
@@ -91,7 +103,7 @@ class DeserializationError(RLPException):
     :ivar serial: the decoded RLP string that could not be deserialized
     """
 
-    def __init__(self, message, serial):
+    def __init__(self, message: str, serial: Optional[bytes]) -> None:
         super(DeserializationError, self).__init__(message)
         self.serial = serial
 
@@ -105,7 +117,11 @@ class ListDeserializationError(DeserializationError):
                  to a specific element
     """
 
-    def __init__(self, message=None, serial=None, element_exception=None, index=None):
+    def __init__(self,
+                 message: str=None,
+                 serial: bytes=None,
+                 element_exception: Exception=None,
+                 index: int=None):
         if not message:
             assert index is not None
             assert element_exception is not None
@@ -126,7 +142,11 @@ class ObjectDeserializationError(DeserializationError):
                  responsible for the error
     """
 
-    def __init__(self, message=None, serial=None, sedes=None, list_exception=None):
+    def __init__(self,
+                 message: str=None,
+                 serial: bytes=None,
+                 sedes: Any=None,
+                 list_exception: Optional[ListDeserializationError]=None):
         if not message:
             assert list_exception is not None
             if list_exception.element_exception is None:

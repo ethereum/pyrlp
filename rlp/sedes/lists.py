@@ -2,7 +2,9 @@
 Module for sedes objects that use lists as serialization format.
 """
 from collections.abc import Sequence
+from typing import Any, Iterable
 
+import typing
 from eth_utils import (
     to_list,
     to_tuple,
@@ -20,7 +22,7 @@ from .binary import (
 )
 
 
-def is_sedes(obj):
+def is_sedes(obj: Any) -> bool:
     """Check if `obj` is a sedes object.
 
     A sedes object is characterized by having the methods `serialize(obj)` and
@@ -29,13 +31,13 @@ def is_sedes(obj):
     return hasattr(obj, 'serialize') and hasattr(obj, 'deserialize')
 
 
-def is_sequence(obj):
+def is_sequence(obj: Any) -> bool:
     """Check if `obj` is a sequence, but not a string or bytes."""
     return isinstance(obj, Sequence) and not (
         isinstance(obj, str) or BinaryClass.is_valid_type(obj))
 
 
-class List(list):
+class List(typing.List[Any]):
 
     """A sedes for lists, implemented as a list of other sedes objects.
 
@@ -45,7 +47,7 @@ class List(list):
                    lists runs out of elements.
     """
 
-    def __init__(self, elements=None, strict=True):
+    def __init__(self, elements: Any=None, strict: bool=True) -> None:
         super(List, self).__init__()
         self.strict = strict
 
@@ -62,7 +64,7 @@ class List(list):
                     )
 
     @to_list
-    def serialize(self, obj):
+    def serialize(self, obj: 'Sequence[Any]') -> Iterable[bytes]:
         if not is_sequence(obj):
             raise ListSerializationError('Can only serialize sequences', obj)
         if self.strict and len(self) != len(obj):
@@ -78,7 +80,7 @@ class List(list):
                 raise ListSerializationError(obj=obj, element_exception=e, index=index)
 
     @to_tuple
-    def deserialize(self, serial):
+    def deserialize(self, serial: bytes) -> Any:
         if not is_sequence(serial):
             raise ListDeserializationError('Can only deserialize sequences', serial)
 
@@ -104,12 +106,12 @@ class CountableList(object):
     :param max_length: maximum number of allowed elements, or `None` for no limit
     """
 
-    def __init__(self, element_sedes, max_length=None):
+    def __init__(self, element_sedes: Any, max_length: int=None) -> None:
         self.element_sedes = element_sedes
         self.max_length = max_length
 
     @to_list
-    def serialize(self, obj):
+    def serialize(self, obj: Any) -> Iterable[bytes]:
         if not is_sequence(obj):
             raise ListSerializationError('Can only serialize sequences', obj)
 
@@ -129,7 +131,7 @@ class CountableList(object):
                 raise ListSerializationError(obj=obj, element_exception=e, index=index)
 
     @to_tuple
-    def deserialize(self, serial):
+    def deserialize(self, serial: bytes) -> Any:
         if not is_sequence(serial):
             raise ListDeserializationError('Can only deserialize sequences', serial=serial)
         for index, element in enumerate(serial):

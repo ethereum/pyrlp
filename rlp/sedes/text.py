@@ -1,3 +1,5 @@
+from typing import Any
+
 from rlp.exceptions import SerializationError, DeserializationError
 from rlp.atomic import Atomic
 
@@ -11,7 +13,11 @@ class Text:
                         a minimum length is required otherwise
     """
 
-    def __init__(self, min_length=None, max_length=None, allow_empty=False, encoding='utf8'):
+    def __init__(self,
+                 min_length: int=None,
+                 max_length: int=None,
+                 allow_empty: bool=False,
+                 encoding: str='utf8'):
         self.min_length = min_length or 0
         if max_length is None:
             self.max_length = float('inf')
@@ -21,21 +27,21 @@ class Text:
         self.encoding = encoding
 
     @classmethod
-    def fixed_length(cls, l, allow_empty=False):
+    def fixed_length(cls, length: int, allow_empty: bool=False) -> 'Text':
         """Create a sedes for text data with exactly `l` encoded characters."""
-        return cls(l, l, allow_empty=allow_empty)
+        return cls(length, length, allow_empty=allow_empty)
 
     @classmethod
-    def is_valid_type(cls, obj):
+    def is_valid_type(cls, obj: Any) -> bool:
         return isinstance(obj, str)
 
-    def is_valid_length(self, l):
+    def is_valid_length(self, length: int) -> bool:
         return any((
-            self.min_length <= l <= self.max_length,
-            self.allow_empty and l == 0
+            self.min_length <= length <= self.max_length,
+            self.allow_empty and length == 0
         ))
 
-    def serialize(self, obj):
+    def serialize(self, obj: str) -> bytes:
         if not self.is_valid_type(obj):
             raise SerializationError('Object is not a serializable ({})'.format(type(obj)), obj)
 
@@ -44,7 +50,7 @@ class Text:
 
         return obj.encode(self.encoding)
 
-    def deserialize(self, serial):
+    def deserialize(self, serial: bytes) -> Any:
         if not isinstance(serial, Atomic):
             m = 'Objects of type {} cannot be deserialized'
             raise DeserializationError(m.format(type(serial).__name__), serial)

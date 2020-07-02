@@ -14,6 +14,7 @@ extras_require = {
     ],
     'lint': [
         "flake8==3.4.1",
+        "mypy==0.782",
     ],
     'doc': [
         "Sphinx>=1.6.5,<2",
@@ -58,6 +59,7 @@ setup(
     license="MIT",
     zip_safe=False,
     keywords='rlp ethereum',
+    package_data={'rlp': ['py.typed']},
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
