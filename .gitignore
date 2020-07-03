@@ -61,5 +61,9 @@ docs/modules.rst
 target/
 .eggs
 
+# mypy
+.mypy_cache
+
 # Editors
 *.swp
+.idea
