@@ -5,16 +5,30 @@ from eth_utils import (
     int_to_big_endian,
     is_bytes,
 )
+import rusty_rlp
 
-from rlp.atomic import (
-    Atomic,
-)
 from rlp.exceptions import EncodingError, DecodingError
 from rlp.sedes.binary import Binary as BinaryClass
 from rlp.sedes import big_endian_int, binary, boolean, text
 from rlp.sedes.lists import List, is_sedes, is_sequence
 from rlp.sedes.serializable import Serializable
 from rlp.utils import ALL_BYTES
+
+
+def decode_raw(item, strict, preserve_per_item_rlp):
+    try:
+        return rusty_rlp.decode_raw(item, strict, preserve_per_item_rlp)
+    except (TypeError, rusty_rlp.DecodingError) as e:
+        raise DecodingError(e, item)
+
+
+def encode_raw(obj):
+    try:
+        if isinstance(obj, bytearray):
+            obj = bytes(obj)
+        return rusty_rlp.encode_raw(obj)
+    except(rusty_rlp.EncodingError) as e:
+        raise EncodingError(e, obj)
 
 
 def encode(obj, sedes=None, infer_serializer=True, cache=True):
@@ -68,28 +82,6 @@ def encode(obj, sedes=None, infer_serializer=True, cache=True):
     if really_cache:
         obj._cached_rlp = result
     return result
-
-
-def encode_raw(item):
-    """RLP encode (a nested sequence of) :class:`Atomic`s."""
-    if isinstance(item, Atomic):
-        if len(item) == 1 and item[0] < 128:
-            return item
-        payload = item
-        prefix_offset = 128  # string
-    elif not isinstance(item, str) and isinstance(item, collections.abc.Sequence):
-        payload = b''.join(encode_raw(x) for x in item)
-        prefix_offset = 192  # list
-    else:
-        msg = 'Cannot encode object of type {0}'.format(type(item).__name__)
-        raise EncodingError(msg, item)
-
-    try:
-        prefix = length_prefix(len(payload), prefix_offset)
-    except ValueError:
-        raise EncodingError('Item too big to encode', item)
-
-    return prefix + payload
 
 
 LONG_LENGTH = 256**8
@@ -226,13 +218,12 @@ def decode(rlp, sedes=None, strict=True, recursive_cache=False, **kwargs):
     """
     if not is_bytes(rlp):
         raise DecodingError('Can only decode RLP bytes, got type %s' % type(rlp).__name__, rlp)
-    try:
-        item, per_item_rlp, end = consume_item(rlp, 0)
-    except IndexError:
-        raise DecodingError('RLP string too short', rlp)
-    if end != len(rlp) and strict:
-        msg = 'RLP string ends with {} superfluous bytes'.format(len(rlp) - end)
-        raise DecodingError(msg, rlp)
+
+    item, per_item_rlp = decode_raw(rlp, strict, recursive_cache)
+
+    if len(per_item_rlp) == 0:
+        per_item_rlp = [rlp]
+
     if sedes:
         obj = sedes.deserialize(item, **kwargs)
         if is_sequence(obj) or hasattr(obj, '_cached_rlp'):
