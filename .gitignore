@@ -63,3 +63,7 @@ target/
 
 # Editors
 *.swp
+.idea/
+
+# linting / type checking
+.mypy_cache/
