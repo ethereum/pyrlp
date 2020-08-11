@@ -53,6 +53,7 @@ setup(
     setup_requires=['setuptools-markdown'],
     install_requires=[
         "eth-utils>=1.0.2,<2",
+        "rusty-rlp>=0.1.15, <0.2",
     ],
     extras_require=extras_require,
     license="MIT",
