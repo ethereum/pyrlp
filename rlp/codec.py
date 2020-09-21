@@ -5,7 +5,7 @@ from eth_utils import (
     int_to_big_endian,
     is_bytes,
 )
-import rusty_rlp
+
 
 from rlp.exceptions import EncodingError, DecodingError
 from rlp.sedes.binary import Binary as BinaryClass
@@ -15,20 +15,63 @@ from rlp.sedes.serializable import Serializable
 from rlp.utils import ALL_BYTES
 
 
-def decode_raw(item, strict, preserve_per_item_rlp):
-    try:
-        return rusty_rlp.decode_raw(item, strict, preserve_per_item_rlp)
-    except (TypeError, rusty_rlp.DecodingError) as e:
-        raise DecodingError(e, item)
+try:
+    import rusty_rlp
+except ImportError as e:
+    import logging
+    from rlp.atomic import (
+        Atomic,
+    )
+    logger = logging.getLogger()
+    logger.warning(
+        "Consider installing rusty-rlp to improve pyrlp performance with a rust based backend"
+    )
 
+    def encode_raw(item):
+        """RLP encode (a nested sequence of) :class:`Atomic`s."""
+        if isinstance(item, Atomic):
+            if len(item) == 1 and item[0] < 128:
+                return item
+            payload = item
+            prefix_offset = 128  # string
+        elif not isinstance(item, str) and isinstance(item, collections.abc.Sequence):
+            payload = b''.join(encode_raw(x) for x in item)
+            prefix_offset = 192  # list
+        else:
+            msg = 'Cannot encode object of type {0}'.format(type(item).__name__)
+            raise EncodingError(msg, item)
 
-def encode_raw(obj):
-    try:
-        if isinstance(obj, bytearray):
-            obj = bytes(obj)
-        return rusty_rlp.encode_raw(obj)
-    except(rusty_rlp.EncodingError) as e:
-        raise EncodingError(e, obj)
+        try:
+            prefix = length_prefix(len(payload), prefix_offset)
+        except ValueError:
+            raise EncodingError('Item too big to encode', item)
+
+        return prefix + payload
+
+    def decode_raw(item, strict, _):
+        try:
+            result, per_item_rlp, end = consume_item(item, 0)
+        except IndexError:
+            raise DecodingError('RLP string too short', item)
+        if end != len(item) and strict:
+            msg = 'RLP string ends with {} superfluous bytes'.format(len(item) - end)
+            raise DecodingError(msg, item)
+
+        return result, per_item_rlp
+else:
+    def decode_raw(item, strict, preserve_per_item_rlp):
+        try:
+            return rusty_rlp.decode_raw(item, strict, preserve_per_item_rlp)
+        except (TypeError, rusty_rlp.DecodingError) as e:
+            raise DecodingError(e, item)
+
+    def encode_raw(obj):
+        try:
+            if isinstance(obj, bytearray):
+                obj = bytes(obj)
+            return rusty_rlp.encode_raw(obj)
+        except(rusty_rlp.EncodingError) as e:
+            raise EncodingError(e, obj)
 
 
 def encode(obj, sedes=None, infer_serializer=True, cache=True):
