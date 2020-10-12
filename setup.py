@@ -44,7 +44,7 @@ extras_require['dev'] = (
 setup(
     name='rlp',
     # *IMPORTANT*: Don't manually change the version here. See README for more.
-    version='2.0.0-alpha.2',
+    version='2.0.0-beta.1',
     description="A package for Recursive Length Prefix encoding and decoding",
     long_description_markdown_filename='README.md',
     author="jnnk",
