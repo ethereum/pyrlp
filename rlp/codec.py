@@ -22,10 +22,6 @@ except ImportError as e:
     from rlp.atomic import (
         Atomic,
     )
-    logger = logging.getLogger()
-    logger.warning(
-        "Consider installing rusty-rlp to improve pyrlp performance with a rust based backend"
-    )
 
     def encode_raw(item):
         """RLP encode (a nested sequence of) :class:`Atomic`s."""
