@@ -46,33 +46,33 @@ def test_string(value):
 
 
 def test_list_getitem():
-    l = rlp.decode_lazy(rlp.encode([1, 2, 3]), big_endian_int)
-    assert isinstance(l, rlp.lazy.LazyList)
-    assert l[0] == 1
-    assert l[1] == 2
-    assert l[2] == 3
-    assert l[-1] == 3
-    assert l[-2] == 2
-    assert l[-3] == 1
-    assert l[0:3] == [1, 2, 3]
-    assert l[0:2] == [1, 2]
-    assert l[0:1] == [1]
-    assert l[1:2] == [2]
-    assert l[1:] == [2, 3]
-    assert l[1:-1] == [2]
-    assert l[-2:] == [2, 3]
-    assert l[:2] == [1, 2]
+    decoded = rlp.decode_lazy(rlp.encode([1, 2, 3]), big_endian_int)
+    assert isinstance(decoded, rlp.lazy.LazyList)
+    assert decoded[0] == 1
+    assert decoded[1] == 2
+    assert decoded[2] == 3
+    assert decoded[-1] == 3
+    assert decoded[-2] == 2
+    assert decoded[-3] == 1
+    assert decoded[0:3] == [1, 2, 3]
+    assert decoded[0:2] == [1, 2]
+    assert decoded[0:1] == [1]
+    assert decoded[1:2] == [2]
+    assert decoded[1:] == [2, 3]
+    assert decoded[1:-1] == [2]
+    assert decoded[-2:] == [2, 3]
+    assert decoded[:2] == [1, 2]
 
 
 def test_nested_list():
-    l = ((), (b'a'), (b'b', b'c', b'd'))
+    nested = ((), (b'a'), (b'b', b'c', b'd'))
 
     def dec():
-        return rlp.decode_lazy(rlp.encode(l))
+        return rlp.decode_lazy(rlp.encode(nested))
 
     assert isinstance(dec(), Sequence)
-    assert len(dec()) == len(l)
-    assert evaluate(dec()) == l
+    assert len(dec()) == len(nested)
+    assert evaluate(dec()) == nested
     with pytest.raises(IndexError):
         dec()[0][0]
     with pytest.raises(IndexError):

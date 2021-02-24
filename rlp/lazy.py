@@ -6,7 +6,7 @@ from .atomic import Atomic
 
 
 def decode_lazy(rlp, sedes=None, **sedes_kwargs):
-    """Decode an RLP encoded object in a lazy fashion.
+    r"""Decode an RLP encoded object in a lazy fashion.
 
     If the encoded object is a bytestring, this function acts similar to
     :func:`rlp.decode`. If it is a list however, a :class:`LazyList` is
@@ -23,7 +23,7 @@ def decode_lazy(rlp, sedes=None, **sedes_kwargs):
     :param sedes: an object implementing a method ``deserialize(code)`` which
                   is used as described above, or ``None`` if no
                   deserialization should be performed
-    :param \*\*sedes_kwargs: additional keyword arguments that will be passed
+    :param **sedes_kwargs: additional keyword arguments that will be passed
                              to the deserializers
     :returns: either the already decoded and deserialized object (if encoded as
               a string) or an instance of :class:`rlp.LazyList`
@@ -63,7 +63,7 @@ def consume_item_lazy(rlp, start):
 
 
 class LazyList(Sequence):
-    """A RLP encoded list which decodes itself when necessary.
+    r"""A RLP encoded list which decodes itself when necessary.
 
     Both indexing with positive indices and iterating are supported.
     Getting the length with :func:`len` is possible as well but requires full
@@ -74,7 +74,7 @@ class LazyList(Sequence):
     :param end: the position of the last payload byte of the encoded list
     :param sedes: a sedes object which deserializes each element of the list,
                   or ``None`` for no deserialization
-    :param \*\*sedes_kwargs: keyword arguments which will be passed on to the
+    :param **sedes_kwargs: keyword arguments which will be passed on to the
                              deserializer
     """
 
