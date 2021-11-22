@@ -58,6 +58,12 @@ jobs:
       - image: circleci/python:3.8
         environment:
           TOXENV: py38-core
+  py39-core:
+    <<: *common
+    docker:
+      - image: circleci/python:3.9
+        environment:
+          TOXENV: py39-core
   py36-rust-backend:
     <<: *common
     docker:
@@ -76,6 +82,12 @@ jobs:
       - image: circleci/python:3.8
         environment:
           TOXENV: py38-rust-backend
+  py39-rust-backend:
+    <<: *common
+    docker:
+      - image: circleci/python:3.9
+        environment:
+          TOXENV: py39-rust-backend
   py36-doctest:
     <<: *common
     docker:
@@ -94,6 +106,12 @@ jobs:
       - image: circleci/python:3.8
         environment:
           TOXENV: py38-doctest
+  py39-doctest:
+    <<: *common
+    docker:
+      - image: circleci/python:3.9
+        environment:
+          TOXENV: py39-doctest
 
   lint:
     <<: *common
@@ -109,13 +127,16 @@ workflows:
       - py36-core
       - py37-core
       - py38-core
+      - py39-core
 
       - py36-rust-backend
       - py37-rust-backend
       - py38-rust-backend
+      - py39-rust-backend
 
       - py36-doctest
       - py37-doctest
       - py38-doctest
+      - py39-doctest
 
       - lint
