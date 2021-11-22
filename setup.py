@@ -54,7 +54,7 @@ setup(
     include_package_data=True,
     setup_requires=['setuptools-markdown'],
     install_requires=[
-        "eth-utils>=1.0.2,<2",
+        "eth-utils>=2.0.0,<3",
     ],
     extras_require=extras_require,
     license="MIT",
