@@ -7,7 +7,7 @@ from setuptools import (
 
 extras_require = {
     'test': [
-        "pytest==5.4.3",
+        "pytest>=6.2.5,<7",
         "tox>=2.9.1,<3",
         "hypothesis==5.19.0",
     ],
@@ -69,6 +69,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
 )
