@@ -28,7 +28,7 @@ extras_require = {
         "twine",
     ],
     'rust-backend': [
-        "rusty-rlp>=0.1.15, <0.2"
+        "rusty-rlp>=0.2.1, <0.3"
     ]
 }
 
