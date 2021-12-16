@@ -186,6 +186,22 @@ def Changeset(obj, changes):
     return cls(obj, changes)
 
 
+def _is_immutable(value):
+    if type(value) in {int, bytes, bool}:
+        return True
+    elif type(value) in {tuple, list} or isinstance(value, Serializable):
+        return all(_is_immutable(element) for element in value)
+    else:
+        raise TypeError("Unsupported type: {0}".format(type(value)))
+
+
+def _copy_if_mutable(value):
+    if _is_immutable(value):
+        return value
+    else:
+        return copy.deepcopy(value)
+
+
 class BaseSerializable(collections.abc.Sequence):
     def __init__(self, *args, **kwargs):
         if kwargs:
@@ -286,7 +302,7 @@ class BaseSerializable(collections.abc.Sequence):
             self._meta.field_names[:len(args)]
         )
         unchanged_kwargs = {
-            key: copy.deepcopy(value)
+            key: _copy_if_mutable(value)
             for key, value
             in self.as_dict().items()
             if key in missing_overrides
