@@ -12,7 +12,7 @@ extras_require = {
         "hypothesis==5.19.0",
     ],
     'lint': [
-        "flake8==3.4.1",
+        "flake8==3.7.9",
     ],
     'doc': [
         "Sphinx>=1.6.5,<2",

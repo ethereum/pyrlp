@@ -17,7 +17,7 @@ from rlp.utils import ALL_BYTES
 
 try:
     import rusty_rlp
-except ImportError as e:
+except ImportError:
     import logging
     from rlp.atomic import (
         Atomic,
@@ -108,8 +108,8 @@ def encode(obj, sedes=None, infer_serializer=True, cache=True):
             return cached_rlp
         else:
             really_cache = (
-                cache and
-                sedes is None
+                cache
+                and sedes is None
             )
     else:
         really_cache = False
@@ -242,7 +242,7 @@ def consume_item(rlp, start):
 
 
 def decode(rlp, sedes=None, strict=True, recursive_cache=False, **kwargs):
-    """Decode an RLP encoded object.
+    r"""Decode an RLP encoded object.
 
     If the deserialized result `obj` has an attribute :attr:`_cached_rlp` (e.g. if `sedes` is a
     subclass of :class:`rlp.Serializable`) it will be set to `rlp`, which will improve performance
@@ -252,7 +252,7 @@ def decode(rlp, sedes=None, strict=True, recursive_cache=False, **kwargs):
 
     :param sedes: an object implementing a function ``deserialize(code)`` which will be applied
                   after decoding, or ``None`` if no deserialization should be performed
-    :param \*\*kwargs: additional keyword arguments that will be passed to the deserializer
+    :param **kwargs: additional keyword arguments that will be passed to the deserializer
     :param strict: if false inputs that are longer than necessary don't cause an exception
     :returns: the decoded and maybe deserialized Python object
     :raises: :exc:`rlp.DecodingError` if the input string does not end after the root item and

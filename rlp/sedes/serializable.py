@@ -482,8 +482,8 @@ class SerializableBase(abc.ABCMeta):
             name,
             bases,
             dict(
-                field_props +
-                tuple(attrs.items())
+                field_props
+                + tuple(attrs.items())
             ),
         )
 

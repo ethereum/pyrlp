@@ -28,9 +28,9 @@ class Binary(object):
     def is_valid_type(cls, obj):
         return isinstance(obj, (bytes, bytearray))
 
-    def is_valid_length(self, l):
-        return any((self.min_length <= l <= self.max_length,
-                    self.allow_empty and l == 0))
+    def is_valid_length(self, length):
+        return any((self.min_length <= length <= self.max_length,
+                    self.allow_empty and length == 0))
 
     def serialize(self, obj):
         if not Binary.is_valid_type(obj):

@@ -58,8 +58,7 @@ def test_consume_item():
     rlp = encode(obj)
     item, per_item_rlp, end = consume_item(rlp, 0)
     assert per_item_rlp == [
-        (b'\xf8y' b'f' + b'\x83bar' + b'\xb8d' + b'a' * 100 + b'i' +
-         b'\xcc\x86nested\x84list'),
+        (b'\xf8y' b'f' + b'\x83bar' + b'\xb8d' + b'a' * 100 + b'i' + b'\xcc\x86nested\x84list'),
         [b'f'],
         [b'\x83bar'],
         [b'\xb8d' + b'a' * 100],

@@ -44,7 +44,7 @@ def compare_nested(got, expected):
             return False
 
 
-with open('tests/rlptest.json') as rlptest_file:
+with open('tests/core/rlptest.json') as rlptest_file:
     test_data = json.load(rlptest_file)
     test_pieces = [
         (
