@@ -20,7 +20,7 @@ extras_require = {
     ],
     'dev': [
         "bumpversion>=0.5.3,<1",
-        "setuptools>=36.2.0",
+        "setuptools>=38.6.0",
         "pytest-xdist",
         "pytest-watch>=4.1.0,<5",
         "wheel",
@@ -40,19 +40,21 @@ extras_require['dev'] = (
     extras_require['doc']
 )
 
+with open("./README.md") as readme:
+    long_description = readme.read()
 
 setup(
     name='rlp',
     # *IMPORTANT*: Don't manually change the version here. See README for more.
     version='3.0.0',
     description="A package for Recursive Length Prefix encoding and decoding",
-    long_description_markdown_filename='README.md',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author="jnnk",
     author_email='jnnknnj@gmail.com',
     url='https://github.com/ethereum/pyrlp',
     packages=find_packages(exclude=["tests", "tests.*"]),
     include_package_data=True,
-    setup_requires=['setuptools-markdown'],
     install_requires=[
         "eth-utils>=2.0.0,<3",
     ],
