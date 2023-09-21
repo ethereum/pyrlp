@@ -67,7 +67,7 @@ setup(
         "eth-utils>=2",
     ],
     extras_require=extras_require,
-    py_modules=["<MODULE_NAME>"],
+    py_modules=["rlp"],
     license="MIT",
     zip_safe=False,
     keywords='rlp ethereum',

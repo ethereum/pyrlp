@@ -211,8 +211,8 @@ latex_elements = {
 latex_documents = [
     (
         "index",
-        "<MODULE_NAME>.tex",
-        "<PROJECT_NAME> Documentation",
+        "rlp.tex",
+        "pyrlp Documentation",
         "The Ethereum Foundation",
         "manual",
     ),
