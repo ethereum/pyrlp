@@ -11,10 +11,10 @@ from eth_utils import (
 )
 
 from rlp.exceptions import (
-    ListSerializationError,
-    ObjectSerializationError,
     ListDeserializationError,
+    ListSerializationError,
     ObjectDeserializationError,
+    ObjectSerializationError,
 )
 
 from .lists import (
@@ -31,20 +31,18 @@ class MetaBase:
 
 def _get_duplicates(values):
     counts = collections.Counter(values)
-    return tuple(
-        item
-        for item, num in counts.items()
-        if num > 1
-    )
+    return tuple(item for item, num in counts.items() if num > 1)
 
 
 def validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=False):
     duplicate_arg_names = _get_duplicates(arg_names)
     if duplicate_arg_names:
-        raise TypeError("Duplicate argument names: {0}".format(sorted(duplicate_arg_names)))
+        raise TypeError(
+            "Duplicate argument names: {0}".format(sorted(duplicate_arg_names))
+        )
 
-    needed_kwargs = arg_names[len(args):]
-    used_kwargs = set(arg_names[:len(args)])
+    needed_kwargs = arg_names[len(args) :]
+    used_kwargs = set(arg_names[: len(args)])
 
     duplicate_kwargs = used_kwargs.intersection(kwargs.keys())
     if duplicate_kwargs:
@@ -63,7 +61,7 @@ def validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=False):
 def merge_kwargs_to_args(args, kwargs, arg_names, allow_missing=False):
     validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=allow_missing)
 
-    needed_kwargs = arg_names[len(args):]
+    needed_kwargs = arg_names[len(args) :]
 
     yield from args
     for arg_name in needed_kwargs:
@@ -81,8 +79,8 @@ def merge_args_to_kwargs(args, kwargs, arg_names, allow_missing=False):
 
 def _eq(left, right):
     """
-    Equality comparison that allows for equality between tuple and list types
-    with equivalent elements.
+    Equality comparison that allows for equality between tuple and list types with
+    equivalent elements.
     """
     if isinstance(left, (tuple, list)) and isinstance(right, (tuple, list)):
         return len(left) == len(right) and all(_eq(*pair) for pair in zip(left, right))
@@ -91,9 +89,9 @@ def _eq(left, right):
 
 
 class ChangesetState(enum.Enum):
-    INITIALIZED = 'INITIALIZED'
-    OPEN = 'OPEN'
-    CLOSED = 'CLOSED'
+    INITIALIZED = "INITIALIZED"
+    OPEN = "OPEN"
+    CLOSED = "CLOSED"
 
 
 class ChangesetField:
@@ -106,7 +104,9 @@ class ChangesetField:
         if instance is None:
             return self
         elif instance.__state__ is not ChangesetState.OPEN:
-            raise AttributeError("Changeset is not active.  Attribute access not allowed")
+            raise AttributeError(
+                "Changeset is not active.  Attribute access not allowed"
+            )
         else:
             try:
                 return instance.__diff__[self.field]
@@ -115,7 +115,9 @@ class ChangesetField:
 
     def __set__(self, instance, value):
         if instance.__state__ is not ChangesetState.OPEN:
-            raise AttributeError("Changeset is not active.  Attribute access not allowed")
+            raise AttributeError(
+                "Changeset is not active.  Attribute access not allowed"
+            )
         instance.__diff__[self.field] = value
 
 
@@ -141,8 +143,7 @@ class BaseChangeset:
         if self.__state__ == ChangesetState.OPEN:
             field_kwargs = {
                 name: self.__diff__.get(name, self.__original__[name])
-                for name
-                in self.__original__._meta.field_names
+                for name in self.__original__._meta.field_names
             }
             return type(self.__original__)(**field_kwargs)
         else:
@@ -152,7 +153,9 @@ class BaseChangeset:
         if self.__state__ == ChangesetState.INITIALIZED:
             self.__state__ = ChangesetState.OPEN
         else:
-            raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
+            raise ValueError(
+                "Cannot open Changeset which is not in the INITIALIZED state"
+            )
 
     def close(self):
         if self.__state__ == ChangesetState.OPEN:
@@ -165,7 +168,9 @@ class BaseChangeset:
             self.open()
             return self
         else:
-            raise ValueError("Cannot open Changeset which is not in the INITIALIZED state")
+            raise ValueError(
+                "Cannot open Changeset which is not in the INITIALIZED state"
+            )
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.__state__ == ChangesetState.OPEN:
@@ -173,11 +178,7 @@ class BaseChangeset:
 
 
 def Changeset(obj, changes):
-    namespace = {
-        name: ChangesetField(name)
-        for name
-        in obj._meta.field_names
-    }
+    namespace = {name: ChangesetField(name) for name in obj._meta.field_names}
     cls = type(
         "{0}Changeset".format(obj.__class__.__name__),
         (BaseChangeset,),
@@ -195,10 +196,10 @@ class BaseSerializable(collections.abc.Sequence):
 
         if len(field_values) != len(self._meta.field_names):
             raise TypeError(
-                'Argument count mismatch. expected {0} - got {1} - missing {2}'.format(
+                "Argument count mismatch. expected {0} - got {1} - missing {2}".format(
                     len(self._meta.field_names),
                     len(field_values),
-                    ','.join(self._meta.field_names[len(field_values):]),
+                    ",".join(self._meta.field_names[len(field_values) :]),
                 )
             )
 
@@ -209,9 +210,7 @@ class BaseSerializable(collections.abc.Sequence):
 
     def as_dict(self):
         return dict(
-            (field, value)
-            for field, value
-            in zip(self._meta.field_names, self)
+            (field, value) for field, value in zip(self._meta.field_names, self)
         )
 
     def __iter__(self):
@@ -239,10 +238,10 @@ class BaseSerializable(collections.abc.Sequence):
     def __getstate__(self):
         state = self.__dict__.copy()
         # The hash() builtin is not stable across processes
-        # (https://docs.python.org/3/reference/datamodel.html#object.__hash__), so we do this here
-        # to ensure pickled instances don't carry the cached hash() as that may cause issues like
-        # https://github.com/ethereum/py-evm/issues/1318
-        state['_hash_cache'] = None
+        # (https://docs.python.org/3/reference/datamodel.html#object.__hash__), so we do
+        # this here to ensure pickled instances don't carry the cached hash() as that
+        # may cause issues like https://github.com/ethereum/py-evm/issues/1318
+        state["_hash_cache"] = None
         return state
 
     _hash_cache = None
@@ -278,17 +277,14 @@ class BaseSerializable(collections.abc.Sequence):
         return cls(**args_as_kwargs, **extra_kwargs)
 
     def copy(self, *args, **kwargs):
-        missing_overrides = set(
-            self._meta.field_names
-        ).difference(
-            kwargs.keys()
-        ).difference(
-            self._meta.field_names[:len(args)]
+        missing_overrides = (
+            set(self._meta.field_names)
+            .difference(kwargs.keys())
+            .difference(self._meta.field_names[: len(args)])
         )
         unchanged_kwargs = {
             key: copy.deepcopy(value)
-            for key, value
-            in self.as_dict().items()
+            for key, value in self.as_dict().items()
             if key in missing_overrides
         }
         combined_kwargs = dict(**unchanged_kwargs, **kwargs)
@@ -325,7 +321,7 @@ def _mk_field_attrs(field_names, extra_namespace):
     namespace = set(field_names).union(extra_namespace)
     for field in field_names:
         while True:
-            field = '_' + field
+            field = "_" + field
             if field not in namespace:
                 namespace.add(field)
                 yield field
@@ -356,9 +352,9 @@ def _is_valid_identifier(value):
 
 @to_set
 def _get_class_namespace(cls):
-    if hasattr(cls, '__dict__'):
+    if hasattr(cls, "__dict__"):
         yield from cls.__dict__.keys()
-    if hasattr(cls, '__slots__'):
+    if hasattr(cls, "__slots__"):
         yield from cls.__slots__
 
 
@@ -369,7 +365,7 @@ class SerializableBase(abc.ABCMeta):
         serializable_bases = tuple(b for b in bases if isinstance(b, SerializableBase))
         has_multiple_serializable_parents = len(serializable_bases) > 1
         is_serializable_subclass = any(serializable_bases)
-        declares_fields = 'fields' in attrs
+        declares_fields = "fields" in attrs
 
         if not is_serializable_subclass:
             # If this is the original creation of the `Serializable` class,
@@ -385,7 +381,7 @@ class SerializableBase(abc.ABCMeta):
                 # This is just a vanilla subclass of a `Serializable` parent class.
                 parent_serializable = serializable_bases[0]
 
-                if hasattr(parent_serializable, '_meta'):
+                if hasattr(parent_serializable, "_meta"):
                     fields = parent_serializable._meta.fields
                 else:
                     # This is a subclass of `Serializable` which has no
@@ -394,7 +390,7 @@ class SerializableBase(abc.ABCMeta):
         else:
             # ensure that the `fields` property is a tuple of tuples to ensure
             # immutability.
-            fields = tuple(tuple(field) for field in attrs.pop('fields'))
+            fields = tuple(tuple(field) for field in attrs.pop("fields"))
 
         # split the fields into names and sedes
         if fields:
@@ -414,21 +410,23 @@ class SerializableBase(abc.ABCMeta):
         # check that field names are valid identifiers
         invalid_field_names = {
             field_name
-            for field_name
-            in field_names
+            for field_name in field_names
             if not _is_valid_identifier(field_name)
         }
         if invalid_field_names:
             raise TypeError(
-                "The following field names are not valid python identifiers: {0}".format(
-                    ",".join("`{0}`".format(item) for item in sorted(invalid_field_names))
+                "The following field names are not valid python identifiers: {0}".format(  # noqa: E501
+                    ",".join(
+                        "`{0}`".format(item) for item in sorted(invalid_field_names)
+                    )
                 )
             )
 
         # extract all of the fields from parent `Serializable` classes.
         parent_field_names = {
             field_name
-            for base in serializable_bases if hasattr(base, '_meta')
+            for base in serializable_bases
+            if hasattr(base, "_meta")
             for field_name in base._meta.field_names
         }
 
@@ -456,35 +454,31 @@ class SerializableBase(abc.ABCMeta):
 
         # construct the Meta object to store field information for the class
         meta_namespace = {
-            'fields': fields,
-            'field_attrs': field_attrs,
-            'field_names': field_names,
-            'sedes': List(sedes),
+            "fields": fields,
+            "field_attrs": field_attrs,
+            "field_names": field_names,
+            "sedes": List(sedes),
         }
 
-        meta_base = attrs.pop('_meta', MetaBase)
+        meta_base = attrs.pop("_meta", MetaBase)
         meta = type(
-            'Meta',
+            "Meta",
             (meta_base,),
             meta_namespace,
         )
-        attrs['_meta'] = meta
+        attrs["_meta"] = meta
 
         # construct `property` attributes for read only access to the fields.
         field_props = tuple(
             (field, _mk_field_property(field, attr))
-            for field, attr
-            in zip(meta.field_names, meta.field_attrs)
+            for field, attr in zip(meta.field_names, meta.field_attrs)
         )
 
         return super_new(
             cls,
             name,
             bases,
-            dict(
-                field_props +
-                tuple(attrs.items())
-            ),
+            dict(field_props + tuple(attrs.items())),
         )
 
 
@@ -492,4 +486,5 @@ class Serializable(BaseSerializable, metaclass=SerializableBase):
     """
     The base class for serializable objects.
     """
+
     pass

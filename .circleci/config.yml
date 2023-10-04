@@ -50,7 +50,7 @@ windows_steps: &windows_steps
   executor:
     name: win/default
     shell: bash.exe
-  working_directory: C:\Users\circleci\project\<REPO_NAME>
+  working_directory: C:\Users\circleci\project\pyrlp
   steps:
     - checkout
     - restore_cache:
@@ -77,12 +77,6 @@ jobs:
         environment:
           TOXENV: docs
 
-  py37-core:
-    <<: *common
-    docker:
-      - image: cimg/python:3.7
-        environment:
-          TOXENV: py37-core
   py38-core:
     <<: *common
     docker:
@@ -133,12 +127,6 @@ jobs:
         environment:
           TOXENV: py311-lint
 
-  py37-wheel:
-    <<: *common
-    docker:
-      - image: cimg/python:3.7
-        environment:
-          TOXENV: py37-wheel
   py38-wheel:
     <<: *common
     docker:
@@ -169,12 +157,6 @@ jobs:
     environment:
       TOXENV: py311-wheel-windows
 
-  py37-rust-backend:
-    <<: *common
-    docker:
-      - image: cimg/python:3.7
-        environment:
-          TOXENV: py37-rust-backend
   py38-rust-backend:
     <<: *common
     docker:
@@ -193,36 +175,32 @@ jobs:
       - image: cimg/python:3.10
         environment:
           TOXENV: py310-rust-backend
-  py311-rust-backend:
-    <<: *common
-    docker:
-      - image: cimg/python:3.11
-        environment:
-          TOXENV: py311-rust-backend
+  # py311-rust-backend:
+  #   <<: *common
+  #   docker:
+  #     - image: cimg/python:3.11
+  #       environment:
+  #         TOXENV: py311-rust-backend
 
 workflows:
   version: 2
   test:
     jobs:
       - docs
-      - py37-core
       - py38-core
       - py39-core
       - py310-core
       - py311-core
-      - py37-lint
       - py38-lint
       - py39-lint
       - py310-lint
       - py311-lint
-      - py37-wheel
       - py38-wheel
       - py39-wheel
       - py310-wheel
       - py311-wheel
       - py311-wheel-windows
-      - py37-rust-backend
       - py38-rust-backend
       - py39-rust-backend
       - py310-rust-backend
-      - py311-rust-backend
+      # - py311-rust-backend

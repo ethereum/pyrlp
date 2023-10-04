@@ -1,17 +1,24 @@
 import pytest
-from rlp import encode, decode, SerializationError, DecodingError
-from rlp.sedes import raw
 
+from rlp import (
+    DecodingError,
+    SerializationError,
+    decode,
+    encode,
+)
+from rlp.sedes import (
+    raw,
+)
 
 serializable = (
-    b'',
-    b'asdf',
-    b'fds89032#$@%',
-    b'',
-    b'dfsa',
-    [b'dfsa', b''],
+    b"",
+    b"asdf",
+    b"fds89032#$@%",
+    b"",
+    b"dfsa",
+    [b"dfsa", b""],
     [],
-    [b'fdsa', [b'dfs', [b'jfdkl']]],
+    [b"fdsa", [b"dfs", [b"jfdkl"]]],
 )
 
 
@@ -23,13 +30,8 @@ def test_serializable():
 
 
 @pytest.mark.parametrize(
-    'rlp_data',
-    (
-        0,
-        32,
-        ['asdf', ['fdsa', [5]]],
-        str
-    ),
+    "rlp_data",
+    (0, 32, ["asdf", ["fdsa", [5]]], str),
 )
 def test_invalid_serializations(rlp_data):
     with pytest.raises(SerializationError):
@@ -37,10 +39,10 @@ def test_invalid_serializations(rlp_data):
 
 
 @pytest.mark.parametrize(
-    'rlp_data',
+    "rlp_data",
     (
         None,
-        'asdf',
+        "asdf",
     ),
 )
 def test_invalid_deserializations(rlp_data):

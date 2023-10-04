@@ -22,7 +22,7 @@ encode these kinds of objects, use :func:`rlp.encode`::
     b'\xb88Lorem ipsum dolor sit amet, consetetur sadipscing elitr.'
     >>> encode([])
     b'\xc0'
-    >>> encode(['this', ['is', ('a', ('nested', 'list', []))]]) 
+    >>> encode(['this', ['is', ('a', ('nested', 'list', []))]])
     b'\xd9\x84this\xd3\x82is\xcfa\xcd\x86nested\x84list\xc0'
 
 
@@ -201,7 +201,7 @@ Further Reading
 
 This was basically everything there is to about this package. The technical
 specification of RLP can be found either in the
-`Ethereum wiki <https://github.com/ethereum/wiki/wiki/RLP>`_ or in Appendix B of
+`Ethereum wiki <https://ethereum.org/en/developers/docs/data-structures-and-encoding/rlp/>`_ or in Appendix B of
 Gavin Woods `Yellow Paper <http://gavwood.com/Paper.pdf>`_. For more detailed
 information about this package, have a look at the :ref:`API-reference` or the
 source code.

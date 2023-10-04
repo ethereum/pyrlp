@@ -54,7 +54,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "<PROJECT_NAME>"
+project = "pyrlp"
 copyright = u'2015, jnnk'
 
 __version__ = setup_version
@@ -190,7 +190,7 @@ html_theme = "sphinx_rtd_theme"
 # html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "<MODULE_NAME>docs"
+htmlhelp_basename = "rlpdocs"
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -210,8 +210,8 @@ latex_elements = {
 latex_documents = [
     (
         "index",
-        "<MODULE_NAME>.tex",
-        "<PROJECT_NAME> Documentation",
+        "rlp.tex",
+        "pyrlp Documentation",
         "The Ethereum Foundation",
         "manual",
     ),
@@ -245,8 +245,8 @@ latex_documents = [
 man_pages = [
     (
         "index",
-        "<MODULE_NAME>",
-        "<PROJECT_NAME> Documentation",
+        "rlp",
+        "pyrlp Documentation",
         [u"jnnk"],
         1,
     )
@@ -264,11 +264,11 @@ man_pages = [
 texinfo_documents = [
     (
         "index",
-        "<PROJECT_NAME>",
-        "<PROJECT_NAME> Documentation",
+        "pyrlp",
+        "pyrlp Documentation",
         "The Ethereum Foundation",
-        "<PROJECT_NAME>",
-        "<SHORT_DESCRIPTION>",
+        "pyrlp",
+        "A package for Recursive Length Prefix encoding and decoding",
         "Miscellaneous",
     ),
 ]

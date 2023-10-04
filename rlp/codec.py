@@ -6,45 +6,64 @@ from eth_utils import (
     is_bytes,
 )
 
-
-from rlp.exceptions import EncodingError, DecodingError
-from rlp.sedes.binary import Binary as BinaryClass
-from rlp.sedes import big_endian_int, binary, boolean, text
-from rlp.sedes.lists import List, is_sedes, is_sequence
-from rlp.sedes.serializable import Serializable
-from rlp.utils import ALL_BYTES
-
+from rlp.exceptions import (
+    DecodingError,
+    EncodingError,
+)
+from rlp.sedes import (
+    big_endian_int,
+    binary,
+    boolean,
+    text,
+)
+from rlp.sedes.binary import (
+    Binary as BinaryClass,
+)
+from rlp.sedes.lists import (
+    List,
+    is_sedes,
+    is_sequence,
+)
+from rlp.sedes.serializable import (
+    Serializable,
+)
+from rlp.utils import (
+    ALL_BYTES,
+)
 
 try:
     import rusty_rlp
-except ImportError as e:
+except ImportError:
     import logging
+
     from rlp.atomic import (
         Atomic,
     )
+
     logger = logging.getLogger("rlp.codec")
     logger.debug(
-        "Consider installing rusty-rlp to improve pyrlp performance with a rust based backend"
+        "Consider installing rusty-rlp to improve pyrlp performance with a rust based"
+        "backend. Not currently functional for Python 3.11"
     )
 
     def encode_raw(item):
-        """RLP encode (a nested sequence of) :class:`Atomic`s."""
+        r"""RLP encode (a nested sequence of) :class:`Atomic`\s."""
         if isinstance(item, Atomic):
             if len(item) == 1 and item[0] < 128:
                 return item
             payload = item
             prefix_offset = 128  # string
         elif not isinstance(item, str) and isinstance(item, collections.abc.Sequence):
-            payload = b''.join(encode_raw(x) for x in item)
+            payload = b"".join(encode_raw(x) for x in item)
             prefix_offset = 192  # list
         else:
-            msg = 'Cannot encode object of type {0}'.format(type(item).__name__)
+            msg = "Cannot encode object of type {0}".format(type(item).__name__)
             raise EncodingError(msg, item)
 
         try:
             prefix = length_prefix(len(payload), prefix_offset)
         except ValueError:
-            raise EncodingError('Item too big to encode', item)
+            raise EncodingError("Item too big to encode", item)
 
         return prefix + payload
 
@@ -52,13 +71,15 @@ except ImportError as e:
         try:
             result, per_item_rlp, end = consume_item(item, 0)
         except IndexError:
-            raise DecodingError('RLP string too short', item)
+            raise DecodingError("RLP string too short", item)
         if end != len(item) and strict:
-            msg = 'RLP string ends with {} superfluous bytes'.format(len(item) - end)
+            msg = "RLP string ends with {} superfluous bytes".format(len(item) - end)
             raise DecodingError(msg, item)
 
         return result, per_item_rlp
+
 else:
+
     def decode_raw(item, strict, preserve_per_item_rlp):
         try:
             return rusty_rlp.decode_raw(item, strict, preserve_per_item_rlp)
@@ -70,12 +91,13 @@ else:
             if isinstance(obj, bytearray):
                 obj = bytes(obj)
             return rusty_rlp.encode_raw(obj)
-        except(rusty_rlp.EncodingError) as e:
+        except rusty_rlp.EncodingError as e:
             raise EncodingError(e, obj)
 
 
 def encode(obj, sedes=None, infer_serializer=True, cache=True):
-    """Encode a Python object in RLP format.
+    """
+    Encode a Python object in RLP format.
 
     By default, the object is serialized in a suitable way first (using
     :func:`rlp.infer_sedes`) and then encoded. Serialization can be explicitly
@@ -91,15 +113,17 @@ def encode(obj, sedes=None, infer_serializer=True, cache=True):
     If `obj` is a :class:`rlp.Serializable` and `cache` is true, the result of
     the encoding will be stored in :attr:`_cached_rlp` if it is empty.
 
-    :param sedes: an object implementing a function ``serialize(obj)`` which will be used to
-                  serialize ``obj`` before encoding, or ``None`` to use the infered one (if any)
-    :param infer_serializer: if ``True`` an appropriate serializer will be selected using
-                             :func:`rlp.infer_sedes` to serialize `obj` before encoding
+    :param sedes: an object implementing a function ``serialize(obj)`` which will be
+                  used to serialize ``obj`` before encoding, or ``None`` to use the
+                  infered one (if any)
+    :param infer_serializer: if ``True`` an appropriate serializer will be selected
+                             using :func:`rlp.infer_sedes` to serialize `obj` before
+                             encoding
     :param cache: cache the return value in `obj._cached_rlp` if possible
                   (default `True`)
     :returns: the RLP encoded item
-    :raises: :exc:`rlp.EncodingError` in the rather unlikely case that the item is too big to
-             encode (will not happen)
+    :raises: :exc:`rlp.EncodingError` in the rather unlikely case that the item is too
+             big to encode (will not happen)
     :raises: :exc:`rlp.SerializationError` if the serialization fails
     """
     if isinstance(obj, Serializable):
@@ -107,10 +131,7 @@ def encode(obj, sedes=None, infer_serializer=True, cache=True):
         if sedes is None and cached_rlp:
             return cached_rlp
         else:
-            really_cache = (
-                cache and
-                sedes is None
-            )
+            really_cache = cache and sedes is None
     else:
         really_cache = False
 
@@ -131,7 +152,8 @@ LONG_LENGTH = 256**8
 
 
 def length_prefix(length, offset):
-    """Construct the prefix to lists or strings denoting their length.
+    """
+    Construct the prefix to lists or strings denoting their length.
 
     :param length: the length of the item in bytes
     :param offset: ``0x80`` when encoding raw bytes, ``0xc0`` when encoding a
@@ -143,14 +165,15 @@ def length_prefix(length, offset):
         length_string = int_to_big_endian(length)
         return ALL_BYTES[offset + 56 - 1 + len(length_string)] + length_string
     else:
-        raise ValueError('Length greater than 256**8')
+        raise ValueError("Length greater than 256**8")
 
 
 SHORT_STRING = 128 + 56
 
 
 def consume_length_prefix(rlp, start):
-    """Read a length prefix from an RLP string.
+    """
+    Read a length prefix from an RLP string.
 
     :param rlp: the rlp byte string to read from
     :param start: the position at which to start reading
@@ -161,35 +184,38 @@ def consume_length_prefix(rlp, start):
     """
     b0 = rlp[start]
     if b0 < 128:  # single byte
-        return (b'', bytes, 1, start)
+        return (b"", bytes, 1, start)
     elif b0 < SHORT_STRING:  # short string
         if b0 - 128 == 1 and rlp[start + 1] < 128:
-            raise DecodingError('Encoded as short string although single byte was possible', rlp)
-        return (rlp[start:start + 1], bytes, b0 - 128, start + 1)
+            raise DecodingError(
+                "Encoded as short string although single byte was possible", rlp
+            )
+        return (rlp[start : start + 1], bytes, b0 - 128, start + 1)
     elif b0 < 192:  # long string
         ll = b0 - 183  # - (128 + 56 - 1)
-        if rlp[start + 1:start + 2] == b'\x00':
-            raise DecodingError('Length starts with zero bytes', rlp)
-        len_prefix = rlp[start + 1:start + 1 + ll]
+        if rlp[start + 1 : start + 2] == b"\x00":
+            raise DecodingError("Length starts with zero bytes", rlp)
+        len_prefix = rlp[start + 1 : start + 1 + ll]
         l = big_endian_to_int(len_prefix)  # noqa: E741
         if l < 56:
-            raise DecodingError('Long string prefix used for short string', rlp)
-        return (rlp[start:start + 1] + len_prefix, bytes, l, start + 1 + ll)
+            raise DecodingError("Long string prefix used for short string", rlp)
+        return (rlp[start : start + 1] + len_prefix, bytes, l, start + 1 + ll)
     elif b0 < 192 + 56:  # short list
-        return (rlp[start:start + 1], list, b0 - 192, start + 1)
+        return (rlp[start : start + 1], list, b0 - 192, start + 1)
     else:  # long list
         ll = b0 - 192 - 56 + 1
-        if rlp[start + 1:start + 2] == b'\x00':
-            raise DecodingError('Length starts with zero bytes', rlp)
-        len_prefix = rlp[start + 1:start + 1 + ll]
+        if rlp[start + 1 : start + 2] == b"\x00":
+            raise DecodingError("Length starts with zero bytes", rlp)
+        len_prefix = rlp[start + 1 : start + 1 + ll]
         l = big_endian_to_int(len_prefix)  # noqa: E741
         if l < 56:
-            raise DecodingError('Long list prefix used for short list', rlp)
-        return (rlp[start:start + 1] + len_prefix, list, l, start + 1 + ll)
+            raise DecodingError("Long list prefix used for short list", rlp)
+        return (rlp[start : start + 1] + len_prefix, list, l, start + 1 + ll)
 
 
 def consume_payload(rlp, prefix, start, type_, length):
-    """Read the payload of an item from an RLP string.
+    """
+    Read the payload of an item from an RLP string.
 
     :param rlp: the rlp string to read from
     :param type_: the type of the payload (``bytes`` or ``list``)
@@ -201,7 +227,7 @@ def consume_payload(rlp, prefix, start, type_, length):
               first unprocessed byte
     """
     if type_ is bytes:
-        item = rlp[start: start + length]
+        item = rlp[start : start + length]
         return (item, [prefix + item], start + length)
     elif type_ is list:
         items = []
@@ -213,22 +239,24 @@ def consume_payload(rlp, prefix, start, type_, length):
             p, t, l, s = consume_length_prefix(rlp, next_item_start)
             item, item_rlp, next_item_start = consume_payload(rlp, p, s, t, l)
             per_item_rlp.append(item_rlp)
-            # When the item returned above is a single element, item_rlp will also contain a
-            # single element, but when it's a list, the first element will be the RLP of the
-            # whole List, which is what we want here.
+            # When the item returned above is a single element, item_rlp will also
+            # contain a single element, but when it's a list, the first element will be
+            # the RLP of the whole List, which is what we want here.
             list_rlp += item_rlp[0]
             items.append(item)
         per_item_rlp.insert(0, list_rlp)
         if next_item_start > end:
-            raise DecodingError('List length prefix announced a too small '
-                                'length', rlp)
+            raise DecodingError(
+                "List length prefix announced a too small " "length", rlp
+            )
         return (items, per_item_rlp, next_item_start)
     else:
-        raise TypeError('Type must be either list or bytes')
+        raise TypeError("Type must be either list or bytes")
 
 
 def consume_item(rlp, start):
-    """Read an item from an RLP string.
+    """
+    Read an item from an RLP string.
 
     :param rlp: the rlp string to read from
     :param start: the position at which to start reading
@@ -242,25 +270,32 @@ def consume_item(rlp, start):
 
 
 def decode(rlp, sedes=None, strict=True, recursive_cache=False, **kwargs):
-    """Decode an RLP encoded object.
+    """
+    Decode an RLP encoded object.
 
-    If the deserialized result `obj` has an attribute :attr:`_cached_rlp` (e.g. if `sedes` is a
-    subclass of :class:`rlp.Serializable`) it will be set to `rlp`, which will improve performance
-    on subsequent :func:`rlp.encode` calls. Bear in mind however that `obj` needs to make sure that
-    this value is updated whenever one of its fields changes or prevent such changes entirely
-    (:class:`rlp.sedes.Serializable` does the latter).
+    If the deserialized result `obj` has an attribute :attr:`_cached_rlp` (e.g. if
+    `sedes` is a subclass of :class:`rlp.Serializable`) it will be set to `rlp`, which
+    will improve performance on subsequent :func:`rlp.encode` calls. Bear in mind
+    however that `obj` needs to make sure that this value is updated whenever one of its
+    fields changes or prevent such changes entirely (:class:`rlp.sedes.Serializable`
+    does the latter).
 
-    :param sedes: an object implementing a function ``deserialize(code)`` which will be applied
-                  after decoding, or ``None`` if no deserialization should be performed
-    :param \*\*kwargs: additional keyword arguments that will be passed to the deserializer
-    :param strict: if false inputs that are longer than necessary don't cause an exception
+    :param sedes: an object implementing a function ``deserialize(code)`` which will be
+                  applied after decoding, or ``None`` if no deserialization should be
+                  performed
+    :param `**kwargs`: additional keyword arguments that will be passed to the
+                       deserializer
+    :param strict: if false inputs that are longer than necessary don't cause an
+                   exception
     :returns: the decoded and maybe deserialized Python object
-    :raises: :exc:`rlp.DecodingError` if the input string does not end after the root item and
-             `strict` is true
+    :raises: :exc:`rlp.DecodingError` if the input string does not end after the root
+             item and `strict` is true
     :raises: :exc:`rlp.DeserializationError` if the deserialization fails
     """
     if not is_bytes(rlp):
-        raise DecodingError('Can only decode RLP bytes, got type %s' % type(rlp).__name__, rlp)
+        raise DecodingError(
+            "Can only decode RLP bytes, got type %s" % type(rlp).__name__, rlp
+        )
 
     item, per_item_rlp = decode_raw(rlp, strict, recursive_cache)
 
@@ -269,7 +304,7 @@ def decode(rlp, sedes=None, strict=True, recursive_cache=False, **kwargs):
 
     if sedes:
         obj = sedes.deserialize(item, **kwargs)
-        if is_sequence(obj) or hasattr(obj, '_cached_rlp'):
+        if is_sequence(obj) or hasattr(obj, "_cached_rlp"):
             _apply_rlp_cache(obj, per_item_rlp, recursive_cache)
         return obj
     else:
@@ -280,7 +315,7 @@ def _apply_rlp_cache(obj, split_rlp, recursive):
     item_rlp = split_rlp.pop(0)
     if isinstance(obj, (int, bool, str, bytes, bytearray)):
         return
-    elif hasattr(obj, '_cached_rlp'):
+    elif hasattr(obj, "_cached_rlp"):
         obj._cached_rlp = item_rlp
     if not recursive:
         return
@@ -293,7 +328,8 @@ def _apply_rlp_cache(obj, split_rlp, recursive):
 
 
 def infer_sedes(obj):
-    """Try to find a sedes objects suitable for a given Python object.
+    """
+    Try to find a sedes objects suitable for a given Python object.
 
     The sedes objects considered are `obj`'s class, `big_endian_int` and
     `binary`. If `obj` is a sequence, a :class:`rlp.sedes.List` will be
@@ -314,5 +350,5 @@ def infer_sedes(obj):
         return boolean
     elif isinstance(obj, str):
         return text
-    msg = 'Did not find sedes handling type {}'.format(type(obj).__name__)
+    msg = "Did not find sedes handling type {}".format(type(obj).__name__)
     raise TypeError(msg)

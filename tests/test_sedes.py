@@ -1,20 +1,26 @@
-from __future__ import unicode_literals
+from __future__ import (
+    unicode_literals,
+)
 
 import pytest
-from rlp import SerializationError, DeserializationError
-from rlp import infer_sedes
+
+from rlp import (
+    DeserializationError,
+    SerializationError,
+    infer_sedes,
+)
 from rlp.sedes import (
+    CountableList,
+    List,
     big_endian_int,
     binary,
     boolean,
     text,
-    CountableList,
-    List,
 )
 
 
 @pytest.mark.parametrize(
-    'value,expected',
+    "value,expected",
     (
         (5, big_endian_int),
         (0, big_endian_int),
@@ -22,18 +28,18 @@ from rlp.sedes import (
         (True, boolean),
         (False, boolean),
         (None, None),
-        (b'', binary),
-        (b'asdf', binary),
-        (b'\xe4\xf6\xfc\xea\xe2\xfb', binary),
-        ('', text),
-        ('asdf', text),
-        ('\xe4\xf6\xfc\xea\xe2\xfb', text),
-        ('你好世界', text),
-        ('\u4f60\u597d\u4e16\u754c', text),
+        (b"", binary),
+        (b"asdf", binary),
+        (b"\xe4\xf6\xfc\xea\xe2\xfb", binary),
+        ("", text),
+        ("asdf", text),
+        ("\xe4\xf6\xfc\xea\xe2\xfb", text),
+        ("你好世界", text),
+        ("\u4f60\u597d\u4e16\u754c", text),
         ([], List()),
         ([1, 2, 3], List((big_endian_int,) * 3)),
-        ([[], b'asdf'], List(([], binary))),
-        ([1, 'asdf'], List((big_endian_int, text))),
+        ([[], b"asdf"], List(([], binary))),
+        ([1, "asdf"], List((big_endian_int, text))),
     ),
 )
 def test_inference(value, expected):
@@ -69,7 +75,7 @@ def test_list_sedes():
 
     c = CountableList(big_endian_int)
     assert l1.deserialize(c.serialize([])) == ()
-    for s in (c.serialize(l) for l in [[1], [1, 2, 3], range(30), (4, 3)]):
+    for s in (c.serialize(length) for length in [[1], [1, 2, 3], range(30), (4, 3)]):
         with pytest.raises(DeserializationError):
             l1.deserialize(s)
 

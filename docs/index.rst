@@ -1,7 +1,7 @@
-<PROJECT_NAME>
+pyrlp
 ==============================
 
-<SHORT_DESCRIPTION>
+A package for Recursive Length Prefix encoding and decoding
 
 Contents
 --------
@@ -9,7 +9,10 @@ Contents
 .. toctree::
     :maxdepth: 3
 
-    <MODULE_NAME>
+    quickstart
+    tutorial
+    api
+    rlp
     release_notes
 
 

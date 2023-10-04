@@ -1,24 +1,24 @@
-# <PROJECT_NAME>
+# pyrlp
 
 [![Join the conversation on Discord](https://img.shields.io/discord/809793915578089484?color=blue&label=chat&logo=discord&logoColor=white)](https://discord.gg/GHryRvPB84)
-[![Build Status](https://circleci.com/gh/ethereum/<REPO_NAME>.svg?style=shield)](https://circleci.com/gh/ethereum/<REPO_NAME>)
-[![PyPI version](https://badge.fury.io/py/<PYPI_NAME>.svg)](https://badge.fury.io/py/<PYPI_NAME>)
-[![Python versions](https://img.shields.io/pypi/pyversions/<PYPI_NAME>.svg)](https://pypi.python.org/pypi/<PYPI_NAME>)
-[![Docs build](https://readthedocs.org/projects/<RTD_NAME>/badge/?version=latest)](https://<RTD_NAME>.readthedocs.io/en/latest/?badge=latest)
+[![Build Status](https://circleci.com/gh/ethereum/pyrlp.svg?style=shield)](https://circleci.com/gh/ethereum/pyrlp)
+[![PyPI version](https://badge.fury.io/py/rlp.svg)](https://badge.fury.io/py/rlp)
+[![Python versions](https://img.shields.io/pypi/pyversions/rlp.svg)](https://pypi.python.org/pypi/rlp)
+[![Docs build](https://readthedocs.org/projects/pyrlp/badge/?version=latest)](https://pyrlp.readthedocs.io/en/latest/?badge=latest)
 
-<SHORT_DESCRIPTION>
+A package for Recursive Length Prefix encoding and decoding
 
-Read more in the [documentation on ReadTheDocs](https://<RTD_NAME>.readthedocs.io/). [View the change log](https://<RTD_NAME>.readthedocs.io/en/latest/release_notes.html).
+Read more in the [documentation on ReadTheDocs](https://pyrlp.readthedocs.io/). [View the change log](https://pyrlp.readthedocs.io/en/latest/release_notes.html).
 
 ## Quickstart
 
 ```sh
-python -m pip install <PYPI_NAME>
+python -m pip install rlp
 ```
 
 ## Developer Setup
 
-If you would like to hack on <REPO_NAME>, please check out the [Snake Charmers
+If you would like to hack on pyrlp, please check out the [Snake Charmers
 Tactical Manual](https://github.com/ethereum/snake-charmers-tactical-manual)
 for information on how we do:
 
@@ -36,8 +36,8 @@ can do so with `git commit --no-verify`.
 You can set up your dev environment with:
 
 ```sh
-git clone git@github.com:ethereum/<REPO_NAME>.git
-cd <REPO_NAME>
+git clone git@github.com:ethereum/pyrlp.git
+cd pyrlp
 virtualenv -p python3 venv
 . venv/bin/activate
 python -m pip install -e ".[dev]"

@@ -1,10 +1,17 @@
-from collections.abc import Sequence
+from collections.abc import (
+    Sequence,
+)
 
 import pytest
 
 import rlp
-from rlp import DeserializationError
-from rlp.sedes import big_endian_int, CountableList
+from rlp import (
+    DeserializationError,
+)
+from rlp.sedes import (
+    CountableList,
+    big_endian_int,
+)
 
 
 def evaluate(lazy_list):
@@ -28,8 +35,8 @@ def test_empty_list():
 
 
 @pytest.mark.parametrize(
-    'value',
-    (b'', b'asdf', b'a' * 56, b'b' * 123),
+    "value",
+    (b"", b"asdf", b"a" * 56, b"b" * 123),
 )
 def test_string(value):
     def dec():
@@ -46,33 +53,33 @@ def test_string(value):
 
 
 def test_list_getitem():
-    l = rlp.decode_lazy(rlp.encode([1, 2, 3]), big_endian_int)
-    assert isinstance(l, rlp.lazy.LazyList)
-    assert l[0] == 1
-    assert l[1] == 2
-    assert l[2] == 3
-    assert l[-1] == 3
-    assert l[-2] == 2
-    assert l[-3] == 1
-    assert l[0:3] == [1, 2, 3]
-    assert l[0:2] == [1, 2]
-    assert l[0:1] == [1]
-    assert l[1:2] == [2]
-    assert l[1:] == [2, 3]
-    assert l[1:-1] == [2]
-    assert l[-2:] == [2, 3]
-    assert l[:2] == [1, 2]
+    length = rlp.decode_lazy(rlp.encode([1, 2, 3]), big_endian_int)
+    assert isinstance(length, rlp.lazy.LazyList)
+    assert length[0] == 1
+    assert length[1] == 2
+    assert length[2] == 3
+    assert length[-1] == 3
+    assert length[-2] == 2
+    assert length[-3] == 1
+    assert length[0:3] == [1, 2, 3]
+    assert length[0:2] == [1, 2]
+    assert length[0:1] == [1]
+    assert length[1:2] == [2]
+    assert length[1:] == [2, 3]
+    assert length[1:-1] == [2]
+    assert length[-2:] == [2, 3]
+    assert length[:2] == [1, 2]
 
 
 def test_nested_list():
-    l = ((), (b'a'), (b'b', b'c', b'd'))
+    length = ((), (b"a"), (b"b", b"c", b"d"))
 
     def dec():
-        return rlp.decode_lazy(rlp.encode(l))
+        return rlp.decode_lazy(rlp.encode(length))
 
     assert isinstance(dec(), Sequence)
-    assert len(dec()) == len(l)
-    assert evaluate(dec()) == l
+    assert len(dec()) == len(length)
+    assert evaluate(dec()) == length
     with pytest.raises(IndexError):
         dec()[0][0]
     with pytest.raises(IndexError):
@@ -84,7 +91,7 @@ def test_nested_list():
 
 
 @pytest.mark.parametrize(
-    'value',
+    "value",
     (
         (),
         (1,),
@@ -97,7 +104,7 @@ def test_evaluation_of_lazy_decode_with_simple_value_sedes(value):
 
 def test_evaluation_of_lazy_decode_with_list_sedes_and_invalid_value():
     sedes = CountableList(big_endian_int)
-    value = [(), (1, 2), b'asdf', (3)]
+    value = [(), (1, 2), b"asdf", (3)]
     invalid_lazy = rlp.decode_lazy(rlp.encode(value), sedes)
     assert invalid_lazy[0] == value[0]
     assert invalid_lazy[1] == value[1]
@@ -106,7 +113,7 @@ def test_evaluation_of_lazy_decode_with_list_sedes_and_invalid_value():
 
 
 def test_peek():
-    assert rlp.peek(rlp.encode(b''), []) == b''
+    assert rlp.peek(rlp.encode(b""), []) == b""
     nested = rlp.encode([0, 1, [2, 3]])
     assert rlp.peek(nested, [2, 0], big_endian_int) == 2
     for index in [3, [3], [0, 0], [2, 2], [2, 1, 0]]:
