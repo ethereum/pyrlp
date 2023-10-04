@@ -1,31 +1,31 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import py
 from setuptools import (
-    setup,
     find_packages,
+    setup,
 )
 
 extras_require = {
-    'test': [
-        "pytest>=6.2.5,<7",
-        "tox>=2.9.1,<3",
-        "hypothesis==5.19.0",
-    ],
-    'lint': [
-        "flake8==3.4.1",
-    ],
-    'doc': [
-        "Sphinx>=1.6.5,<2",
-        "sphinx_rtd_theme>=0.1.9",
-    ],
-    'dev': [
-        "bumpversion>=0.5.3,<1",
-        "setuptools>=36.2.0",
-        "pytest-xdist",
-        "pytest-watch>=4.1.0,<5",
-        "wheel",
+    "dev": [
+        "build>=0.9.0",
+        "bumpversion>=0.5.3",
         "ipython",
+        "pre-commit>=3.4.0",
+        "pytest-watch>=4.1.0",
+        "tox>=4.0.0",
         "twine",
+        "wheel",
+    ],
+    "docs": [
+        "sphinx>=6.0.0",
+        "sphinx_rtd_theme>=1.0.0",
+        "towncrier>=21,<22",
+    ],
+    "test": [
+        "pytest>=7.0.0",
+        "pytest-xdist>=2.4.0",
+        "hypothesis==5.19.0",
     ],
     'rust-backend': [
         "rusty-rlp>=0.2.1, <0.3"
@@ -34,42 +34,44 @@ extras_require = {
 
 
 extras_require['dev'] = (
-    extras_require['dev'] +
-    extras_require['test'] +
-    extras_require['lint'] +
-    extras_require['doc']
+    extras_require['dev'] + extras_require['docs'] + extras_require['test']
 )
 
+with open("./README.md") as readme:
+    long_description = readme.read()
 
 setup(
     name='rlp',
     # *IMPORTANT*: Don't manually change the version here. See README for more.
     version='3.0.0',
-    description="A package for Recursive Length Prefix encoding and decoding",
-    long_description_markdown_filename='README.md',
+    description="""rlp: A package for Recursive Length Prefix encoding and decoding""",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     author="jnnk",
     author_email='jnnknnj@gmail.com',
     url='https://github.com/ethereum/pyrlp',
-    packages=find_packages(exclude=["tests", "tests.*"]),
     include_package_data=True,
-    setup_requires=['setuptools-markdown'],
     install_requires=[
-        "eth-utils>=2.0.0,<3",
+        "eth-utils>=2",
     ],
+    python_requires='>=3.7, <4',
     extras_require=extras_require,
+    py_modules=['rlp'],
     license="MIT",
     zip_safe=False,
     keywords='rlp ethereum',
+    packages=find_packages(exclude=["tests", "tests.*"]),
+    package_data={'rlp': ['py.typed']},
     classifiers=[
+        "Development Status :: 3 - Alpha",
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: Implementation :: PyPy',
+        'Programming Language :: Python :: 3.11',
     ],
 )

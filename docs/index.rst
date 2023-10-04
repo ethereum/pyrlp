@@ -1,29 +1,20 @@
-.. pyrlp documentation master file, created by
-   sphinx-quickstart on Mon Feb 16 14:20:49 2015.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+<PROJECT_NAME>
+==============================
 
-Welcome to pyrlp's documentation!
-=================================
+<SHORT_DESCRIPTION>
 
-*pyrlp* is a package for encoding and decoding data to and from *recursive
-length prefix encoding* (*RLP*). This format finds widely spread use in the
-Ethereum world.
+Contents
+--------
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 3
 
-   quickstart
-   tutorial
-   api
-   releases
-
+    <MODULE_NAME>
+    release_notes
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
-
