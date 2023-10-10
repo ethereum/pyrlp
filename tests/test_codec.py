@@ -1,16 +1,19 @@
-import pytest
-
 from eth_utils import (
     decode_hex,
 )
+import pytest
 
-from rlp.exceptions import DecodingError
-from rlp.codec import consume_length_prefix, consume_item
 from rlp import (
     decode,
     encode,
 )
-
+from rlp.codec import (
+    consume_item,
+    consume_length_prefix,
+)
+from rlp.exceptions import (
+    DecodingError,
+)
 
 EMPTYLIST = encode([])
 
@@ -45,26 +48,28 @@ def test_compare_length():
 
 
 def test_favor_short_string_form():
-    data = decode_hex('b8056d6f6f7365')
+    data = decode_hex("b8056d6f6f7365")
     with pytest.raises(DecodingError):
         decode(data)
 
-    data = decode_hex('856d6f6f7365')
-    assert decode(data) == b'moose'
+    data = decode_hex("856d6f6f7365")
+    assert decode(data) == b"moose"
 
 
 def test_consume_item():
-    obj = [b'f', b'bar', b'a' * 100, 105, [b'nested', b'list']]
+    obj = [b"f", b"bar", b"a" * 100, 105, [b"nested", b"list"]]
     rlp = encode(obj)
     item, per_item_rlp, end = consume_item(rlp, 0)
     assert per_item_rlp == [
-        (b'\xf8y' b'f' + b'\x83bar' + b'\xb8d' + b'a' * 100 + b'i' +
-         b'\xcc\x86nested\x84list'),
-        [b'f'],
-        [b'\x83bar'],
-        [b'\xb8d' + b'a' * 100],
-        [b'i'],
-        [b'\xcc\x86nested\x84list', [b'\x86nested'], [b'\x84list']]
+        (
+            b"\xf8y"
+            b"f" + b"\x83bar" + b"\xb8d" + b"a" * 100 + b"i" + b"\xcc\x86nested\x84list"
+        ),
+        [b"f"],
+        [b"\x83bar"],
+        [b"\xb8d" + b"a" * 100],
+        [b"i"],
+        [b"\xcc\x86nested\x84list", [b"\x86nested"], [b"\x84list"]],
     ]
     assert end == 123
     assert per_item_rlp[0] == rlp

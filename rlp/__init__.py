@@ -1,15 +1,29 @@
-from . import sedes  # noqa: F401
-from .codec import (  # noqa: F401
-    encode,
+from importlib.metadata import (
+    version as __version,
+)
+
+from . import (
+    sedes,
+)
+from .codec import (
     decode,
+    encode,
     infer_sedes,
 )
-from .exceptions import (  # noqa: F401
-    RLPException,
-    EncodingError,
+from .exceptions import (
     DecodingError,
-    SerializationError,
     DeserializationError,
+    EncodingError,
+    RLPException,
+    SerializationError,
 )
-from .lazy import decode_lazy, peek, LazyList  # noqa: F401
-from .sedes import Serializable  # noqa: F401
+from .lazy import (
+    LazyList,
+    decode_lazy,
+    peek,
+)
+from .sedes import (
+    Serializable,
+)
+
+__version__ = __version("rlp")

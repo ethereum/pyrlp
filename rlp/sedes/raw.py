@@ -3,10 +3,16 @@ A sedes that does nothing. Thus, everything that can be directly encoded by RLP
 is serializable. This sedes can be used as a placeholder when deserializing
 larger structures.
 """
-from collections.abc import Sequence
+from collections.abc import (
+    Sequence,
+)
 
-from rlp.exceptions import SerializationError
-from rlp.atomic import Atomic
+from rlp.atomic import (
+    Atomic,
+)
+from rlp.exceptions import (
+    SerializationError,
+)
 
 
 def serializable(obj):
@@ -20,8 +26,7 @@ def serializable(obj):
 
 def serialize(obj):
     if not serializable(obj):
-        raise SerializationError('Can only serialize nested lists of strings',
-                                 obj)
+        raise SerializationError("Can only serialize nested lists of strings", obj)
     return obj
 
 

@@ -1,7 +1,9 @@
 """
 Module for sedes objects that use lists as serialization format.
 """
-from collections.abc import Sequence
+from collections.abc import (
+    Sequence,
+)
 
 from eth_utils import (
     to_list,
@@ -9,10 +11,10 @@ from eth_utils import (
 )
 
 from rlp.exceptions import (
-    SerializationError,
-    ListSerializationError,
     DeserializationError,
     ListDeserializationError,
+    ListSerializationError,
+    SerializationError,
 )
 
 from .binary import (
@@ -21,23 +23,25 @@ from .binary import (
 
 
 def is_sedes(obj):
-    """Check if `obj` is a sedes object.
+    """
+    Check if `obj` is a sedes object.
 
     A sedes object is characterized by having the methods `serialize(obj)` and
     `deserialize(serial)`.
     """
-    return hasattr(obj, 'serialize') and hasattr(obj, 'deserialize')
+    return hasattr(obj, "serialize") and hasattr(obj, "deserialize")
 
 
 def is_sequence(obj):
     """Check if `obj` is a sequence, but not a string or bytes."""
     return isinstance(obj, Sequence) and not (
-        isinstance(obj, str) or BinaryClass.is_valid_type(obj))
+        isinstance(obj, str) or BinaryClass.is_valid_type(obj)
+    )
 
 
 class List(list):
-
-    """A sedes for lists, implemented as a list of other sedes objects.
+    """
+    A sedes for lists, implemented as a list of other sedes objects.
 
     :param strict: If true (de)serializing lists that have a length not
                    matching the sedes length will result in an error. If false
@@ -57,19 +61,20 @@ class List(list):
                     self.append(List(e))
                 else:
                     raise TypeError(
-                        'Instances of List must only contain sedes objects or '
-                        'nested sequences thereof.'
+                        "Instances of List must only contain sedes objects or "
+                        "nested sequences thereof."
                     )
 
     @to_list
     def serialize(self, obj):
         if not is_sequence(obj):
-            raise ListSerializationError('Can only serialize sequences', obj)
+            raise ListSerializationError("Can only serialize sequences", obj)
         if self.strict and len(self) != len(obj):
             raise ListSerializationError(
-                'Serializing list length (%d) does not match sedes (%d)' % (
-                    len(obj), len(self)),
-                obj)
+                "Serializing list length (%d) does not match sedes (%d)"
+                % (len(obj), len(self)),
+                obj,
+            )
 
         for index, (element, sedes) in enumerate(zip(obj, self)):
             try:
@@ -80,24 +85,27 @@ class List(list):
     @to_tuple
     def deserialize(self, serial):
         if not is_sequence(serial):
-            raise ListDeserializationError('Can only deserialize sequences', serial)
+            raise ListDeserializationError("Can only deserialize sequences", serial)
 
         if self.strict and len(serial) != len(self):
             raise ListDeserializationError(
-                'Deserializing list length (%d) does not match sedes (%d)' % (
-                    len(serial), len(self)),
-                serial)
+                "Deserializing list length (%d) does not match sedes (%d)"
+                % (len(serial), len(self)),
+                serial,
+            )
 
         for idx, (sedes, element) in enumerate(zip(self, serial)):
             try:
                 yield sedes.deserialize(element)
             except DeserializationError as e:
-                raise ListDeserializationError(serial=serial, element_exception=e, index=idx)
+                raise ListDeserializationError(
+                    serial=serial, element_exception=e, index=idx
+                )
 
 
 class CountableList(object):
-
-    """A sedes for lists of arbitrary length.
+    """
+    A sedes for lists of arbitrary length.
 
     :param element_sedes: when (de-)serializing a list, this sedes will be
                           applied to all of its elements
@@ -111,11 +119,11 @@ class CountableList(object):
     @to_list
     def serialize(self, obj):
         if not is_sequence(obj):
-            raise ListSerializationError('Can only serialize sequences', obj)
+            raise ListSerializationError("Can only serialize sequences", obj)
 
         if self.max_length is not None and len(obj) > self.max_length:
             raise ListSerializationError(
-                'Too many elements ({}, allowed {})'.format(
+                "Too many elements ({}, allowed {})".format(
                     len(obj),
                     self.max_length,
                 ),
@@ -131,15 +139,19 @@ class CountableList(object):
     @to_tuple
     def deserialize(self, serial):
         if not is_sequence(serial):
-            raise ListDeserializationError('Can only deserialize sequences', serial=serial)
+            raise ListDeserializationError(
+                "Can only deserialize sequences", serial=serial
+            )
         for index, element in enumerate(serial):
             if self.max_length is not None and index >= self.max_length:
                 raise ListDeserializationError(
-                    'Too many elements (more than {})'.format(self.max_length),
+                    "Too many elements (more than {})".format(self.max_length),
                     serial=serial,
                 )
 
             try:
                 yield self.element_sedes.deserialize(element)
             except DeserializationError as e:
-                raise ListDeserializationError(serial=serial, element_exception=e, index=index)
+                raise ListDeserializationError(
+                    serial=serial, element_exception=e, index=index
+                )

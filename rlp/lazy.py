@@ -1,12 +1,23 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import (
+    Iterable,
+    Sequence,
+)
 
-from .codec import consume_length_prefix, consume_payload
-from .exceptions import DecodingError
-from .atomic import Atomic
+from .atomic import (
+    Atomic,
+)
+from .codec import (
+    consume_length_prefix,
+    consume_payload,
+)
+from .exceptions import (
+    DecodingError,
+)
 
 
 def decode_lazy(rlp, sedes=None, **sedes_kwargs):
-    """Decode an RLP encoded object in a lazy fashion.
+    """
+    Decode an RLP encoded object in a lazy fashion.
 
     If the encoded object is a bytestring, this function acts similar to
     :func:`rlp.decode`. If it is a list however, a :class:`LazyList` is
@@ -23,14 +34,14 @@ def decode_lazy(rlp, sedes=None, **sedes_kwargs):
     :param sedes: an object implementing a method ``deserialize(code)`` which
                   is used as described above, or ``None`` if no
                   deserialization should be performed
-    :param \*\*sedes_kwargs: additional keyword arguments that will be passed
+    :param `**sedes_kwargs`: additional keyword arguments that will be passed
                              to the deserializers
     :returns: either the already decoded and deserialized object (if encoded as
               a string) or an instance of :class:`rlp.LazyList`
     """
     item, end = consume_item_lazy(rlp, 0)
     if end != len(rlp):
-        raise DecodingError('RLP length prefix announced wrong length', rlp)
+        raise DecodingError("RLP length prefix announced wrong length", rlp)
     if isinstance(item, LazyList):
         item.sedes = sedes
         item.sedes_kwargs = sedes_kwargs
@@ -42,7 +53,8 @@ def decode_lazy(rlp, sedes=None, **sedes_kwargs):
 
 
 def consume_item_lazy(rlp, start):
-    """Read an item from an RLP string lazily.
+    """
+    Read an item from an RLP string lazily.
 
     If the length prefix announces a string, the string is read; if it
     announces a list, a :class:`LazyList` is created.
@@ -63,7 +75,8 @@ def consume_item_lazy(rlp, start):
 
 
 class LazyList(Sequence):
-    """A RLP encoded list which decodes itself when necessary.
+    """
+    A RLP encoded list which decodes itself when necessary.
 
     Both indexing with positive indices and iterating are supported.
     Getting the length with :func:`len` is possible as well but requires full
@@ -74,7 +87,7 @@ class LazyList(Sequence):
     :param end: the position of the last payload byte of the encoded list
     :param sedes: a sedes object which deserializes each element of the list,
                   or ``None`` for no deserialization
-    :param \*\*sedes_kwargs: keyword arguments which will be passed on to the
+    :param `**sedes_kwargs`: keyword arguments which will be passed on to the
                              deserializer
     """
 
@@ -118,7 +131,7 @@ class LazyList(Sequence):
                 self.next()
         except StopIteration:
             assert self.index == self.end
-            raise IndexError('Index %s out of range' % i)
+            raise IndexError("Index %s out of range" % i)
 
         if isinstance(i, slice):
             return self._elements[start:stop]
@@ -136,7 +149,8 @@ class LazyList(Sequence):
 
 
 def peek(rlp, index, sedes=None):
-    """Get a specific element from an rlp encoded nested list.
+    """
+    Get a specific element from an rlp encoded nested list.
 
     This function uses :func:`rlp.decode_lazy` and, thus, decodes only the
     necessary parts of the string.
@@ -163,7 +177,7 @@ def peek(rlp, index, sedes=None):
         index = [index]
     for i in index:
         if isinstance(ll, Atomic):
-            raise IndexError('Too many indices given')
+            raise IndexError("Too many indices given")
         ll = ll[i]
     if sedes:
         return sedes.deserialize(ll)

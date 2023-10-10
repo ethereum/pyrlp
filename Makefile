@@ -1,75 +1,83 @@
-.PHONY: clean-pyc clean-build docs clean
+CURRENT_SIGN_SETTING := $(shell git config commit.gpgSign)
+
+.PHONY: clean-pyc clean-build docs
 
 help:
-	@echo "clean - remove all build, test, coverage and Python artifacts"
 	@echo "clean-build - remove build artifacts"
 	@echo "clean-pyc - remove Python file artifacts"
-	@echo "clean-test - remove test and coverage artifacts"
-	@echo "lint - check style with flake8"
+	@echo "lint - fix linting issues with pre-commit"
 	@echo "test - run tests quickly with the default Python"
-	@echo "test-all - run tests on every Python version with tox"
-	@echo "coverage - check code coverage quickly with the default Python"
-	@echo "docs - generate Sphinx HTML documentation, including API docs"
-	@echo "release - package and upload a release"
+	@echo "docs - generate docs and open in browser (linux-docs for version on linux)"
+	@echo "notes - consume towncrier newsfragments/ and update release notes in docs/"
+	@echo "release - package and upload a release (does not run notes target)"
 	@echo "dist - package"
-	@echo "install - install the package to the active Python's site-packages"
 
-clean: clean-build clean-pyc clean-test
+clean: clean-build clean-pyc
 
 clean-build:
 	rm -fr build/
 	rm -fr dist/
-	rm -fr .eggs/
-	find . -name '*.egg-info' -exec rm -fr {} +
-	find . -name '*.egg' -exec rm -f {} +
+	rm -fr *.egg-info
 
 clean-pyc:
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
 	find . -name '*~' -exec rm -f {} +
-	find . -name '__pycache__' -exec rm -fr {} +
-
-clean-test:
-	rm -fr .tox/
-	rm -f .coverage
-	rm -fr htmlcov/
+	find . -name '__pycache__' -exec rm -rf {} +
 
 lint:
-	flake8 rlp tests
+	pre-commit run --all-files --show-diff-on-failure
 
 test:
-	python setup.py test
+	pytest tests
 
-test-all:
-	tox
-
-coverage:
-	coverage run --source rlp setup.py test
-	coverage report -m
-	coverage html
-	open htmlcov/index.html
-
-docs:
-	rm -f docs/rlp.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ rlp
+build-docs:
+	sphinx-apidoc -o docs/ . setup.py "*conftest*"
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
+	$(MAKE) -C docs doctest
+
+validate-docs:
+	python ./newsfragments/validate_files.py
+	towncrier build --draft --version preview
+
+check-docs: build-docs validate-docs
+
+docs: check-docs
 	open docs/_build/html/index.html
 
-release: clean
+linux-docs: check-docs
+	xdg-open docs/_build/html/index.html
+
+check-bump:
+ifndef bump
+	$(error bump must be set, typically: major, minor, patch, or devnum)
+endif
+
+notes: check-bump
+	# Let UPCOMING_VERSION be the version that is used for the current bump
+	$(eval UPCOMING_VERSION=$(shell bumpversion $(bump) --dry-run --list | grep new_version= | sed 's/new_version=//g'))
+	# Now generate the release notes to have them included in the release commit
+	towncrier build --yes --version $(UPCOMING_VERSION)
+	# Before we bump the version, make sure that the towncrier-generated docs will build
+	make build-docs
+	git commit -m "Compile release notes"
+
+release: check-bump clean
+	# require that upstream is configured for ethereum/pyrlp
+	git remote -v | grep "upstream\tgit@github.com:ethereum/pyrlp.git (push)\|upstream\thttps://github.com/ethereum/pyrlp (push)"
+	# verify that docs build correctly
+	./newsfragments/validate_files.py is-empty
+	make build-docs
 	CURRENT_SIGN_SETTING=$(git config commit.gpgSign)
 	git config commit.gpgSign true
 	bumpversion $(bump)
 	git push upstream && git push upstream --tags
-	python setup.py sdist bdist_wheel
+	python -m build
 	twine upload dist/*
 	git config commit.gpgSign "$(CURRENT_SIGN_SETTING)"
 
-dist: clean
-	python setup.py sdist
-	python setup.py bdist_wheel
-	ls -l dist
 
-install: clean
-	python setup.py install
+dist: clean
+	python -m build
+	ls -l dist

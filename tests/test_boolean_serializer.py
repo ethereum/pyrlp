@@ -1,17 +1,19 @@
 import pytest
 
 from rlp import (
-    SerializationError,
     DeserializationError,
+    SerializationError,
 )
-from rlp.sedes import Boolean
+from rlp.sedes import (
+    Boolean,
+)
 
 
 @pytest.mark.parametrize(
-    'value,expected',
+    "value,expected",
     (
-        (True, b'\x01'),
-        (False, b''),
+        (True, b"\x01"),
+        (False, b""),
     ),
 )
 def test_boolean_serialize_values(value, expected):
@@ -20,13 +22,13 @@ def test_boolean_serialize_values(value, expected):
 
 
 @pytest.mark.parametrize(
-    'value',
+    "value",
     (
         None,
         1,
         0,
-        'True',
-        b'True',
+        "True",
+        b"True",
     ),
 )
 def test_boolean_serialize_bad_values(value):
@@ -36,10 +38,10 @@ def test_boolean_serialize_bad_values(value):
 
 
 @pytest.mark.parametrize(
-    'value,expected',
+    "value,expected",
     (
-        (b'\x01', True),
-        (b'', False),
+        (b"\x01", True),
+        (b"", False),
     ),
 )
 def test_boolean_deserialization(value, expected):
@@ -48,14 +50,14 @@ def test_boolean_deserialization(value, expected):
 
 
 @pytest.mark.parametrize(
-    'value',
+    "value",
     (
-        b' ',
-        b'\x02',
-        b'\x00\x00',
-        b'\x01\x00',
-        b'\x00\x01',
-        b'\x01\x01',
+        b" ",
+        b"\x02",
+        b"\x00\x00",
+        b"\x01\x00",
+        b"\x00\x01",
+        b"\x01\x01",
     ),
 )
 def test_boolean_deserialization_bad_value(value):
