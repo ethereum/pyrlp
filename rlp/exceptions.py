@@ -56,8 +56,8 @@ class ListSerializationError(SerializationError):
             assert index is not None
             assert element_exception is not None
             message = (
-                "Serialization failed because of element at index {} "
-                '("{}")'.format(index, str(element_exception))
+                f"Serialization failed because of element at index {index} "
+                f'("{str(element_exception)}")'
             )
         super(ListSerializationError, self).__init__(message, obj)
         self.index = index
@@ -82,13 +82,14 @@ class ObjectSerializationError(SerializationError):
                 field = None
                 message = (
                     "Serialization failed because of underlying list "
-                    '("{}")'.format(str(list_exception))
+                    f'("{str(list_exception)}")'
                 )
             else:
                 assert sedes is not None
                 field = sedes._meta.field_names[list_exception.index]
-                message = "Serialization failed because of field {} " '("{}")'.format(
-                    field, str(list_exception.element_exception)
+                message = (
+                    f"Serialization failed because of field {field} "
+                    f'("{str(list_exception.element_exception)}")'
                 )
         else:
             field = None
@@ -125,8 +126,8 @@ class ListDeserializationError(DeserializationError):
             assert index is not None
             assert element_exception is not None
             message = (
-                "Deserialization failed because of element at index {} "
-                '("{}")'.format(index, str(element_exception))
+                f"Deserialization failed because of element at index {index} "
+                f'("{str(element_exception)}")'
             )
         super(ListDeserializationError, self).__init__(message, serial)
         self.index = index
@@ -151,13 +152,14 @@ class ObjectDeserializationError(DeserializationError):
                 field = None
                 message = (
                     "Deserialization failed because of underlying list "
-                    '("{}")'.format(str(list_exception))
+                    f'("{str(list_exception)}")'
                 )
             else:
                 assert sedes is not None
                 field = sedes._meta.field_names[list_exception.index]
-                message = "Deserialization failed because of field {} " '("{}")'.format(
-                    field, str(list_exception.element_exception)
+                message = (
+                    f"Deserialization failed because of field {field} "
+                    f'("{str(list_exception.element_exception)}")'
                 )
         super(ObjectDeserializationError, self).__init__(message, serial)
         self.sedes = sedes

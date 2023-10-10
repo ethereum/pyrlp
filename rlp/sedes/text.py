@@ -49,9 +49,7 @@ class Text:
 
     def serialize(self, obj):
         if not self.is_valid_type(obj):
-            raise SerializationError(
-                "Object is not a serializable ({})".format(type(obj)), obj
-            )
+            raise SerializationError(f"Object is not a serializable ({type(obj)})", obj)
 
         if not self.is_valid_length(len(obj)):
             raise SerializationError("Object has invalid length", obj)
@@ -60,8 +58,10 @@ class Text:
 
     def deserialize(self, serial):
         if not isinstance(serial, Atomic):
-            m = "Objects of type {} cannot be deserialized"
-            raise DeserializationError(m.format(type(serial).__name__), serial)
+            raise DeserializationError(
+                f"Objects of type {type(serial).__name__} cannot be deserialized",
+                serial,
+            )
 
         try:
             text_value = serial.decode(self.encoding)
@@ -71,9 +71,7 @@ class Text:
         if self.is_valid_length(len(text_value)):
             return text_value
         else:
-            raise DeserializationError(
-                "{} has invalid length".format(type(serial)), serial
-            )
+            raise DeserializationError(f"{type(serial)} has invalid length", serial)
 
 
 text = Text()

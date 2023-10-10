@@ -37,24 +37,22 @@ def _get_duplicates(values):
 def validate_args_and_kwargs(args, kwargs, arg_names, allow_missing=False):
     duplicate_arg_names = _get_duplicates(arg_names)
     if duplicate_arg_names:
-        raise TypeError(
-            "Duplicate argument names: {0}".format(sorted(duplicate_arg_names))
-        )
+        raise TypeError(f"Duplicate argument names: {sorted(duplicate_arg_names)}")
 
     needed_kwargs = arg_names[len(args) :]
     used_kwargs = set(arg_names[: len(args)])
 
     duplicate_kwargs = used_kwargs.intersection(kwargs.keys())
     if duplicate_kwargs:
-        raise TypeError("Duplicate kwargs: {0}".format(sorted(duplicate_kwargs)))
+        raise TypeError(f"Duplicate kwargs: {sorted(duplicate_kwargs)}")
 
     unknown_kwargs = set(kwargs.keys()).difference(arg_names)
     if unknown_kwargs:
-        raise TypeError("Unknown kwargs: {0}".format(sorted(unknown_kwargs)))
+        raise TypeError(f"Unknown kwargs: {sorted(unknown_kwargs)}")
 
     missing_kwargs = set(needed_kwargs).difference(kwargs.keys())
     if not allow_missing and missing_kwargs:
-        raise TypeError("Missing kwargs: {0}".format(sorted(missing_kwargs)))
+        raise TypeError(f"Missing kwargs: {sorted(missing_kwargs)}")
 
 
 @to_tuple
@@ -180,7 +178,7 @@ class BaseChangeset:
 def Changeset(obj, changes):
     namespace = {name: ChangesetField(name) for name in obj._meta.field_names}
     cls = type(
-        "{0}Changeset".format(obj.__class__.__name__),
+        f"{obj.__class__.__name__}Changeset",
         (BaseChangeset,),
         namespace,
     )
@@ -196,11 +194,9 @@ class BaseSerializable(collections.abc.Sequence):
 
         if len(field_values) != len(self._meta.field_names):
             raise TypeError(
-                "Argument count mismatch. expected {0} - got {1} - missing {2}".format(
-                    len(self._meta.field_names),
-                    len(field_values),
-                    ",".join(self._meta.field_names[len(field_values) :]),
-                )
+                f"Argument count mismatch. expected {len(self._meta.field_names)} - "
+                f"got {len(field_values)} - "
+                f"missing {','.join(self._meta.field_names[len(field_values) :])}"
             )
 
         for value, attr in zip(field_values, self._meta.field_attrs):
@@ -227,7 +223,7 @@ class BaseSerializable(collections.abc.Sequence):
         elif isinstance(idx, str):
             return getattr(self, idx)
         else:
-            raise IndexError("Unsupported type for __getitem__: {0}".format(type(idx)))
+            raise IndexError(f"Unsupported type for __getitem__: {type(idx)}")
 
     def __len__(self):
         return len(self._meta.fields)
@@ -253,11 +249,8 @@ class BaseSerializable(collections.abc.Sequence):
         return self._hash_cache
 
     def __repr__(self):
-        keyword_args = tuple("{}={!r}".format(k, v) for k, v in self.as_dict().items())
-        return "{}({})".format(
-            type(self).__name__,
-            ", ".join(keyword_args),
-        )
+        keyword_args = tuple(f"{k}={v!r}" for k, v in self.as_dict().items())
+        return f"{type(self).__name__}({', '.join(keyword_args)})"
 
     @classmethod
     def serialize(cls, obj):
@@ -403,8 +396,7 @@ class SerializableBase(abc.ABCMeta):
         if duplicate_field_names:
             raise TypeError(
                 "The following fields are duplicated in the `fields` "
-                "declaration: "
-                "{0}".format(",".join(sorted(duplicate_field_names)))
+                f"declaration: {','.join(sorted(duplicate_field_names))}"
             )
 
         # check that field names are valid identifiers
@@ -415,11 +407,8 @@ class SerializableBase(abc.ABCMeta):
         }
         if invalid_field_names:
             raise TypeError(
-                "The following field names are not valid python identifiers: {0}".format(  # noqa: E501
-                    ",".join(
-                        "`{0}`".format(item) for item in sorted(invalid_field_names)
-                    )
-                )
+                "The following field names are not valid python identifiers: "
+                f"{','.join(f'`{item}`' for item in sorted(invalid_field_names))}"
             )
 
         # extract all of the fields from parent `Serializable` classes.
@@ -437,8 +426,7 @@ class SerializableBase(abc.ABCMeta):
             raise TypeError(
                 "Subclasses of `Serializable` **must** contain a full superset "
                 "of the fields defined in their parent classes.  The following "
-                "fields are missing: "
-                "{0}".format(",".join(sorted(missing_fields)))
+                f"fields are missing: {','.join(sorted(missing_fields))}"
             )
 
         # the actual field values are stored in separate *private* attributes.
