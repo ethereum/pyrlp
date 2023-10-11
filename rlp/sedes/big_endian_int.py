@@ -25,7 +25,7 @@ class BigEndianInt(object):
             raise SerializationError("Can only serialize integers", obj)
         if self.length is not None and obj >= 256**self.length:
             raise SerializationError(
-                "Integer too large (does not fit in {self.length} bytes)",
+                f"Integer too large (does not fit in {self.length} bytes)",
                 obj,
             )
         if obj < 0:
