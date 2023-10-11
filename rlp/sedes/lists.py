@@ -123,10 +123,7 @@ class CountableList(object):
 
         if self.max_length is not None and len(obj) > self.max_length:
             raise ListSerializationError(
-                "Too many elements ({}, allowed {})".format(
-                    len(obj),
-                    self.max_length,
-                ),
+                f"Too many elements ({len(obj)}, allowed {self.max_length})",
                 obj=obj,
             )
 
@@ -145,7 +142,7 @@ class CountableList(object):
         for index, element in enumerate(serial):
             if self.max_length is not None and index >= self.max_length:
                 raise ListDeserializationError(
-                    "Too many elements (more than {})".format(self.max_length),
+                    f"Too many elements (more than {self.max_length})",
                     serial=serial,
                 )
 

@@ -44,9 +44,7 @@ class Binary(object):
 
     def serialize(self, obj):
         if not Binary.is_valid_type(obj):
-            raise SerializationError(
-                "Object is not a serializable ({})".format(type(obj)), obj
-            )
+            raise SerializationError(f"Object is not a serializable ({type(obj)})", obj)
 
         if not self.is_valid_length(len(obj)):
             raise SerializationError("Object has invalid length", obj)
@@ -55,15 +53,15 @@ class Binary(object):
 
     def deserialize(self, serial):
         if not isinstance(serial, Atomic):
-            m = "Objects of type {} cannot be deserialized"
-            raise DeserializationError(m.format(type(serial).__name__), serial)
+            raise DeserializationError(
+                f"Objects of type {type(serial).__name__} cannot be deserialized",
+                serial,
+            )
 
         if self.is_valid_length(len(serial)):
             return serial
         else:
-            raise DeserializationError(
-                "{} has invalid length".format(type(serial)), serial
-            )
+            raise DeserializationError(f"{type(serial)} has invalid length", serial)
 
 
 binary = Binary()

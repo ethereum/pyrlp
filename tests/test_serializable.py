@@ -633,8 +633,9 @@ def test_serializable_multiple_inheritance_requires_all_parent_fields():
     ),
 )
 def test_serializable_field_names_must_be_valid_identifiers(name):
-    msg = "not valid python identifiers: `{0}`".format(re.escape(name))
-    with pytest.raises(TypeError, match=msg):
+    with pytest.raises(
+        TypeError, match=f"not valid python identifiers: `{re.escape(name)}`"
+    ):
 
         class Klass(Serializable):
             fields = ((name, big_endian_int),)

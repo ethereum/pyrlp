@@ -57,7 +57,7 @@ except ImportError:
             payload = b"".join(encode_raw(x) for x in item)
             prefix_offset = 192  # list
         else:
-            msg = "Cannot encode object of type {0}".format(type(item).__name__)
+            msg = f"Cannot encode object of type {type(item).__name__}"
             raise EncodingError(msg, item)
 
         try:
@@ -73,7 +73,7 @@ except ImportError:
         except IndexError:
             raise DecodingError("RLP string too short", item)
         if end != len(item) and strict:
-            msg = "RLP string ends with {} superfluous bytes".format(len(item) - end)
+            msg = f"RLP string ends with {len(item) - end} superfluous bytes"
             raise DecodingError(msg, item)
 
         return result, per_item_rlp
@@ -350,5 +350,5 @@ def infer_sedes(obj):
         return boolean
     elif isinstance(obj, str):
         return text
-    msg = "Did not find sedes handling type {}".format(type(obj).__name__)
+    msg = f"Did not find sedes handling type {type(obj).__name__}"
     raise TypeError(msg)

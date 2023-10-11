@@ -65,17 +65,17 @@ with open("tests/rlptest.json") as rlptest_file:
 
 @pytest.mark.parametrize("name, in_out", test_pieces)
 def test_encode(name, in_out):
-    msg_format = "Test {} failed (encoded {} to {} instead of {})"
     data = in_out["in"]
     result = encode_hex(encode(data)).lower()
     expected = in_out["out"].lower()
     if result != expected:
-        pytest.fail(msg_format.format(name, data, result, expected))
+        pytest.fail(
+            f"Test {name} failed (encoded {data} to {result} instead of {expected})"
+        )
 
 
 @pytest.mark.parametrize("name, in_out", test_pieces)
 def test_decode(name, in_out):
-    msg_format = "Test {} failed (decoded {} to {} instead of {})"
     rlp_string = decode_hex(in_out["out"])
     decoded = decode(rlp_string)
     with pytest.raises(DecodingError):
@@ -89,4 +89,6 @@ def test_decode(name, in_out):
     assert compare_nested(data, decode(rlp_string, sedes))
 
     if not compare_nested(data, expected):
-        pytest.fail(msg_format.format(name, rlp_string, decoded, expected))
+        pytest.fail(
+            f"Test {name} failed (decoded {rlp_string} to {decoded} instead of {expected})"  # noqa: E501
+        )
