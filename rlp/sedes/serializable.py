@@ -474,5 +474,3 @@ class Serializable(BaseSerializable, metaclass=SerializableBase):
     """
     The base class for serializable objects.
     """
-
-    pass
