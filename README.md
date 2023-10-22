@@ -18,8 +18,8 @@ python -m pip install rlp
 
 ## Developer Setup
 
-If you would like to hack on pyrlp, please check out the [Snake Charmers
-Tactical Manual](https://github.com/ethereum/snake-charmers-tactical-manual)
+If you would like to hack on pyrlp, please check out the 
+[Snake Charmers Tactical Manual](https://github.com/ethereum/snake-charmers-tactical-manual)
 for information on how we do:
 
 - Testing
