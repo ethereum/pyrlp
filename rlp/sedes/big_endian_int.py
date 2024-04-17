@@ -9,7 +9,7 @@ from rlp.exceptions import (
 )
 
 
-class BigEndianInt(object):
+class BigEndianInt:
     """
     A sedes for big endian integers.
 

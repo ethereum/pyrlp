@@ -249,6 +249,12 @@ jobs:
       - image: cimg/python:3.11
         environment:
           TOXENV: py311-rust-backend
+  py312-rust-backend:
+    <<: *common
+    docker:
+      - image: cimg/python:3.12
+        environment:
+          TOXENV: py312-rust-backend
 
 define: &all_jobs
   - docs
@@ -273,6 +279,7 @@ define: &all_jobs
   - py39-rust-backend
   - py310-rust-backend
   - py311-rust-backend
+  - py312-rust-backend
 
 workflows:
   version: 2

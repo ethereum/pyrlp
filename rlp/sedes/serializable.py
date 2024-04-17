@@ -205,9 +205,7 @@ class BaseSerializable(collections.abc.Sequence):
     _cached_rlp = None
 
     def as_dict(self):
-        return dict(
-            (field, value) for field, value in zip(self._meta.field_names, self)
-        )
+        return {field: value for field, value in zip(self._meta.field_names, self)}
 
     def __iter__(self):
         for attr in self._meta.field_attrs:
@@ -353,7 +351,7 @@ def _get_class_namespace(cls):
 
 class SerializableBase(abc.ABCMeta):
     def __new__(cls, name, bases, attrs):
-        super_new = super(SerializableBase, cls).__new__
+        super_new = super().__new__
 
         serializable_bases = tuple(b for b in bases if isinstance(b, SerializableBase))
         has_multiple_serializable_parents = len(serializable_bases) > 1

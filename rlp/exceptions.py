@@ -10,7 +10,7 @@ class EncodingError(RLPException):
     """
 
     def __init__(self, message, obj):
-        super(EncodingError, self).__init__(message)
+        super().__init__(message)
         self.obj = obj
 
 
@@ -22,7 +22,7 @@ class DecodingError(RLPException):
     """
 
     def __init__(self, message, rlp):
-        super(DecodingError, self).__init__(message)
+        super().__init__(message)
         self.rlp = rlp
 
 
@@ -34,7 +34,7 @@ class SerializationError(RLPException):
     """
 
     def __init__(self, message, obj):
-        super(SerializationError, self).__init__(message)
+        super().__init__(message)
         self.obj = obj
 
 
@@ -57,7 +57,7 @@ class ListSerializationError(SerializationError):
                 f"Serialization failed because of element at index {index} "
                 f'("{str(element_exception)}")'
             )
-        super(ListSerializationError, self).__init__(message, obj)
+        super().__init__(message, obj)
         self.index = index
         self.element_exception = element_exception
 
@@ -91,7 +91,7 @@ class ObjectSerializationError(SerializationError):
                 )
         else:
             field = None
-        super(ObjectSerializationError, self).__init__(message, obj)
+        super().__init__(message, obj)
         self.field = field
         self.list_exception = list_exception
 
@@ -104,7 +104,7 @@ class DeserializationError(RLPException):
     """
 
     def __init__(self, message, serial):
-        super(DeserializationError, self).__init__(message)
+        super().__init__(message)
         self.serial = serial
 
 
@@ -127,7 +127,7 @@ class ListDeserializationError(DeserializationError):
                 f"Deserialization failed because of element at index {index} "
                 f'("{str(element_exception)}")'
             )
-        super(ListDeserializationError, self).__init__(message, serial)
+        super().__init__(message, serial)
         self.index = index
         self.element_exception = element_exception
 
@@ -159,7 +159,7 @@ class ObjectDeserializationError(DeserializationError):
                     f"Deserialization failed because of field {field} "
                     f'("{str(list_exception.element_exception)}")'
                 )
-        super(ObjectDeserializationError, self).__init__(message, serial)
+        super().__init__(message, serial)
         self.sedes = sedes
         self.list_exception = list_exception
         self.field = field

@@ -1,9 +1,9 @@
-# -*- coding: UTF-8 -*-
+import pytest
+
 from hypothesis import (
     given,
     strategies as st,
 )
-import pytest
 
 from rlp import (
     DeserializationError,

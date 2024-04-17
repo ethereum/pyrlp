@@ -2,9 +2,8 @@ from multiprocessing import (
     get_context,
 )
 import pickle
-import re
-
 import pytest
+import re
 
 from rlp import (
     SerializationError,

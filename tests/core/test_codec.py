@@ -1,7 +1,8 @@
+import pytest
+
 from eth_utils import (
     decode_hex,
 )
-import pytest
 
 from rlp import (
     decode,
