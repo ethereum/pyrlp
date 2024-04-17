@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 from setuptools import (
     find_packages,
     setup,
@@ -17,6 +16,7 @@ extras_require = {
     ],
     "docs": [
         "sphinx>=6.0.0",
+        "sphinx-autobuild>=2024.2.4",
         "sphinx_rtd_theme>=1.0.0",
         "towncrier>=21,<22",
     ],
@@ -56,7 +56,7 @@ setup(
     license="MIT",
     zip_safe=False,
     keywords="rlp ethereum",
-    packages=find_packages(exclude=["tests", "tests.*"]),
+    packages=find_packages(exclude=["scripts", "tests", "tests.*"]),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
@@ -67,5 +67,6 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
 )
