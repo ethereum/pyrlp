@@ -1,7 +1,6 @@
 from collections.abc import (
     Sequence,
 )
-
 import pytest
 
 import rlp

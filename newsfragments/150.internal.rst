@@ -1,0 +1,1 @@
+Add python 3.12 support, ``rust-backend`` now works with python 3.11 and 3.12

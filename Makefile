@@ -8,6 +8,7 @@ help:
 	@echo "lint - fix linting issues with pre-commit"
 	@echo "test - run tests quickly with the default Python"
 	@echo "docs - generate docs and open in browser (linux-docs for version on linux)"
+	@echo "autobuild-docs - live update docs when changes are saved"
 	@echo "notes - consume towncrier newsfragments/ and update release notes in docs/"
 	@echo "release - package and upload a release (does not run notes target)"
 	@echo "dist - package"
@@ -17,7 +18,6 @@ clean: clean-build clean-pyc
 clean-build:
 	rm -fr build/
 	rm -fr dist/
-	rm -fr *.egg-info
 
 clean-pyc:
 	find . -name '*.pyc' -exec rm -f {} +
@@ -32,7 +32,10 @@ lint:
 	)
 
 test:
-	pytest tests
+	python -m pytest tests
+
+autobuild-docs:
+	sphinx-autobuild --open-browser docs docs/_build/html
 
 build-docs:
 	sphinx-apidoc -o docs/ . setup.py "*conftest*"
@@ -40,11 +43,17 @@ build-docs:
 	$(MAKE) -C docs html
 	$(MAKE) -C docs doctest
 
-validate-docs:
+build-docs-ci:
+	$(MAKE) -C docs latexpdf
+	$(MAKE) -C docs epub
+
+validate-newsfragments:
 	python ./newsfragments/validate_files.py
 	towncrier build --draft --version preview
 
-check-docs: build-docs validate-docs
+check-docs: build-docs validate-newsfragments
+
+check-docs-ci: build-docs build-docs-ci validate-newsfragments
 
 docs: check-docs
 	open docs/_build/html/index.html
@@ -57,18 +66,18 @@ ifndef bump
 	$(error bump must be set, typically: major, minor, patch, or devnum)
 endif
 
-notes: check-bump
+notes: check-bump validate-newsfragments
 	# Let UPCOMING_VERSION be the version that is used for the current bump
 	$(eval UPCOMING_VERSION=$(shell bumpversion $(bump) --dry-run --list | grep new_version= | sed 's/new_version=//g'))
 	# Now generate the release notes to have them included in the release commit
 	towncrier build --yes --version $(UPCOMING_VERSION)
 	# Before we bump the version, make sure that the towncrier-generated docs will build
 	make build-docs
-	git commit -m "Compile release notes"
+	git commit -m "Compile release notes for v$(UPCOMING_VERSION)"
 
 release: check-bump clean
 	# require that upstream is configured for ethereum/pyrlp
-	git remote -v | grep "upstream\tgit@github.com:ethereum/pyrlp.git (push)\|upstream\thttps://github.com/ethereum/pyrlp (push)"
+	@git remote -v | grep "upstream[[:space:]]git@github.com:ethereum/pyrlp.git (push)\|upstream[[:space:]]https://github.com/ethereum/pyrlp (push)"
 	# verify that docs build correctly
 	./newsfragments/validate_files.py is-empty
 	make build-docs

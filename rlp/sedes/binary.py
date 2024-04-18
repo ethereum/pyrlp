@@ -7,7 +7,7 @@ from rlp.exceptions import (
 )
 
 
-class Binary(object):
+class Binary:
     """
     A sedes object for binary data of certain length.
 

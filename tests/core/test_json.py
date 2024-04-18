@@ -1,11 +1,11 @@
 import json
+import pytest
 
 from eth_utils import (
     add_0x_prefix,
     decode_hex,
     encode_hex,
 )
-import pytest
 
 import rlp
 from rlp import (
@@ -49,7 +49,7 @@ def compare_nested(got, expected):
             return False
 
 
-with open("tests/rlptest.json") as rlptest_file:
+with open("tests/core/rlptest.json") as rlptest_file:
     test_data = json.load(rlptest_file)
     test_pieces = [
         (

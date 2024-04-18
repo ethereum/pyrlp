@@ -50,7 +50,7 @@ class List(list):
     """
 
     def __init__(self, elements=None, strict=True):
-        super(List, self).__init__()
+        super().__init__()
         self.strict = strict
 
         if elements:
@@ -103,7 +103,7 @@ class List(list):
                 )
 
 
-class CountableList(object):
+class CountableList:
     """
     A sedes for lists of arbitrary length.
 

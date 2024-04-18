@@ -1,4 +1,3 @@
-# -*- coding: utf8 -*-
 from rlp import (
     decode,
     decode_lazy,

@@ -2,9 +2,8 @@ from itertools import (
     chain,
     repeat,
 )
-import sys
-
 import pytest
+import sys
 
 import rlp
 from rlp.exceptions import (
@@ -76,7 +75,7 @@ def eager_test_factory(s, valid):
 def generate_test_functions():
     valid = {}
     invalid = {}
-    long_string = bytes(bytearray((i % 256 for i in range(SIZE))))
+    long_string = bytes(bytearray(i % 256 for i in range(SIZE)))
     long_list = rlp.encode([c for c in long_string])
     invalid["long_string"] = long_string
     invalid["long_list"] = long_list
