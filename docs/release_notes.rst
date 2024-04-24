@@ -1,3 +1,18 @@
+pyrlp v4.0.1 (2024-04-24)
+-------------------------
+
+Internal Changes - for pyrlp Contributors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Add python 3.12 support, ``rust-backend`` now works with python 3.11 and 3.12 (`#150 <https://github.com/ethereum/pyrlp/issues/150>`__)
+
+
+Miscellaneous Changes
+~~~~~~~~~~~~~~~~~~~~~
+
+- `#151 <https://github.com/ethereum/pyrlp/issues/151>`__
+
+
 pyrlp v4.0.0 (2023-11-29)
 -------------------------
 
