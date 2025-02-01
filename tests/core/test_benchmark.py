@@ -1,8 +1,8 @@
+import pytest
 from itertools import (
     chain,
     repeat,
 )
-import pytest
 import sys
 
 import rlp

@@ -1,3 +1,8 @@
+Release Notes
+=============
+
+.. towncrier release notes start
+
 pyrlp v4.0.1 (2024-04-24)
 -------------------------
 
@@ -28,11 +33,6 @@ Internal Changes - for pyrlp Contributors
 - Convert ``.format`` strings to ``f-strings`` (`#144 <https://github.com/ethereum/pyrlp/issues/144>`__)
 - Add ``autoflake`` linting and move config to ``pyproject.toml`` (`#145 <https://github.com/ethereum/pyrlp/issues/145>`__)
 
-
-Release Notes
-=============
-
-.. _v0.4.8-release-notes:
 
 0.4.8
 -----

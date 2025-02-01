@@ -7,7 +7,7 @@ from setuptools import (
 extras_require = {
     "dev": [
         "build>=0.9.0",
-        "bumpversion>=0.5.3",
+        "bump_my_version>=0.19.0",
         "ipython",
         "pre-commit>=3.4.0",
         "tox>=4.0.0",
@@ -18,12 +18,12 @@ extras_require = {
         "sphinx>=6.0.0",
         "sphinx-autobuild>=2021.3.14",
         "sphinx_rtd_theme>=1.0.0",
-        "towncrier>=21,<22",
+        "towncrier>=24,<25",
     ],
     "test": [
         "pytest>=7.0.0",
         "pytest-xdist>=2.4.0",
-        "hypothesis==5.19.0",
+        "hypothesis>=6.22.0,<6.108.7",
     ],
     "rust-backend": ["rusty-rlp>=0.2.1"],
 }
@@ -38,7 +38,7 @@ with open("./README.md") as readme:
 
 setup(
     name="rlp",
-    # *IMPORTANT*: Don't manually change the version here. See README for more.
+    # *IMPORTANT*: Don't manually change the version here. See Contributing docs for the release process.
     version="4.0.1",
     description="""rlp: A package for Recursive Length Prefix encoding and decoding""",
     long_description=long_description,
@@ -56,7 +56,7 @@ setup(
     license="MIT",
     zip_safe=False,
     keywords="rlp ethereum",
-    packages=find_packages(exclude=["scripts", "tests", "tests.*"]),
+    packages=find_packages(exclude=["scripts", "scripts.*", "tests", "tests.*"]),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
@@ -68,5 +68,6 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
 )
