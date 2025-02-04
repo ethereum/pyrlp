@@ -1,7 +1,7 @@
+import pytest
 from collections.abc import (
     Sequence,
 )
-import pytest
 
 import rlp
 from rlp import (

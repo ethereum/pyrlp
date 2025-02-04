@@ -1,8 +1,8 @@
+import pytest
 from multiprocessing import (
     get_context,
 )
 import pickle
-import pytest
 import re
 
 from rlp import (

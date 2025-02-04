@@ -1,5 +1,5 @@
-import binascii
 import pytest
+import binascii
 
 from eth_utils import (
     int_to_big_endian,
