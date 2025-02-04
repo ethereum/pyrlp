@@ -3,6 +3,16 @@ Release Notes
 
 .. towncrier release notes start
 
+pyrlp v4.1.0 (2025-02-04)
+-------------------------
+
+Features
+~~~~~~~~
+
+- Merge template, adding ``py313`` support and replacing ``bumpversion`` with ``bump-my-version``.
+  ``rust-backend`` still only supported up to ``py312``. (`#156 <https://github.com/ethereum/pyrlp/issues/156>`__)
+
+
 pyrlp v4.0.1 (2024-04-24)
 -------------------------
 
