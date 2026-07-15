@@ -3,6 +3,9 @@ import collections
 import copy
 import enum
 import re
+from typing import (
+    Any,
+)
 
 from eth_utils import (
     to_dict,
@@ -121,11 +124,11 @@ class ChangesetField:
 
 class BaseChangeset:
     # reference to the original Serializable instance.
-    __original__ = None
+    __original__: Any = None
     # the state of this fieldset.  Initialized -> Open -> Closed
-    __state__ = None
+    __state__: Any = None
     # the field changes that have been made in this change
-    __diff__ = None
+    __diff__: dict[Any, Any] = {}
 
     def __init__(self, obj, changes=None):
         self.__original__ = obj

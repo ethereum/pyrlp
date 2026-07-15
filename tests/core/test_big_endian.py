@@ -90,8 +90,8 @@ def packl(lnum):
     byte string 0 padded to a multiple of padmultiple bytes in size. 0
     means no padding whatsoever, so that packing 0 result in an empty
     string.  The resulting byte string is the big-endian two's
-    complement representation of the passed in long."""
-
+    complement representation of the passed in long.
+    """
     if lnum == 0:
         return b"\0"
     s = hex(lnum)[2:]

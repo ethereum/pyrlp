@@ -1,6 +1,7 @@
 """
 Module for sedes objects that use lists as serialization format.
 """
+
 from collections.abc import (
     Sequence,
 )

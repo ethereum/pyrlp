@@ -15,14 +15,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 # sys.path.insert(0, os.path.abspath('.'))
 
-import os
-
-DIR = os.path.dirname(__file__)
-with open(os.path.join(DIR, "../setup.py"), "r") as f:
-    for line in f:
-        if "version=" in line:
-            setup_version = line.split('"')[1]
-            break
+from importlib.metadata import PackageNotFoundError, version as metadata_version
 
 # -- General configuration ------------------------------------------------
 
@@ -55,7 +48,10 @@ master_doc = "index"
 project = "pyrlp"
 copyright = "2019-2025, The Ethereum Foundation"
 
-__version__ = setup_version
+try:
+    __version__ = metadata_version("rlp")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.

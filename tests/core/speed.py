@@ -1,6 +1,7 @@
 """
 util to benchmark known usecase
 """
+
 import random
 import time
 
@@ -132,7 +133,7 @@ rlp.decode(rlp.encode(mk_transaction()), Transaction)
 
 
 def mk_block_header():
-    return BlockHeader(*[rand_map[t]() for _, t in BlockHeader._meta.fields])
+    return BlockHeader(*[rand_map[t]() for _, t in BlockHeader._meta.fields])  # type: ignore[operator]
 
 
 rlp.decode(rlp.encode(mk_block_header()), BlockHeader)
