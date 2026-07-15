@@ -3,6 +3,7 @@ A sedes that does nothing. Thus, everything that can be directly encoded by RLP
 is serializable. This sedes can be used as a placeholder when deserializing
 larger structures.
 """
+
 from collections.abc import (
     Sequence,
 )

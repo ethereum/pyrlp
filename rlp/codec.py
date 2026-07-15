@@ -246,9 +246,7 @@ def consume_payload(rlp, prefix, start, type_, length):
             items.append(item)
         per_item_rlp.insert(0, list_rlp)
         if next_item_start > end:
-            raise DecodingError(
-                "List length prefix announced a too small " "length", rlp
-            )
+            raise DecodingError("List length prefix announced a too small length", rlp)
         return (items, per_item_rlp, next_item_start)
     else:
         raise TypeError("Type must be either list or bytes")

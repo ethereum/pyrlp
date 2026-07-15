@@ -642,7 +642,7 @@ def test_serializable_field_names_must_be_valid_identifiers(name):
 
 def test_serializable_inheritance_from_base_with_no_fields():
     """
-    ensure that we can create base classes of the base `Serializable` without
+    Ensure that we can create base classes of the base `Serializable` without
     declaring fields.
     """
 

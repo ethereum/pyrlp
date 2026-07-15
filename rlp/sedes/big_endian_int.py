@@ -46,7 +46,7 @@ class BigEndianInt:
             raise DeserializationError("Invalid serialization (wrong size)", serial)
         if self.length is None and len(serial) > 0 and serial[0:1] == b"\x00":
             raise DeserializationError(
-                "Invalid serialization (not minimal " "length)", serial
+                "Invalid serialization (not minimal length)", serial
             )
 
         serial = serial or b"\x00"
