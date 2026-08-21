@@ -26,7 +26,7 @@ jobs:
         run: uv run --group lint ruff format --check .
 
       - name: Run mdformat
-        run: uv run --group lint mdformat --check README.md newsfragments/README.md
+        run: uv run --group lint mdformat --check *.md
 
   type-check:
     runs-on: ubuntu-latest
