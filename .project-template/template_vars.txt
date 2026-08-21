@@ -1,6 +1,0 @@
-rlp
-rlp
-pyrlp
-pyrlp
-pyrlp
-A package for Recursive Length Prefix encoding and decoding
